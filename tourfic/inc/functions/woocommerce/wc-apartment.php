@@ -19,11 +19,11 @@ function tf_apartment_booking_callback() {
 		return;
 	}
 
-	$post_id           = isset( $_POST['post_id'] ) ? intval( sanitize_text_field(wp_unslash( $_POST['post_id'] )) ) : null;
-	$adults            = isset( $_POST['adults'] ) ? intval( sanitize_text_field(wp_unslash( $_POST['adults'] )) ) : '0';
-	$children          = isset( $_POST['children'] ) ? intval( sanitize_text_field(wp_unslash( $_POST['children'] )) ) : '0';
-	$infant            = isset( $_POST['infant'] ) ? intval( sanitize_text_field(wp_unslash( $_POST['infant'] )) ) : '0';
-	$check_in_out_date = isset( $_POST['check-in-out-date'] ) ? sanitize_text_field(wp_unslash( $_POST['check-in-out-date'] )) : '';
+	$post_id           = isset( $_POST['post_id'] ) ? intval( sanitize_text_field( $_POST['post_id'] ) ) : null;
+	$adults            = isset( $_POST['adults'] ) ? intval( sanitize_text_field( $_POST['adults'] ) ) : '0';
+	$children          = isset( $_POST['children'] ) ? intval( sanitize_text_field( $_POST['children'] ) ) : '0';
+	$infant            = isset( $_POST['infant'] ) ? intval( sanitize_text_field( $_POST['infant'] ) ) : '0';
+	$check_in_out_date = isset( $_POST['check-in-out-date'] ) ? sanitize_text_field( $_POST['check-in-out-date'] ) : '';
 
 	$product_id          = get_post_meta( $post_id, 'product_id', true );
 	$post_author         = get_post_field( 'post_author', $post_id );
@@ -46,20 +46,22 @@ function tf_apartment_booking_callback() {
 		$instantio_is_active = 1;
 	}
 
-
+	if ( function_exists( 'is_tf_pro' ) && is_tf_pro() ) {
+		$additional_fees = ! empty( $meta['additional_fees'] ) ? $meta['additional_fees'] : array();
+	} else {
 		$additional_fee = ! empty( $meta['additional_fee'] ) ? $meta['additional_fee'] : 0;
 		$fee_type       = ! empty( $meta['fee_type'] ) ? $meta['fee_type'] : '';
-	
+	}
 
 	// Booking Type
 	$tf_booking_type = 1;
 	$tf_booking_url  = $tf_booking_query_url = $tf_booking_attribute = '';
-	
+	if ( function_exists( 'is_tf_pro' ) && is_tf_pro() ) {
 		$tf_booking_type      = ! empty( $meta['booking-by'] ) ? $meta['booking-by'] : 1;
 		$tf_booking_url       = ! empty( $meta['booking-url'] ) ? esc_url( $meta['booking-url'] ) : '';
 		$tf_booking_query_url = ! empty( $meta['booking-query'] ) ? $meta['booking-query'] : 'adult={adult}&child={child}&infant={infant}';
 		$tf_booking_attribute = ! empty( $meta['booking-attribute'] ) ? $meta['booking-attribute'] : '';
-	
+	}
 
 	# Calculate nights
 	if ( ! empty( $check_in_out_date ) ) {
@@ -119,7 +121,7 @@ function tf_apartment_booking_callback() {
 
 		// Calculate price
 		if ( $days > 0 ) {
-			if ( $enable_availability === '1' ) {
+			if ( $enable_availability === '1' && function_exists( 'is_tf_pro' ) && is_tf_pro() ) {
 				$total_price = Apt_Pricing::instance( $post_id )->set_dates( $check_in, $check_out )->set_persons( $adults, $children, $infant )->get_availability();
 			} else {
 				$total_price = Apt_Pricing::instance( $post_id )->set_dates( $check_in, $check_out )->set_persons( $adults, $children, $infant )->set_total_price()->get_total_price();
@@ -438,7 +440,6 @@ function tf_add_apartment_data_checkout_order_processed( $order_id, $posted_data
 
 
 			global $wpdb;
-			 // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 			$wpdb->query(
 				$wpdb->prepare(
 					"INSERT INTO {$wpdb->prefix}tf_order_data
@@ -469,7 +470,7 @@ function tf_add_apartment_data_checkout_order_processed( $order_id, $posted_data
 	 * @author Jahid
 	 */
 
-	if ( ! empty( $tf_integration_order_status ) ) {
+	if ( function_exists( 'is_tf_pro' ) && is_tf_pro() && ! empty( $tf_integration_order_status ) ) {
 		do_action( 'tf_new_order_pabbly_form_trigger', $tf_integration_order_data, $billinginfo, $shippinginfo, $tf_integration_order_status );
 		do_action( 'tf_new_order_zapier_form_trigger', $tf_integration_order_data, $billinginfo, $shippinginfo, $tf_integration_order_status );
 	}
@@ -621,7 +622,6 @@ function tf_add_apartment_data_checkout_order_processed_block_checkout( $order )
 
 
 			global $wpdb;
-			 // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 			$wpdb->query(
 				$wpdb->prepare(
 					"INSERT INTO {$wpdb->prefix}tf_order_data
@@ -651,7 +651,7 @@ function tf_add_apartment_data_checkout_order_processed_block_checkout( $order )
 	 * New Order Pabbly Integration
 	 * @author Jahid
 	 */
-	if ( ! empty( $tf_integration_order_status ) ) {
+	if ( function_exists( 'is_tf_pro' ) && is_tf_pro() && ! empty( $tf_integration_order_status ) ) {
 		do_action( 'tf_new_order_pabbly_form_trigger', $tf_integration_order_data, $billinginfo, $shippinginfo, $tf_integration_order_status );
 		do_action( 'tf_new_order_zapier_form_trigger', $tf_integration_order_data, $billinginfo, $shippinginfo, $tf_integration_order_status );
 	}

@@ -3,7 +3,7 @@ Contributors: themefic, kamrul0424, jahidcse, mehedi890, mdashikul, mainulsunvi,
 Tags: travel-booking, hotel-booking, tour-booking, car-rental, multivendor-marketplace
 Requires at least: 5.4
 Tested up to: 6.8
-Stable tag: 2.16.15
+Stable tag: 2.17.0
 Requires PHP: 7.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -404,11 +404,11 @@ We provide full support on the WordPress.org forums. In addition, please feel fr
 
 == Changelog ==
 
-= 2.16.15 – September 01, 2025 =
+= 2.17.0 – September 03, 2025 =
 
 - Addressed plugin review feedback.
 - Improved security and code quality.
-- Updated readme.txt info for OpenStreetMap.
+- Updated readme.txt info.
 - Performance and stability improvements.
 
 **Old Changelog can be found [here](https://themefic.com/tourfic/changelog/)**.

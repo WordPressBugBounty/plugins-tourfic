@@ -24,7 +24,7 @@ function tf_tours_booking_function() {
 	 *
 	 * @since 2.2.0
 	 */
-	$post_id              = isset( $_POST['post_id'] ) ? intval( sanitize_text_field( wp_unslash($_POST['post_id'] )) ) : '';
+	$post_id              = isset( $_POST['post_id'] ) ? intval( sanitize_text_field( $_POST['post_id'] ) ) : '';
 	$product_id           = get_post_meta( $post_id, 'product_id', true );
 	$post_author          = get_post_field( 'post_author', $post_id );
 	$meta                 = get_post_meta( $post_id, 'tf_tours_opt', true );
@@ -39,15 +39,15 @@ function tf_tours_booking_function() {
 	 *
 	 */
 	// People number
-	$adults       = isset( $_POST['adults'] ) ? intval( sanitize_text_field(wp_unslash( $_POST['adults'] ) )) : 0;
-	$children     = isset( $_POST['childrens'] ) ? intval( sanitize_text_field(wp_unslash( $_POST['childrens'] ) )) : 0;
-	$infant       = isset( $_POST['infants'] ) ? intval( sanitize_text_field(wp_unslash( $_POST['infants'] ) )) : 0;
+	$adults       = isset( $_POST['adults'] ) ? intval( sanitize_text_field( $_POST['adults'] ) ) : 0;
+	$children     = isset( $_POST['childrens'] ) ? intval( sanitize_text_field( $_POST['childrens'] ) ) : 0;
+	$infant       = isset( $_POST['infants'] ) ? intval( sanitize_text_field( $_POST['infants'] ) ) : 0;
 	$total_people = $adults + $children + $infant;
 	$total_people_booking = $adults + $children;
 	// Tour date
-	$tour_date    = ! empty( $_POST['check-in-out-date'] ) ? sanitize_text_field( wp_unslash($_POST['check-in-out-date']) ) : '';
-	$tour_time    = isset( $_POST['check-in-time'] ) ? sanitize_text_field( wp_unslash($_POST['check-in-time'] )) : null;
-	$make_deposit = ! empty( $_POST['deposit'] ) ? sanitize_text_field( wp_unslash($_POST['deposit'] )) : false;
+	$tour_date    = ! empty( $_POST['check-in-out-date'] ) ? sanitize_text_field( $_POST['check-in-out-date'] ) : '';
+	$tour_time    = isset( $_POST['check-in-time'] ) ? sanitize_text_field( $_POST['check-in-time'] ) : null;
+	$make_deposit = ! empty( $_POST['deposit'] ) ? sanitize_text_field( $_POST['deposit'] ) : false;
 
 	// Visitor Details
 	$tf_visitor_details = !empty($_POST['traveller']) ? array_map( 'sanitize_text_field', wp_unslash( $_POST['traveller'] ) ) : "";
@@ -56,10 +56,10 @@ function tf_tours_booking_function() {
 	$tf_confirmation_details = !empty($_POST['booking_confirm']) ? array_map( 'sanitize_text_field', wp_unslash( $_POST['booking_confirm'] ) ) : "";
 
 	// Booking Type
-	$tf_booking_type =!empty( $meta['booking-by'] ) ? $meta['booking-by'] : 1;
-	$tf_booking_url = !empty( $meta['booking-url'] ) ? esc_url($meta['booking-url']) : '';
-	$tf_booking_query_url = !empty( $meta['booking-query'] ) ? $meta['booking-query'] : 'adult={adult}&child={child}&infant={infant}';
-	$tf_booking_attribute = !empty( $meta['booking-attribute'] ) ? $meta['booking-attribute'] : '';
+	$tf_booking_type = function_exists('is_tf_pro') && is_tf_pro() ? ( !empty( $meta['booking-by'] ) ? $meta['booking-by'] : 1 ) : 1;
+	$tf_booking_url = function_exists('is_tf_pro') && is_tf_pro() ? ( !empty( $meta['booking-url'] ) ? esc_url($meta['booking-url']) : '' ) : '';
+	$tf_booking_query_url = function_exists('is_tf_pro') && is_tf_pro() ? ( !empty( $meta['booking-query'] ) ? $meta['booking-query'] : 'adult={adult}&child={child}&infant={infant}' ) : '';
+	$tf_booking_attribute = function_exists('is_tf_pro') && is_tf_pro() ? ( !empty( $meta['booking-attribute'] ) ? $meta['booking-attribute'] : '' ) : '';
 
 	/**
 	 * If fixed is selected but pro is not activated
@@ -68,7 +68,7 @@ function tf_tours_booking_function() {
 	 *
 	 * @return
 	 */
-	if ( $tour_type == 'fixed' ) {
+	if ( $tour_type == 'fixed' && function_exists('is_tf_pro') && ! is_tf_pro() ) {
 		$response['errors'][] = esc_html__( 'Fixed Availability is selected but Tourfic Pro is not activated!', 'tourfic' );
 		$response['status']   = 'error';
 		echo wp_json_encode( $response );
@@ -132,7 +132,7 @@ function tf_tours_booking_function() {
 		}
 
 		if(!empty($tour_type) && ($tour_type == "fixed")) {
-			$start_date = ! empty( $_POST['check-in-out-date'] ) ? sanitize_text_field( wp_unslash($_POST['check-in-out-date']) ) : '';
+			$start_date = ! empty( $_POST['check-in-out-date'] ) ? sanitize_text_field( $_POST['check-in-out-date'] ) : '';
 		}
 
 		if(!empty($start_date) && !empty($day_diff)) {
@@ -141,7 +141,7 @@ function tf_tours_booking_function() {
 
 		// Fixed tour maximum capacity limit
 	
-		if ( !empty($start_date) && !empty($end_date) ) {
+		if ( function_exists( 'is_tf_pro' ) && is_tf_pro() && !empty($start_date) && !empty($end_date) ) {
 			
 			// Tour Order retrive from Tourfic Order Table
 			$tf_orders_select = array(
@@ -300,7 +300,7 @@ function tf_tours_booking_function() {
 	 *
 	 * @return
 	 */
-	if ( $tour_type == 'continuous' && $custom_avail == true ) {
+	if ( $tour_type == 'continuous' && $custom_avail == true && function_exists('is_tf_pro') && ! is_tf_pro() ) {
 		$response['errors'][] = esc_html__( 'Custom Continous Availability is selected but Tourfic Pro is not activated!', 'tourfic' );
 		$response['status']   = 'error';
 		echo wp_json_encode( $response );
@@ -588,7 +588,7 @@ function tf_tours_booking_function() {
 
 	}
 
-	if (  $tour_type == 'continuous' ) {
+	if ( function_exists('is_tf_pro') && is_tf_pro() && $tour_type == 'continuous' ) {
 		$tf_allowed_times = ! empty( $meta['allowed_time'] ) ? $meta['allowed_time'] : '';
 		if( !empty($tf_allowed_times) && gettype($tf_allowed_times)=="string" ){
 			$tf_tour_conti_custom_date = preg_replace_callback ( '!s:(\d+):"(.*?)";!', function($match) {
@@ -780,7 +780,7 @@ function tf_tours_booking_function() {
 		);
 		$response['without_payment'] = 'true';
 		$order_id = Helper::tf_set_order( $order_data );
-		if (  !empty($order_id) ) {
+		if ( function_exists('is_tf_pro') && is_tf_pro() && !empty($order_id) ) {
 			do_action( 'tf_offline_payment_booking_confirmation', $order_id, $order_data );
 
 			if ( ! empty( Helper::tf_data_types( Helper::tfopt( 'tf-integration' ) )['tf-new-order-google-calendar'] ) && Helper::tf_data_types( Helper::tfopt( 'tf-integration' ) )['tf-new-order-google-calendar'] == "1" ) {
@@ -857,7 +857,7 @@ function tf_tours_booking_function() {
 
 			# Deposit information
 			Helper::tf_get_deposit_amount( $meta, $tf_tours_data['tf_tours_data']['price'], $deposit_amount, $has_deposit );
-			if (  $has_deposit == true && $make_deposit == true ) {
+			if ( function_exists('is_tf_pro') && is_tf_pro() && $has_deposit == true && $make_deposit == true ) {
 				$tf_tours_data['tf_tours_data']['due']   = $tf_tours_data['tf_tours_data']['price'] - $deposit_amount;
 				$tf_tours_data['tf_tours_data']['price'] = $deposit_amount;
 			}
@@ -870,7 +870,7 @@ function tf_tours_booking_function() {
 					'{infant}'     => $infant,
 					'{id}' => $post_id,
 					'{title}' => urlencode(get_the_title($post_id)),
-					'{extras}' => sanitize_text_field(wp_unslash($_POST["tour_extra"])),
+					'{extras}' => sanitize_text_field($_POST["tour_extra"]),
 					'{extras_title}' => urlencode(html_entity_decode(wp_strip_all_tags($tour_extra_title))),
 				);
 
@@ -1261,8 +1261,7 @@ function tf_add_order_tour_details_checkout_order_processed( $order_id, $posted_
 
 			$iteminfo = array_combine($iteminfo_keys, $iteminfo_values);
 			
-			global $wpdb;
-			 // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching     
+			global $wpdb;     
 			$wpdb->query(
 				$wpdb->prepare(
 				"INSERT INTO {$wpdb->prefix}tf_order_data
@@ -1296,7 +1295,7 @@ function tf_add_order_tour_details_checkout_order_processed( $order_id, $posted_
 	 * @author Jahid
 	 */
 
-	if (  !empty($tf_integration_order_status) ) {
+	if ( function_exists('is_tf_pro') && is_tf_pro() && !empty($tf_integration_order_status) ) {
 		do_action( 'tf_new_order_pabbly_form_trigger', $tf_integration_order_data, $billinginfo, $shippinginfo, $tf_integration_order_status);
 		do_action( 'tf_new_order_zapier_form_trigger', $tf_integration_order_data, $billinginfo, $shippinginfo, $tf_integration_order_status);
 	} 
@@ -1487,7 +1486,6 @@ function tf_add_order_tour_details_checkout_order_processed_block_checkout( $ord
 			$iteminfo = array_combine($iteminfo_keys, $iteminfo_values);
 
 			global $wpdb;
-			 // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 			$wpdb->query(
 				$wpdb->prepare(
 					"INSERT INTO {$wpdb->prefix}tf_order_data
@@ -1521,7 +1519,7 @@ function tf_add_order_tour_details_checkout_order_processed_block_checkout( $ord
 	 * @author Jahid
 	 */
 
-	if (  !empty($tf_integration_order_status) ) {
+	if ( function_exists('is_tf_pro') && is_tf_pro() && !empty($tf_integration_order_status) ) {
 		do_action( 'tf_new_order_pabbly_form_trigger', $tf_integration_order_data, $billinginfo, $shippinginfo, $tf_integration_order_status);
 		do_action( 'tf_new_order_zapier_form_trigger', $tf_integration_order_data, $billinginfo, $shippinginfo, $tf_integration_order_status);
 	}
@@ -1561,12 +1559,11 @@ function tf_tour_unique_id_order_data_migration(){
 					$post_id   = wc_get_order_item_meta( $item_key, '_tour_id', true );
 					$unique_id   = wc_get_order_item_meta( $item_key, '_tour_unique_id', true );
 
-					$tf_order_checked = $wpdb->get_row( $wpdb->prepare("SELECT id,order_details FROM {$wpdb->prefix}tf_order_data WHERE order_id=%s AND post_id=%s",$item,$post_id) );// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+					$tf_order_checked = $wpdb->get_row( $wpdb->prepare("SELECT id,order_details FROM {$wpdb->prefix}tf_order_data WHERE order_id=%s AND post_id=%s",$item,$post_id) );
 					if( !empty($tf_order_checked) && !empty($unique_id) ){
 						$order_details = json_decode($tf_order_checked->order_details);
 						if(empty($order_details->unique_id)){
 							$order_details->unique_id = $unique_id;
-							 // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 							$wpdb->query(
 								$wpdb->prepare("UPDATE {$wpdb->prefix}tf_order_data SET order_details=%s WHERE id=%d",wp_json_encode($order_details), $tf_order_checked->id)
 							);

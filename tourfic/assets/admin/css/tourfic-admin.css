@@ -433,6 +433,14 @@ Fontawesome
   z-index: 10;
 }
 
+.csf-section .csf-field.tf-csf-pro {
+  cursor: pointer;
+}
+
+.tf-csf-disable.tf-csf-pro {
+  z-index: 9999999999;
+}
+
 .tf-csf-badge .tf-upcoming {
   display: inline-block;
   color: #ffffff;
@@ -445,6 +453,19 @@ Fontawesome
   line-height: 13px;
   background: #006600;
   margin-right: 5px;
+}
+
+.tf-csf-badge .tf-pro {
+  display: inline-block;
+  color: #ffffff;
+  padding: 3px 10px 3px 10px;
+  border-radius: 3px;
+  text-align: center;
+  margin: 5px 0 0 0;
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 13px;
+  background: #b30000;
 }
 
 #tf_room_opt .unique-id {
@@ -555,6 +576,38 @@ button.tf-order-remove {
 
 .tf-notice.tf-notice-danger {
   color: red;
+  font-size: 1rem;
+}
+
+.tf-license-activate {
+  display: inline-block;
+}
+
+.tf-license-activate p.submit {
+  margin: 0px !important;
+}
+
+.tf-license-activate p.submit input {
+  background-color: #003C79 !important;
+  border-color: #003C79 !important;
+  color: #ffffff;
+  padding: 4px 25px;
+  font-size: 1rem;
+}
+
+.el-license-active-btn {
+  display: inline-block;
+}
+
+.el-license-active-btn p.submit {
+  margin: 0px !important;
+}
+
+.el-license-active-btn p.submit input {
+  background-color: #003C79 !important;
+  border-color: #003C79 !important;
+  color: #ffffff;
+  padding: 4px 25px;
   font-size: 1rem;
 }
 
@@ -2461,6 +2514,24 @@ Steps
   color: #382673;
 }
 
+.tf-setting-dashboard .tf-setting-performace-section .tf-settings-sidebar .tf-plugin-info .tf-plugin-button.pro, .tf-setting-dashboard .tf-setting-performace-section .tf-settings-sidebar .tf-plugin-info .tf-plugin-button.activate-pro {
+  color: #ff9800;
+}
+
+.tf-setting-dashboard .tf-setting-performace-section .tf-settings-sidebar .tf-plugin-info .tf-plugin-status.active {
+  color: #382673;
+  opacity: 0.8;
+}
+
+.tf-setting-dashboard .tf-setting-performace-section .tf-settings-sidebar .tf-plugin-info .tf-plugin-status.active-pro {
+  color: #ff5722;
+  opacity: 0.8;
+}
+
+.tf-setting-dashboard .tf-setting-performace-section .tf-settings-sidebar .tf-plugin-info .tf-plugin-button.activate-pro {
+  color: #ff5722;
+}
+
 .tf-setting-dashboard .tf-setting-performace-section .tf-settings-sidebar .tf-plugin-info .badge.free {
   background: rgba(0, 165, 140, 0.101961);
   color: #00a58c;
@@ -2478,6 +2549,19 @@ Steps
   100% {
     transform: rotate(360deg);
   }
+}
+
+.tf-setting-dashboard .tf-setting-performace-section .tf-settings-sidebar .tf-plugin-button:not(.active):not(.active-pro) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.3s;
+  position: relative;
+  background-color: transparent;
+  flex-direction: column;
 }
 
 .tf-setting-dashboard .tf-setting-performace-section .tf-settings-sidebar .tf-plugin-button.loading {
@@ -2769,6 +2853,67 @@ Steps
   font-size: 0.938rem;
   color: #566676;
   margin: 0;
+}
+
+.tf-setting-license {
+  margin: 40px 40px 40px 20px;
+}
+
+.tf-setting-license .tf-setting-license-tabs ul {
+  margin: 0;
+  margin-left: 40px;
+}
+
+.tf-setting-license .tf-setting-license-tabs ul li.active {
+  display: inline-block;
+  border: none;
+  margin: 0;
+  line-height: 18px;
+  text-decoration: none;
+  font-weight: 600;
+  position: relative;
+  background-color: #ffffff;
+  border-radius: 5px 5px 0px 0px;
+}
+
+.tf-setting-license .tf-setting-license-tabs ul li.active:before {
+  position: absolute;
+  content: "";
+  width: 16px;
+  height: 16px;
+  background-color: #ffffff;
+  bottom: -8px;
+  left: -5px;
+  transform: rotate(45deg);
+}
+
+.tf-setting-license .tf-setting-license-tabs ul li.active:after {
+  position: absolute;
+  content: "";
+  width: 16px;
+  height: 16px;
+  background-color: #ffffff;
+  bottom: -8px;
+  right: -5px;
+  transform: rotate(45deg);
+}
+
+.tf-setting-license .tf-setting-license-tabs ul li.active span {
+  display: inline-block;
+  padding: 14px 22px;
+  color: #000;
+  font-size: 1.125rem;
+  text-decoration: none;
+}
+
+.tf-setting-license .tf-setting-license-tabs ul li.active span i {
+  margin-right: 5px;
+}
+
+.tf-setting-license .tf-setting-license-field {
+  background-color: #ffffff;
+  border-radius: 8px;
+  padding: 0px 20px;
 }
 
 .tf-swal-settings-reset-alert #swal2-title {
@@ -3523,6 +3668,11 @@ Steps
 
 .tf-field .tf-field-label .tf-csf-badge {
   margin-left: 13px;
+}
+
+.tf-field .tf-field-label .tf-csf-badge .tf-pro {
+  background-color: #F44336 !important;
+  margin: 0;
 }
 
 .tf-field .tf-field-label .tf-csf-badge .tf-upcoming {
@@ -4293,6 +4443,33 @@ Steps
 .tour-option-itinerary-notice .tf-field-notice-content {
   font-size: 1rem;
   line-height: 1.5;
+}
+
+.tf-pro-notice .tf-field-notice-inner {
+  background-color: #EBEFFF;
+  border: 1.5px solid #295BFF;
+}
+
+.tf-pro-notice .tf-field-notice-inner .tf-field-notice-icon {
+  font-size: 1.5rem;
+  color: #295BFF;
+  margin-right: 8px;
+}
+
+.tf-pro-notice .tf-field-notice-inner .tf-field-notice-content {
+  color: #000;
+  font-size: 0.875rem;
+  line-height: 1.6;
+  align-self: center;
+  font-weight: 400;
+}
+
+.tf-pro-notice .tf-field-notice-inner .tf-field-notice-content b {
+  font-weight: 600;
+}
+
+.tf-pro-notice .tf-field-notice-inner .tf-field-notice-content a {
+  color: #295BFF;
 }
 
 .tf-field-switch .tf-switch-label {
@@ -5246,6 +5423,29 @@ a.tf-import-btn, a.tf-export-btn {
 .tf-image-radio-group li a.tf-image-checkbox-footer:hover {
   text-decoration: underline;
   color: #2979ff;
+}
+
+.tf-image-radio-group li.tf-pro-item {
+  position: relative;
+}
+
+.tf-image-radio-group li.tf-pro-item .tf-image-checkbox-pro-badge {
+  position: absolute;
+  top: -1px;
+  right: -2px;
+  background-color: #295BFF;
+  padding: 3px 10px;
+  color: #ffffff;
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 13px;
+  border-radius: 3px;
+  z-index: 9;
+}
+
+.tf-image-radio-group li.tf-pro-item img {
+  opacity: .5;
+  cursor: not-allowed;
 }
 
 .tf-apt-cal-wrap .fc-view-harness,
@@ -7790,6 +7990,27 @@ a.tf-import-btn, a.tf-export-btn {
   font-style: normal;
   font-weight: 400;
   line-height: 1.12;
+}
+
+.tf-enquiry-table .pro-notice-row {
+  border-top: none;
+}
+
+.tf-enquiry-table .pro-notice-row .tf-pro-notice {
+  padding: 0px 0px;
+}
+
+.tf-enquiry-table .pro-notice-row .tf-pro-notice .tf-fieldset {
+  margin-top: 0px;
+}
+
+.tf-enquiry-table .pro-notice-row .tf-pro-notice .tf-field-notice-inner {
+  justify-content: center;
+}
+
+.tf-enquiry-table .pro-notice-row .tf-pro-notice .tf-field-notice-inner a {
+  text-decoration: underline;
+  color: #295BFF;
 }
 
 .tf-enquiry-details-header-filter {

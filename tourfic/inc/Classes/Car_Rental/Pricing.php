@@ -23,8 +23,8 @@ class Pricing {
 		$discount_type = !empty($meta["discount_type"]) ? $meta["discount_type"] : 'none';
 		$discount_price = !empty($meta["discount_price"]) ? $meta["discount_price"] : '';
 
-        $date_pricing = !empty($meta["date_prices"]) ? $meta["date_prices"] : '';
-        $day_pricing = !empty($meta["day_prices"]) ? $meta["day_prices"] : '';
+        $date_pricing = function_exists( 'is_tf_pro' ) && is_tf_pro() && !empty($meta["date_prices"]) ? $meta["date_prices"] : '';
+        $day_pricing = function_exists( 'is_tf_pro' ) && is_tf_pro() && !empty($meta["day_prices"]) ? $meta["day_prices"] : '';
 
         if( !empty($tf_pickup_date) && !empty($tf_dropoff_date) && 'date'==$pricing_type && !empty($date_pricing) ){
 
@@ -306,7 +306,6 @@ class Pricing {
     static function get_total_trips($post_id){
         global $wpdb;
 
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
         $total_completed_trip = $wpdb->get_results( 
             $wpdb->prepare( 
                 "SELECT id FROM {$wpdb->prefix}tf_order_data WHERE post_id = %s AND ostatus = %s", 

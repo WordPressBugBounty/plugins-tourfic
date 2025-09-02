@@ -101,7 +101,7 @@ class Activator {
 		);
 
 		foreach ( $pages as $key => $page ) {
-			if ( ! empty( $page['pro'] ) ) {
+			if ( ! empty( $page['pro'] ) && ! function_exists( 'is_tf_pro' ) ) {
 				continue;
 			}
 			$this->create_page( esc_sql( $page['name'] ), 'tf_' . $key . '_page_id', $page['title'], $page['content'], ! empty( $page['parent'] ) ? $page['parent'] : '' );
@@ -131,7 +131,7 @@ class Activator {
 		$page_found = null;
 
 		if ( $slug ) {
-			$page_found = $wpdb->get_var( $wpdb->prepare( "SELECT ID FROM {$wpdb->posts} WHERE post_name = %s LIMIT 1;", $slug ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			$page_found = $wpdb->get_var( $wpdb->prepare( "SELECT ID FROM {$wpdb->posts} WHERE post_name = %s LIMIT 1;", $slug ) );
 		}
 
 		if ( $page_found ) {
@@ -203,7 +203,7 @@ class Activator {
 			}
 		}
 
-		if ( get_page_template_slug() == 'tf-login' ) {
+		if ( get_page_template_slug() == 'tf-login' && function_exists( 'is_tf_pro' ) && is_tf_pro() ) {
 			$theme_files     = TF_PRO_INC_PATH . 'templates/tf-login.php';
 			$exists_in_theme = locate_template( $theme_files, false );
 			if ( $exists_in_theme ) {
@@ -213,7 +213,7 @@ class Activator {
 			}
 		}
 
-		if ( get_page_template_slug() == 'tf-register' ) {
+		if ( get_page_template_slug() == 'tf-register' && function_exists( 'is_tf_pro' ) && is_tf_pro() ) {
 			$theme_files     = TF_PRO_INC_PATH . 'templates/tf-register.php';
 			$exists_in_theme = locate_template( $theme_files, false );
 			if ( $exists_in_theme ) {
@@ -223,7 +223,7 @@ class Activator {
 			}
 		}
 
-		if ( get_page_template_slug() == 'tf-email-verification' ) {
+		if ( get_page_template_slug() == 'tf-email-verification' && function_exists( 'is_tf_pro' ) && is_tf_pro() ) {
 			$theme_files     = TF_PRO_TEMP_PATH . '/email-verification.php';
 			$exists_in_theme = locate_template( $theme_files, false );
 			if ( $exists_in_theme ) {
@@ -233,7 +233,7 @@ class Activator {
 			}
 		}
 
-		if ( get_page_template_slug() == 'tf-dashboard' ) {
+		if ( get_page_template_slug() == 'tf-dashboard' && function_exists( 'is_tf_pro' ) && is_tf_pro() ) {
 			$theme_files     = TF_PRO_INC_PATH . 'frontend-dashboard/template-parts/page-templates/frontend-dashboard.php';
 			$exists_in_theme = locate_template( $theme_files, false );
 			if ( $exists_in_theme ) {
@@ -243,7 +243,7 @@ class Activator {
 			}
 		}
 
-		if ( get_page_template_slug() == 'tf-qr-code-scanner' ) {
+		if ( get_page_template_slug() == 'tf-qr-code-scanner' && function_exists( 'is_tf_pro' ) && is_tf_pro() ) {
 			$theme_files     = TF_PRO_INC_PATH . 'templates/qr-code-scanner.php';
 			$exists_in_theme = locate_template( $theme_files, false );
 			if ( $exists_in_theme ) {

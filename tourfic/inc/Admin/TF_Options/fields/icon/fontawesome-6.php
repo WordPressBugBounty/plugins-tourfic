@@ -1,5 +1,4 @@
 <?php
-if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
 function fontawesome_six_icons() {
 	$icons = array(
 		'fa-solid fa-fill-drip',

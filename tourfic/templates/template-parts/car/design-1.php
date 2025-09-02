@@ -7,8 +7,8 @@ use \Tourfic\Classes\Car_Rental\Pricing;
 use \Tourfic\App\TF_Review;
 ?>
 <?php
-$tf_pickup_date = !empty($_GET['pickup_date']) ? sanitize_text_field( wp_unslash($_GET['pickup_date']) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-$tf_dropoff_date = !empty($_GET['dropoff_date']) ? sanitize_text_field( wp_unslash($_GET['dropoff_date']) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+$tf_pickup_date = !empty($_GET['pickup_date']) ? sanitize_text_field( wp_unslash($_GET['pickup_date']) ) : '';
+$tf_dropoff_date = !empty($_GET['dropoff_date']) ? sanitize_text_field( wp_unslash($_GET['dropoff_date']) ) : '';
 
 
 // Pull options from settings or set fallback values
@@ -44,8 +44,8 @@ $end_time   = strtotime($end_time_str);
 $default_time = gmdate('g:i A', strtotime($default_time_str));
 
 // Use selected time from GET or fall back to default
-$selected_pickup_time = !empty($_GET['pickup_time']) ? sanitize_text_field( wp_unslash($_GET['pickup_time']) ) : $default_time; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-$selected_dropoff_time = !empty($_GET['dropoff_time']) ? sanitize_text_field( wp_unslash($_GET['dropoff_time']) ) : $default_time; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+$selected_pickup_time = !empty($_GET['pickup_time']) ? sanitize_text_field( wp_unslash($_GET['pickup_time']) ) : $default_time;
+$selected_dropoff_time = !empty($_GET['dropoff_time']) ? sanitize_text_field( wp_unslash($_GET['dropoff_time']) ) : $default_time;
 
 $total_prices = Pricing::set_total_price($meta, $tf_pickup_date, $tf_dropoff_date, $start_time_str, $end_time_str); 
 $tf_cars_slug = get_option('car_slug');
@@ -348,6 +348,17 @@ $tf_cars_slug = get_option('car_slug');
                         <p><?php echo wp_kses_post(Pricing::is_taxable($meta)); ?></p>
                     </div>
 
+                    <?php if(function_exists( 'is_tf_pro' ) && is_tf_pro()){ ?>
+                    <div class="tf-extra-added-info">
+                        <div class="tf-extra-added-box tf-flex tf-flex-gap-16 tf-flex-direction-column">
+                            <h3><?php esc_html_e("Extras added", "tourfic"); ?></h3>
+                            <div class="tf-added-extra tf-flex tf-flex-gap-16 tf-flex-direction-column">
+                                
+                            </div>
+                        </div>
+                    </div>
+                    <?php } ?>
+
 
                     <div class="tf-date-select-box">
 
@@ -368,8 +379,8 @@ $tf_cars_slug = get_option('car_slug');
                                     </div>
                                     <div class="info-select">
                                         <h5><?php esc_html_e("Pick-up", "tourfic"); ?></h5>
-                                        <input type="text" placeholder="Pick Up Location" id="tf_pickup_location" value="<?php echo !empty($_GET['pickup']) ? esc_html(sanitize_text_field( wp_unslash($_GET['pickup']) )) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended ?>" />
-                                        <input type="hidden" id="tf_pickup_location_id" value="<?php echo !empty($_GET['pickup']) ? esc_html(sanitize_text_field( wp_unslash($_GET['pickup']) )) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended ?>" />
+                                        <input type="text" placeholder="Pick Up Location" id="tf_pickup_location" value="<?php echo !empty($_GET['pickup']) ? esc_html(sanitize_text_field( wp_unslash($_GET['pickup']) )) : ''; ?>" />
+                                        <input type="hidden" id="tf_pickup_location_id" value="<?php echo !empty($_GET['pickup']) ? esc_html(sanitize_text_field( wp_unslash($_GET['pickup']) )) : ''; ?>" />
                                     </div>
                                 </div>
                             </div>
@@ -390,8 +401,8 @@ $tf_cars_slug = get_option('car_slug');
                                     </div>
                                     <div class="info-select">
                                         <h5><?php esc_html_e("Drop-off", "tourfic"); ?></h5>
-                                        <input type="text" placeholder="Drop Off Location" id="tf_dropoff_location" value="<?php echo !empty($_GET['dropoff']) ? esc_html(sanitize_text_field( wp_unslash($_GET['dropoff']) )) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended ?>" />
-                                        <input type="hidden" id="tf_dropoff_location_id" value="<?php echo !empty($_GET['dropoff']) ? esc_html(sanitize_text_field( wp_unslash($_GET['dropoff']) )) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended ?>" />
+                                        <input type="text" placeholder="Drop Off Location" id="tf_dropoff_location" value="<?php echo !empty($_GET['dropoff']) ? esc_html(sanitize_text_field( wp_unslash($_GET['dropoff']) )) : ''; ?>" />
+                                        <input type="hidden" id="tf_dropoff_location_id" value="<?php echo !empty($_GET['dropoff']) ? esc_html(sanitize_text_field( wp_unslash($_GET['dropoff']) )) : ''; ?>" />
                                     </div>
                                 </div>
                             </div>
@@ -407,7 +418,7 @@ $tf_cars_slug = get_option('car_slug');
                                     </div>
                                     <div class="info-select">
                                         <h5><?php esc_html_e("Pick-up date", "tourfic"); ?></h5>
-                                        <input type="text" placeholder="<?php esc_html_e("Pick Up Date", "tourfic"); ?>" id="tf_pickup_date" class="tf_pickup_date" value="<?php echo !empty($_GET['pickup_date']) ? esc_html(sanitize_text_field( wp_unslash($_GET['pickup_date']) )) : esc_attr(gmdate('Y/m/d', strtotime('+1 day'))); // phpcs:ignore WordPress.Security.NonceVerification.Recommended ?>" />
+                                        <input type="text" placeholder="<?php esc_html_e("Pick Up Date", "tourfic"); ?>" id="tf_pickup_date" class="tf_pickup_date" value="<?php echo !empty($_GET['pickup_date']) ? esc_html(sanitize_text_field( wp_unslash($_GET['pickup_date']) )) : esc_attr(gmdate('Y/m/d', strtotime('+1 day'))); ?>" />
                                     </div>
                                 </div>
                             </div>
@@ -465,7 +476,7 @@ $tf_cars_slug = get_option('car_slug');
                                     </div>
                                     <div class="info-select">
                                         <h5><?php esc_html_e("Drop-off date", "tourfic"); ?></h5>
-                                        <input type="text" placeholder="Drop Off Date" id="tf_dropoff_date" class="tf_dropoff_date" value="<?php echo !empty($_GET['dropoff_date']) ? esc_html(sanitize_text_field( wp_unslash($_GET['dropoff_date']))) : esc_attr(gmdate('Y/m/d', strtotime('+2 day'))); // phpcs:ignore WordPress.Security.NonceVerification.Recommended ?>" />
+                                        <input type="text" placeholder="Drop Off Date" id="tf_dropoff_date" class="tf_dropoff_date" value="<?php echo !empty($_GET['dropoff_date']) ? esc_html(sanitize_text_field( wp_unslash($_GET['dropoff_date']))) : esc_attr(gmdate('Y/m/d', strtotime('+2 day'))); ?>" />
                                     </div>
                                 </div>
                             </div>
@@ -522,7 +533,7 @@ $tf_cars_slug = get_option('car_slug');
                             if($car_deposit_type=='percent'){
                                 $due_amount = ($total_prices['sale_price'] * $car_deposit_amount)/100;
                             }
-                            if( '2'==$car_booking_by ){ ?>
+                            if( function_exists( 'is_tf_pro' ) && is_tf_pro() && '2'==$car_booking_by ){ ?>
                                 <button class="tf-flex tf-flex-align-center tf-flex-justify-center booking-process tf-final-step tf-flex-gap-8">
                                     <?php echo esc_html( apply_filters("tf_car_booking_form_submit_button_text", 'Continue' ) ); ?>
                                     <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -530,7 +541,7 @@ $tf_cars_slug = get_option('car_slug');
                                     </svg>
                                 </button>
                             <?php }else{ ?>
-                                <?php if( !empty($car_allow_deposit) && $car_deposit_type!='none' && !empty($car_deposit_amount) ){  ?>
+                                <?php if( function_exists( 'is_tf_pro' ) && is_tf_pro() && !empty($car_allow_deposit) && $car_deposit_type!='none' && !empty($car_deposit_amount) ){  ?>
                                     <div class="tf-partial-payment-button tf-flex tf-flex-direction-column tf-flex-gap-16">
                                         <button class="tf-flex tf-flex-align-center tf-partial-button tf-flex-justify-center tf-flex-gap-8 <?php echo (empty($car_protection_section_status) || empty($car_protections)) && '3'!=$car_booking_by ? esc_attr('booking-process tf-final-step') : esc_attr('tf-car-booking'); ?>" data-partial="<?php echo esc_attr('yes'); ?>">
                                             <?php esc_html_e( 'Part Pay', 'tourfic' ); ?> <?php echo wp_kses_post(wc_price($due_amount)); ?>
@@ -926,3 +937,60 @@ $tf_cars_slug = get_option('car_slug');
         </div>
     </div>
 </div>
+ <script>
+    (function ($) {
+        $(document).ready(function () {
+            // flatpickr locale first day of Week
+            <?php Helper::tf_flatpickr_locale( "root" ); ?>
+
+            $(".tf-single-template__one #tf_dropoff_date").on("click", function () {
+                $(".tf-single-template__one #tf_pickup_date").trigger("click");
+            });
+            $(".tf-single-template__one #tf_pickup_date").flatpickr({
+                enableTime: false,
+                mode: "range",
+                dateFormat: "Y/m/d",
+                minDate: "today",
+                // flatpickr locale
+                <?php Helper::tf_flatpickr_locale(); ?>
+
+                onReady: function (selectedDates, dateStr, instance) {
+                    dateSetToFields(selectedDates, instance);
+                },
+                onChange: function (selectedDates, dateStr, instance) {
+                    dateSetToFields(selectedDates, instance);
+                },
+                <?php if(! empty( $check_in_out )){ ?>
+                    defaultDate: <?php echo wp_json_encode( explode( '-', $check_in_out ) ) ?>,
+                <?php } ?>
+            });
+
+            function dateSetToFields(selectedDates, instance) {
+                if (selectedDates.length === 2) {
+                    const startDay = flatpickr.formatDate(selectedDates[0], "l");
+                    const endDay = flatpickr.formatDate(selectedDates[1], "l");
+                    if (selectedDates[0]) {
+                        const startDate = flatpickr.formatDate(selectedDates[0], "Y/m/d");
+                        $(".tf-single-template__one #tf_pickup_date").val(startDate);
+                    }
+                    if (selectedDates[1]) {
+                        const endDate = flatpickr.formatDate(selectedDates[1], "Y/m/d");
+                        $(".tf-single-template__one #tf_dropoff_date").val(endDate);
+                    }
+
+                    $.ajax({
+                        url: <?php echo wp_json_encode( admin_url( 'admin-ajax.php' ) ) ?>,
+                        type: 'POST',
+                        data: {
+                            action: 'get_car_time_slots',
+                            pickup_day: startDay,
+                            drop_day: endDay
+                        },
+                        success: function(response) {
+                        }
+                    });
+                }
+            }
+        });
+    })(jQuery);
+</script>

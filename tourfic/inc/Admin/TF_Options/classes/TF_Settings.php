@@ -40,6 +40,8 @@ if ( ! class_exists( 'TF_Settings' ) ) {
 			add_action( 'wp_ajax_tf_search_settings_autocomplete', array( $this, 'tf_search_settings_autocomplete_callback' ) );
 
             add_action( 'wp_ajax_tf_export_data', array( $this, 'tf_export_data' ) );
+			
+			add_action('wp_ajax_themefic_manage_plugin', array( $this, 'themefic_manage_plugin' ) );
         }
 
         public static function option( $key, $params = array() ) {
@@ -167,6 +169,38 @@ if ( ! class_exists( 'TF_Settings' ) ) {
 					'manage_options',
 					$library_url,
 					''
+				);
+			}
+
+			// Template Builder
+			if ( did_action( 'elementor/loaded' ) && function_exists('is_tf_pro')) {
+				add_submenu_page(
+					'tf_settings',
+					esc_html__('Template Builder', 'tourfic'),
+					esc_html__('Template Builder', 'tourfic'),
+					'manage_options',
+					'edit.php?post_type=tf_template_builder',
+				);
+			} elseif (function_exists('is_tf_pro')) {
+				add_submenu_page(
+					'tf_settings',
+					esc_html__('Template Builder', 'tourfic'),
+					esc_html__('Template Builder', 'tourfic'),
+					'manage_options',
+					'tf_template_builder',
+					array( '\Tourfic\App\Templates\Template_Builder', 'tf_template_builder_elementor_check' )
+				);
+			} 
+
+			if ( function_exists('is_tf_pro') ) {
+				//License Info submenu
+				add_submenu_page(
+					$this->option_id,
+					esc_html__('License Info', 'tourfic'),
+					esc_html__('License Info', 'tourfic'),
+					'manage_options',
+					'tf_license_info',
+					array( $this,'tf_license_info_callback'),
 				);
 			}
 
@@ -346,89 +380,7 @@ if ( ! class_exists( 'TF_Settings' ) ) {
 							<?php endif; ?>
 						</div>
 						<div class="tf-settings-sidebar">
-							<div class="tf-sidebar-content">
-								<div class="tf-customization-quote">
-									<div class="tf-quote-header">
-										<i class="fa-solid fa-code"></i>
-										<h3><?php esc_html_e('Need help building your Travel, Hotel, or Rental Website?', 'tourfic');  ?></h3>
-									</div>
-									<div class="tf-quote-content">
-										<p><?php esc_html_e('Let our expert team craft a custom WordPress site tailored to your business—whether you\'re running a hotel, tour agency, or vacation rental. Optimized for performance, bookings, and conversions.', 'tourfic'); ?></p>
-										<a href="<?php echo esc_url( Helper::tf_utm_generator( 'https://portal.themefic.com/hire-us/', array( 'utm_medium' => 'dashboard_free_quote' ) ) ); ?>" target="_blank" class="tf-admin-btn tf-btn-secondary"><?php esc_html_e('Get Free Quote', 'tourfic');  ?></a>								
-									</div>
-								</div>
-
-								<?php $plugins = [
-									[
-										'name'       => 'Instantio',
-										'slug'       => 'instantio',
-										'file_name'  => 'instantio',
-										'subtitle'   => 'WooCommerce Quick & Direct Checkout',
-										'image'      => 'https://ps.w.org/instantio/assets/icon-128x128.png',
-									],
-									[
-										'name'       => 'Hydra',
-										'slug'       => 'hydra-booking',
-										'file_name'  => 'hydra-booking',
-										'subtitle'   => 'All in One Appointment Booking System',
-										'image'      => 'https://ps.w.org/hydra-booking/assets/icon-128x128.jpg',
-									],
-									[
-										'name'       => 'BEAF',
-										'slug'       => 'beaf-before-and-after-gallery',
-										'file_name'  => 'before-and-after-gallery',
-										'subtitle'   => 'Ultimate Before After Image Slider & Gallery',
-										'image'      => 'https://ps.w.org/beaf-before-and-after-gallery/assets/icon-128x128.png',
-									],
-									[
-										'name'       => 'UACF7',
-										'slug'       => 'ultimate-addons-for-contact-form-7',
-										'file_name'  => 'ultimate-addons-for-contact-form-7',
-										'subtitle'   => '40+ Essential Addons for Contact Form 7',
-										'image'      => 'https://ps.w.org/ultimate-addons-for-contact-form-7/assets/icon-128x128.png',
-									],
-								];
-								?>
-
-
-
-								<div class="tf-quick-access">
-									<h3><?php esc_html_e('Helpful Resources', 'tourfic');  ?></h3>
-									<div class="tf-quick-access-wrapper">
-										<div class="tf-access-item">
-											<a href="<?php echo esc_url( Helper::tf_utm_generator( 'https://themefic.com/docs/tourfic/', array( 'utm_medium' => 'dashboard_doc_link' ) ) ); ?>" target="_blank">
-												<span class="icon"><i class="fa-solid fa-folder-open"></i></span>
-												<?php esc_html_e( 'Documentation', 'tourfic' ); ?>
-											</a>
-										</div>
-										<div class="tf-access-item">
-											<a href="<?php echo esc_url( Helper::tf_utm_generator( 'https://portal.themefic.com/support/', array( 'utm_medium' => 'dashboard_support_link' ) ) ); ?>" target="_blank">
-												<span class="icon"><i class="fa-solid fa-headset"></i></span>
-												<?php esc_html_e( 'Get Support', 'tourfic' ); ?>
-											</a>
-										</div>
-										<div class="tf-access-item">
-											<a href="https://www.facebook.com/groups/tourfic/" target="_blank">
-												<span class="icon"><i class="fa-solid fa-users"></i></span>
-												<?php esc_html_e( 'Join our Community', 'tourfic' ); ?>
-											</a>
-										</div>
-										<div class="tf-access-item">
-											<a href="https://app.loopedin.io/tourfic" target="_blank">
-												<span class="icon"><i class="fa-solid fa-road-circle-check"></i></span>
-												<?php esc_html_e( 'See our Roadmap', 'tourfic' ); ?>
-											</a>
-										</div>
-										<div class="tf-access-item">
-											<a href="https://app.loopedin.io/tourfic#/ideas-board" target="_blank">
-												<span class="icon"><i class="fa-solid fa-lightbulb"></i></span>
-												<?php esc_html_e( 'Request a Feature', 'tourfic' ); ?>
-											</a>
-										</div>
-									</div>
-								</div>
-
-							</div>
+							<?php echo wp_kses_post($this->tf_settings_sidebar()); ?>
 						</div>
 					</div>
 				</div>
@@ -437,7 +389,213 @@ if ( ! class_exists( 'TF_Settings' ) ) {
 			<?php
 		}
 
-		
+		public function tf_settings_sidebar() {
+			ob_start();
+			?>
+			<div class="tf-sidebar-content">
+				<div class="tf-customization-quote">
+                    <div class="tf-quote-header">
+                        <i class="fa-solid fa-code"></i>
+                        <h3><?php echo __('Need help building your Travel, Hotel, or Rental Website?', 'tourfic');  ?></h3>
+                    </div>
+                    <div class="tf-quote-content">
+                        <p><?php echo __('Let our expert team craft a custom WordPress site tailored to your business—whether you\'re running a hotel, tour agency, or vacation rental. Optimized for performance, bookings, and conversions.', 'tourfic'); ?></p>
+						<a href="<?php echo esc_url( Helper::tf_utm_generator( 'https://portal.themefic.com/hire-us/', array( 'utm_medium' => 'dashboard_free_quote' ) ) ); ?>" target="_blank" class="tf-admin-btn tf-btn-secondary"><?php echo __('Get Free Quote', 'tourfic');  ?></a>								
+                    </div>
+                </div>
+
+				<?php echo $this->tf_get_sidebar_plugin_list(); ?>
+
+				<div class="tf-quick-access">
+					<h3><?php echo __('Helpful Resources', 'tourfic');  ?></h3>
+					<div class="tf-quick-access-wrapper">
+						<div class="tf-access-item">
+							<a href="<?php echo esc_url( Helper::tf_utm_generator( 'https://themefic.com/docs/tourfic/', array( 'utm_medium' => 'dashboard_doc_link' ) ) ); ?>" target="_blank">
+								<span class="icon"><i class="fa-solid fa-folder-open"></i></span>
+								<?php echo _e( 'Documentation', 'tourfic' ); ?>
+							</a>
+						</div>
+						<div class="tf-access-item">
+							<a href="<?php echo esc_url( Helper::tf_utm_generator( 'https://portal.themefic.com/support/', array( 'utm_medium' => 'dashboard_support_link' ) ) ); ?>" target="_blank">
+								<span class="icon"><i class="fa-solid fa-headset"></i></span>
+								<?php echo _e( 'Get Support', 'tourfic' ); ?>
+							</a>
+						</div>
+						<div class="tf-access-item">
+							<a href="https://www.facebook.com/groups/tourfic/" target="_blank">
+								<span class="icon"><i class="fa-solid fa-users"></i></span>
+								<?php echo _e( 'Join our Community', 'tourfic' ); ?>
+							</a>
+						</div>
+						<div class="tf-access-item">
+							<a href="https://app.loopedin.io/tourfic" target="_blank">
+								<span class="icon"><i class="fa-solid fa-road-circle-check"></i></span>
+								<?php echo _e( 'See our Roadmap', 'tourfic' ); ?>
+							</a>
+						</div>
+						<div class="tf-access-item">
+							<a href="https://app.loopedin.io/tourfic#/ideas-board" target="_blank">
+								<span class="icon"><i class="fa-solid fa-lightbulb"></i></span>
+								<?php echo _e( 'Request a Feature', 'tourfic' ); ?>
+							</a>
+						</div>
+					</div>
+				</div>
+
+			</div>
+			<?php
+			return ob_get_clean();
+		}
+
+		public function tf_get_sidebar_plugin_list(){
+			$plugins = [
+				[
+					'name'       => 'Instantio',
+					'slug'       => 'instantio',
+					'file_name'  => 'instantio',
+					'subtitle'   => 'WooCommerce Quick & Direct Checkout',
+					'image'      => 'https://ps.w.org/instantio/assets/icon-128x128.png',
+				],
+				[
+					'name'       => 'Hydra',
+					'slug'       => 'hydra-booking',
+					'file_name'  => 'hydra-booking',
+					'subtitle'   => 'All in One Appointment Booking System',
+					'image'      => 'https://ps.w.org/hydra-booking/assets/icon-128x128.jpg',
+				],
+				[
+					'name'       => 'BEAF',
+					'slug'       => 'beaf-before-and-after-gallery',
+					'file_name'  => 'before-and-after-gallery',
+					'subtitle'   => 'Ultimate Before After Image Slider & Gallery',
+					'image'      => 'https://ps.w.org/beaf-before-and-after-gallery/assets/icon-128x128.png',
+				],
+				[
+					'name'       => 'UACF7',
+					'slug'       => 'ultimate-addons-for-contact-form-7',
+					'file_name'  => 'ultimate-addons-for-contact-form-7',
+					'subtitle'   => '40+ Essential Addons for Contact Form 7',
+					'image'      => 'https://ps.w.org/ultimate-addons-for-contact-form-7/assets/icon-128x128.png',
+				],
+			];
+			?>
+
+			<ul>
+				<?php foreach ($plugins as $plugin): 
+					$plugin_path = $plugin['slug'] . '/' . $plugin['file_name'] . '.php';
+					$installed = file_exists(WP_PLUGIN_DIR . '/' . $plugin_path);
+					$activated = $installed && is_plugin_active($plugin_path);
+
+					$pro_installed = false;
+					$pro_activated = false;
+					
+					if (!empty($plugin['pro'])) {
+						$pro_path = $plugin['pro']['slug'] . '/' . $plugin['pro']['file_name'] . '.php';
+						$pro_installed = file_exists(WP_PLUGIN_DIR . '/' . $pro_path);
+						$pro_activated = $pro_installed && is_plugin_active($pro_path);
+					}
+					?>
+
+					<li class="tf-plugin-item <?php echo esc_attr($plugin['slug'] == 'instantio' ? 'featured' : ''); ?>" data-plugin-slug="<?php echo esc_attr($plugin['slug']); ?>">
+						<div class="tf-plugin-info-wrapper">
+							<div class="tf-plugin-info">
+								<img src="<?php echo esc_url($plugin['image']); ?>" alt="<?php echo esc_attr($plugin['name']); ?>" class="<?php echo esc_attr($plugin['name'] == 'BEAF' ? 'beaf-logo' : ''); ?>" width="40" height="40">
+								<div class="tf-plugin-btn">
+									<span class="badge free">Free</span>
+									<?php if (!$installed): ?>
+										<button class="tf-plugin-button install" data-action="install" data-plugin="<?php echo esc_attr($plugin['slug']); ?>" data-plugin_filename="<?php echo esc_attr($plugin['file_name']); ?>">
+											Install <span class="loader"></span>
+										</button>
+									<?php elseif (!$activated): ?>
+										<button class="tf-plugin-button activate" data-action="activate" data-plugin="<?php echo esc_attr($plugin['slug']); ?>" data-plugin_filename="<?php echo esc_attr($plugin['file_name']); ?>" >
+											Activate <span class="loader"></span>
+										</button>
+									<?php else: ?>
+										<span class="tf-plugin-button tf-plugin-status active">Activated</span>
+									<?php endif; ?>
+
+									<?php if (!empty($plugin['pro'])): ?>
+										<?php if (!$pro_installed): ?>
+											<a href="<?php echo esc_url($plugin['pro']['url']); ?>" class="tf-plugin-button pro" target="_blank">Get Pro</a>
+										<?php elseif (!$pro_activated): ?>
+											<button class="tf-plugin-button activate-pro" data-action="activate" data-plugin="<?php echo esc_attr($plugin['pro']['slug']); ?>" data-plugin_filename="<?php echo esc_attr($plugin['pro']['file_name']); ?>">
+												Activate Pro <span class="loader"></span>
+											</button>
+										<?php else: ?>
+											<span class="tf-plugin-button tf-plugin-status active-pro">Pro Activated</span>
+										<?php endif; ?>
+									<?php endif; ?>
+								</div>
+							</div>
+							<div class="tf-plugin-content">
+								<h4><?php echo esc_html($plugin['name']); ?></h4>
+								<p><?php echo esc_html($plugin['subtitle']); ?></p>
+								<strong></strong>
+							</div>
+						</div>
+					</li>
+
+				<?php endforeach; ?>
+
+			</ul>
+
+			<?php 
+		}
+
+		public function themefic_manage_plugin() {
+			check_ajax_referer('updates', 'security');
+
+			if (!current_user_can('install_plugins')) {
+				wp_send_json_error('You do not have permission to perform this action.');
+			}
+
+			$plugin_slug = isset($_POST['plugin_slug']) ? sanitize_text_field($_POST['plugin_slug']) : '';
+			$plugin_filename = isset($_POST['plugin_filename']) ? sanitize_text_field($_POST['plugin_filename']) : '';
+			$plugin_action = isset($_POST['plugin_action']) ? sanitize_text_field($_POST['plugin_action']) : '';
+
+			if (!$plugin_slug || !$plugin_action) {
+				wp_send_json_error('Invalid request.');
+			}
+
+			include_once ABSPATH . 'wp-admin/includes/plugin-install.php';
+			include_once ABSPATH . 'wp-admin/includes/class-wp-upgrader.php';
+			include_once ABSPATH . 'wp-admin/includes/plugin.php';
+
+			if ($plugin_action === 'install') {
+				$api = plugins_api('plugin_information', ['slug' => $plugin_slug]);
+
+				if (is_wp_error($api)) {
+					wp_send_json_error($api->get_error_message());
+				}
+
+				$upgrader = new Plugin_Upgrader(new WP_Ajax_Upgrader_Skin());
+				$install_result = $upgrader->install($api->download_link);
+
+				if (is_wp_error($install_result)) {
+					wp_send_json_error($install_result->get_error_message());
+				}
+
+				wp_send_json_success(['message' => 'Installed successfully.']);
+			}
+
+			if ($plugin_action === 'activate') {
+				$plugin_path = WP_PLUGIN_DIR . '/' . $plugin_slug . '/' . $plugin_filename . '.php';
+
+				if (!file_exists($plugin_path)) {
+					wp_send_json_error('Plugin file not found.');
+				}
+
+				$activate_result = activate_plugin($plugin_path);
+
+				if (is_wp_error($activate_result)) {
+					wp_send_json_error($activate_result->get_error_message());
+				}
+
+				wp_send_json_success(['message' => 'Activated successfully.']);
+			}
+
+			wp_send_json_error('Invalid action.');
+		}
 
 		/**
 		 * Get Help Page
@@ -470,7 +628,7 @@ if ( ! class_exists( 'TF_Settings' ) ) {
 							</svg>
 							<h3><?php esc_html_e("Get Started Quickly","tourfic"); ?></h3>
 							<p><?php esc_html_e("Use our guided setup wizard to get up and running fast.","tourfic"); ?></p>
-							<a href="#" target="" class="tf-link-skip-btn"><?php esc_html_e("Setup Wizard","tourfic"); ?></a>
+							<a href="<?php echo esc_url(admin_url( 'admin.php?page=tf-setup-wizard' )) ?>" target="" class="tf-link-skip-btn"><?php esc_html_e("Setup Wizard","tourfic"); ?></a>
 						</div>
 
 						<!-- Customization -->
@@ -648,6 +806,73 @@ if ( ! class_exists( 'TF_Settings' ) ) {
 			</div>
 			<?php
 		}
+		public function tf_license_info_callback(){
+		?>
+		<div class="tf-setting-dashboard">
+
+			<!-- dashboard-header-include -->
+			<?php \Tourfic\Classes\Helper::tf_dashboard_header(); ?>
+
+			<div class="tf-setting-license">
+				<div class="tf-setting-license-tabs">
+					<ul>
+						<li class="active">
+							<span>
+								<i class="fas fa-key"></i>
+								<?php esc_html_e("License Info","tourfic"); ?>
+							</span>
+						</li>
+					</ul>
+				</div>
+				<div class="tf-setting-license-field">
+					<div class="tf-tab-wrapper">
+						<div id="license" class="tf-tab-content">
+							<div class="tf-field tf-field-callback" style="width: 100%;">
+								<div class="tf-fieldset"></div>
+							</div>
+							<?php
+							$licenseKey = ! empty( tfliopt( 'license-key' ) ) ? tfliopt( 'license-key' ) : '';
+							$liceEmail  = ! empty( tfliopt( 'license-email' ) ) ? tfliopt( 'license-email' ) : '';
+
+							if ( TourficProBase::CheckWPPlugin( $licenseKey, $liceEmail, $licenseMessage, $responseObj, TF_PRO_PATH . 'tourfic-pro.php' ) ) {
+								tf_license_info();
+							} else {
+							?>
+							<div class="tf-field tf-field-text" style="width: 100%;">
+								<label for="tf_settings[license-key]" class="tf-field-label"> <?php esc_html_e("License Key","tourfic"); ?></label>
+
+								<span class="tf-field-sub-title"><?php esc_html_e("Enter your license key here, to activate the product, and get full feature updates and premium support.","tourfic"); ?></span>
+
+								<div class="tf-fieldset">
+									<input type="text" name="tf_settings[license-key]" id="tf_settings[license-key]" value="" placeholder="xxxxxxxx-xxxxxxxx-xxxxxxxx-xxxxxxxx" />
+								</div>
+							</div>
+
+							<div class="tf-field tf-field-text" style="width: 100%;">
+								<label for="tf_settings[license-email]" class="tf-field-label"> <?php esc_html_e("License Email ","tourfic"); ?></label>
+
+								<span class="tf-field-sub-title"><?php esc_html_e("We will send update news of this product by this email address, don't worry, we hate spam","tourfic"); ?></span>
+
+								<div class="tf-fieldset">
+									<input type="text" name="tf_settings[license-email]" id="tf_settings[license-email]" value="" />
+								</div>
+							</div>
+
+							<div class="tf-field tf-field-callback" style="width: 100%;">
+								<div class="tf-fieldset">
+									<div class="tf-license-activate">
+										<p class="submit"><input type="submit" name="submit" id="submit" class="button button-primary" value="Activate" /></p>
+									</div>
+								</div>
+							</div>
+							<?php } ?>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+		<?php
+		}
 
 		/**
 		 * Options Page
@@ -815,9 +1040,17 @@ if ( ! class_exists( 'TF_Settings' ) ) {
 			}
 
 			$tf_option_value = array();
-			$option_request = array();
-			if ( ! empty( $_POST[ $this->option_id ] ) ) {
-				$option_request = $this->recursive_sanitize( wp_unslash( $_POST[ $this->option_id ] ) ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+			$option_request  = ( ! empty( $_POST[ $this->option_id ] ) ) ? $_POST[ $this->option_id ] : array();
+
+			if(isset($_POST['tf_import_option']) && !empty(wp_unslash( trim( $_POST['tf_import_option']) ))){
+
+				$tf_import_option = json_decode( wp_unslash( trim( $_POST['tf_import_option']) ), true );
+
+				do_action( 'tf_setting_import_before_save', $tf_import_option );
+
+				// $option_request = !empty($tf_import_option) && is_array($tf_import_option) ? $tf_import_option : $option_request;
+				update_option( $this->option_id, $tf_import_option );
+				return;
 			}
 
 			if ( ! empty( $option_request ) && ! empty( $this->option_sections ) ) {
@@ -874,12 +1107,10 @@ if ( ! class_exists( 'TF_Settings' ) ) {
 										// extension want to allow
 										$allowed_ext = array('ttf', 'otf', 'woff', 'woff2', 'eot');
 										$allowed_mime_types = array('application/octet-stream', 'font/ttf', 'font/otf', 'font/woff', 'font/woff2', 'application/vnd.ms-fontobject');
-										$file_name = !empty($_FILES['file']['name']) ? sanitize_file_name(wp_unslash($_FILES['file']['name'])) : [];
-										$file_tmp_name = !empty($_FILES['file']['tmp_name']) ? sanitize_file_name(wp_unslash($_FILES['file']['tmp_name'])) : [];
-										for($i = 0; $i < count($file_name); $i++) {
+										for($i = 0; $i < count($_FILES['file']['name']); $i++) {
 											
-											$tf_font_filename = sanitize_file_name( wp_unslash($file_name[$i]) );
-											$uploaded_file_tmp = sanitize_file_name( wp_unslash($file_tmp_name[$i]) );
+											$tf_font_filename = sanitize_file_name( wp_unslash($_FILES['file']['name'][$i]) );
+											$uploaded_file_tmp = sanitize_file_name( wp_unslash($_FILES['file']['tmp_name'][$i]) );
 											$checked = wp_check_filetype_and_ext( $uploaded_file_tmp, $tf_font_filename);
 											if (isset($checked['ext']) && in_array($checked["ext"], $allowed_ext) && in_array($checked['type'], $allowed_mime_types)) {
 												$destination_path = $tf_itinerary_fonts .'/'. $tf_font_filename;
@@ -942,12 +1173,28 @@ if ( ! class_exists( 'TF_Settings' ) ) {
                 die();
 	        }
 
-			
-			$this->save_options();
-			$response = [
-				'status'  => 'success',
-				'message' => esc_html__( 'Options saved successfully!', 'tourfic' ),
-			];
+			if(isset($_POST['tf_import_option']) && !empty(wp_unslash( trim( $_POST['tf_import_option']) )) ){
+
+				$tf_import_option = json_decode( wp_unslash( trim( $_POST['tf_import_option']) ), true );
+				if(empty($tf_import_option) || !is_array($tf_import_option)){
+					$response    = [
+						'status'  => 'error',
+						'message' => esc_html__( 'Your imported data is not valid', 'tourfic' ),
+					];
+				}else{
+					$this->save_options();
+					$response = [
+						'status'  => 'success',
+						'message' => esc_html__( 'Options imported successfully!', 'tourfic' ),
+					];
+				}
+			}else{
+				$this->save_options();
+				$response = [
+					'status'  => 'success',
+					'message' => esc_html__( 'Options saved successfully!', 'tourfic' ),
+				];
+			}
 
 			do_action("tourfic_settings_save_hook");
 
@@ -1152,20 +1399,5 @@ if ( ! class_exists( 'TF_Settings' ) ) {
             echo wp_json_encode($response);
             die();
         }
-
-		/**
-		 * Recursively sanitize an array or a scalar value.
-		 *
-		 * @param mixed $data
-		 * @return mixed
-		 */
-		private function recursive_sanitize( $data ) {
-			if ( is_array( $data ) ) {
-				return array_map( array( $this, 'recursive_sanitize' ), $data );
-			}
-
-			// Default sanitization for scalar values
-			return sanitize_text_field( wp_unslash( $data ) );
-		}
 	}
 }

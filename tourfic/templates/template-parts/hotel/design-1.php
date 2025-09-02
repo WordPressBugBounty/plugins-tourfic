@@ -10,11 +10,12 @@ $tf_booking_type = '1';
 $tf_hide_booking_form = '';
 $tf_ext_booking_type = '';
 $tf_ext_booking_code = '';
+if ( function_exists( 'is_tf_pro' ) && is_tf_pro() ) {
 	$tf_booking_type      = ! empty( $meta['booking-by'] ) ? $meta['booking-by'] : 1;
 	$tf_hide_booking_form = ! empty( $meta['hide_booking_form'] ) ? $meta['hide_booking_form'] : '';
 	$tf_ext_booking_type = ! empty( $meta['external-booking-type'] ) ? $meta['external-booking-type'] : '1';
     $tf_ext_booking_code = !empty( $meta['booking-code'] ) ? $meta['booking-code'] : '';
-
+}
 ?>
 <div class="tf-single-template__one">
     <div class="tf-tour-single">
@@ -220,21 +221,32 @@ $tf_ext_booking_code = '';
                                 </div>
                             <?php endif; ?>
                             <div class="tf-hotel-location-map">
-                                <?php if ( !empty( $address ) && $tf_openstreet_map!="default" && (empty($address_latitude) || empty($address_longitude)) ) { ?>
+                                <?php if ( !defined( 'TF_PRO' ) && !empty( $address ) && $tf_openstreet_map!="default" && (empty($address_latitude) || empty($address_longitude)) ) { ?>
                                     <div class="tf-hotel-location-preview show-on-map">
                                     <iframe src="https://maps.google.com/maps?q=<?php echo wp_kses_post($address); ?>&output=embed" width="100%" height="258" style="border:0;" allowfullscreen="" loading="lazy"></iframe>
                                         <a href="https://www.google.com/maps/search/<?php echo wp_kses_post($address); ?>" class="map-pre" target="_blank"><i class="fa-solid fa-location-dot"></i></a>
                                     </div>
-                                <?php } elseif ( !empty( $address ) && $tf_openstreet_map=="default" && !empty($address_latitude) && !empty($address_longitude)) {  ?>
+                                <?php } elseif ( !defined( 'TF_PRO' ) && !empty( $address ) && $tf_openstreet_map=="default" && !empty($address_latitude) && !empty($address_longitude)) {  ?>
                                     <div class="tf-hotel-location-preview show-on-map">
                                         <div id="hotel-location"></div>
                                     </div>
-                                <?php } elseif ( !empty( $address ) && $tf_openstreet_map=="default" && (empty($address_latitude) || empty($address_longitude)) ) {  ?>
+                                    <script>
+                                        const map = L.map('hotel-location').setView([<?php echo esc_html($address_latitude); ?>, <?php echo esc_html($address_longitude); ?>], <?php echo esc_html($address_zoom); ?>);
+
+                                        const tiles = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                                            maxZoom: 20,
+                                            attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                                        }).addTo(map);
+
+                                        const marker = L.marker([<?php echo esc_html($address_latitude); ?>, <?php echo esc_html($address_longitude); ?>], {alt: '<?php echo esc_html($address); ?>'}).addTo(map)
+                                            .bindPopup('<?php echo esc_html($address); ?>');
+                                    </script>
+                                <?php } elseif ( !defined( 'TF_PRO' ) && !empty( $address ) && $tf_openstreet_map=="default" && (empty($address_latitude) || empty($address_longitude)) ) {  ?>
                                     <iframe src="https://maps.google.com/maps?q=<?php echo esc_attr( $address_latitude ); ?>,<?php echo esc_attr( $address_longitude ); ?>&output=embed" width="100%" height="258" style="border:0;" allowfullscreen="" loading="lazy"></iframe>
                                 <?php } ?>
 
-                                
-                                <?php if ( ( ! empty( $address ) || (! empty( $address_latitude ) && ! empty( $address_longitude ) ) ) ) { ?>
+                                <!-- Pro Code -->
+                                <?php if ( function_exists( 'is_tf_pro' ) && is_tf_pro() && ( ! empty( $address ) || (! empty( $address_latitude ) && ! empty( $address_longitude ) ) ) ) { ?>
                                     <?php 
                                     if( $tf_openstreet_map!="default" ){ ?>
                                     <div class="tf-hotel-location-preview show-on-map">
@@ -254,6 +266,17 @@ $tf_ext_booking_code = '';
                                             <i class="fa-solid fa-location-dot"></i>
                                         </a>
                                         </div>
+                                        <script>
+                                            const map = L.map('hotel-location').setView([<?php echo esc_html($address_latitude); ?>, <?php echo esc_html($address_longitude); ?>], <?php echo esc_html($address_zoom); ?>);
+
+                                            const tiles = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                                                maxZoom: 20,
+                                                attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                                            }).addTo(map);
+
+                                            const marker = L.marker([<?php echo esc_html($address_latitude); ?>, <?php echo esc_html($address_longitude); ?>], {alt: '<?php echo esc_html($address); ?>'}).addTo(map)
+                                                .bindPopup('<?php echo esc_html($address); ?>');
+                                        </script>
                                     <?php } ?>
 
                                     <?php if (  $tf_openstreet_map=="default" && (empty($address_latitude) || empty($address_longitude)) ) {  ?>

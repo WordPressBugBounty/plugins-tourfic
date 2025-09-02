@@ -8,14 +8,14 @@ use \Tourfic\Classes\Tour\Tour_Price;
 
 $tf_booking_type = '1';
 $tf_booking_url  = $tf_booking_query_url = $tf_booking_attribute = $tf_hide_booking_form = $tf_hide_price = '';
-
+if ( function_exists( 'is_tf_pro' ) && is_tf_pro() ) {
 	$tf_booking_type      = ! empty( $meta['booking-by'] ) ? $meta['booking-by'] : 1;
 	$tf_booking_url       = ! empty( $meta['booking-url'] ) ? esc_url( $meta['booking-url'] ) : '';
 	$tf_booking_query_url = ! empty( $meta['booking-query'] ) ? $meta['booking-query'] : 'adult={adult}&child={child}&infant={infant}';
 	$tf_booking_attribute = ! empty( $meta['booking-attribute'] ) ? $meta['booking-attribute'] : '';
 	$tf_hide_booking_form = ! empty( $meta['hide_booking_form'] ) ? $meta['hide_booking_form'] : '';
 	$tf_hide_price        = ! empty( $meta['hide_price'] ) ? $meta['hide_price'] : '';
-
+}
 if ( 2 == $tf_booking_type && ! empty( $tf_booking_url ) ) {
 	$external_search_info = array(
 		'{adult}'        => ! empty( $adults ) ? $adults : 1,
@@ -443,7 +443,6 @@ if ( 2 == $tf_booking_type && ! empty( $tf_booking_url ) ) {
 			'posts_per_page' => 8,
 			'orderby'        => 'title',
 			'order'          => 'ASC',
-			// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_tax_query
 			'tax_query'      => array(
 				array(
 					'taxonomy' => 'tour_destination',
@@ -455,7 +454,7 @@ if ( 2 == $tf_booking_type && ! empty( $tf_booking_url ) ) {
 		//show related tour based on selected tours
 		$selected_ids = ! empty( Helper::tfopt( 'tf-related-tours' ) ) ? Helper::tfopt( 'tf-related-tours' ) : array();
 
-		if ( $related_tour_type == 'selected' ) {
+		if ( $related_tour_type == 'selected' && defined( 'TF_PRO' ) ) {
 			if ( in_array( $post_id, $selected_ids ) ) {
 				$index = array_search( $post_id, $selected_ids );
 

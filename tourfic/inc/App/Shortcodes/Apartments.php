@@ -46,7 +46,6 @@ class Apartments extends \Tourfic\Core\Shortcodes {
 				$locations = explode( ',', $locations );
 			}
 
-			// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_tax_query
 			$args['tax_query'] = array(
 				'relation' => 'AND',
 				array(

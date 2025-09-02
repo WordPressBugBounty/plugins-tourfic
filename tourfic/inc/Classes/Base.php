@@ -10,6 +10,7 @@ use Tourfic\Admin\Booking_Details\Apartment_Booking_Details;
 use Tourfic\Admin\Booking_Details\Hotel_Booking_Details;
 use Tourfic\Admin\Booking_Details\Tour_Booking_Details;
 use Tourfic\Admin\Booking_Details\Car_Booking_Details;
+use Tourfic\Admin\TF_Promo_Notice;
 use Tourfic\App\Widgets\TF_Widget_Base;
 use Tourfic\Admin\Notice\Room_Notice;
 use Tourfic\Admin\Notice\Plugin_Page_Notice;
@@ -26,6 +27,7 @@ class Base {
 	public function init() {
 		add_action( 'admin_init', array($this, 'create_enquiry_database_table') );
 		add_action('admin_init', array($this, 'tf_order_table_create'));
+		add_action( 'admin_init', array($this, 'tf_admin_table_alter_order_data') );
 
 		if ( Helper::tf_is_woo_active() ) {
 			\Tourfic\Classes\Woocommerce\Woocommerce::instance();
@@ -49,6 +51,7 @@ class Base {
 		\Tourfic\Admin\Enquiry\Apartment_Enquiry::instance();
 
 		if(is_admin()) {
+			\Tourfic\Admin\TF_Setup_Wizard::instance();
 			\Tourfic\Admin\TF_Options\TF_Options::instance();
 
 			// Backend Bookings
@@ -70,7 +73,8 @@ class Base {
 			// Room_Notice::instance();
 			Plugin_Page_Notice::instance();
 		}
-		
+		// Promo Notice
+		TF_Promo_Notice::instance();
 		if ( Helper::tf_is_woo_active() ) {
 			TF_Widget_Base::instance();
 		}
@@ -99,6 +103,11 @@ class Base {
 
 		// Without Payment Booking
 		// \Tourfic\Classes\Without_Payment_Booking\Hotel_WP_Booking::instance();
+
+		//Template Builder
+		if(function_exists( 'is_tf_pro' ) && is_tf_pro()){
+			\Tourfic\App\Templates\Template_Builder::instance();
+		}
 	}
 
 	function load_shortcodes() {

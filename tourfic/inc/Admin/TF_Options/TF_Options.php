@@ -84,9 +84,11 @@ class TF_Options {
 	 * @author Foysal
 	 */
 	public function load_metaboxes() {
-		
+		if ( $this->is_tf_pro_active() ) {
+			$metaboxes = glob( TF_PRO_ADMIN_PATH . 'tf-options/metaboxes/*.php' );
+		} else {
 			$metaboxes = glob( $this->tf_options_file_path( 'metaboxes/*.php' ) );
-		
+		}
 
 		/*if( !empty( $pro_metaboxes ) ) {
 			$metaboxes = array_merge( $metaboxes, $pro_metaboxes );
@@ -105,9 +107,11 @@ class TF_Options {
 	 * @author Foysal
 	 */
 	public function load_options() {
-		
+		if ( $this->is_tf_pro_active() ) {
+			$options = glob( TF_PRO_ADMIN_PATH . 'tf-options/options/*.php' );
+		} else {
 			$options = glob( $this->tf_options_file_path( 'options/*.php' ) );
-		
+		}
 
 		if ( ! empty( $options ) ) {
 			foreach ( $options as $option ) {
@@ -123,9 +127,11 @@ class TF_Options {
 	 * @author Foysal
 	 */
 	public function load_taxonomy() {
-		
+		if ( $this->is_tf_pro_active() ) {
+			$taxonomies = glob( TF_PRO_ADMIN_PATH . 'tf-options/taxonomies/*.php' );
+		} else {
 			$taxonomies = glob( $this->tf_options_file_path( 'taxonomies/*.php' ) );
-		
+		}
 
 		if ( ! empty( $taxonomies ) ) {
 			foreach ( $taxonomies as $taxonomy ) {
@@ -149,8 +155,15 @@ class TF_Options {
 
 		$class = isset( $field['class'] ) ? $field['class'] : '';
 
-	
+		$is_pro   = isset( $field['is_pro'] ) ? $field['is_pro'] : '';
 		$badge_up = isset( $field['badge_up'] ) ? $field['badge_up'] : '';
+
+		if ( function_exists( 'is_tf_pro' ) && is_tf_pro() ) {
+			$is_pro = false;
+		}
+		if ( $is_pro == true ) {
+			$class .= ' tf-field-disable tf-field-pro';
+		}
 		if ( $badge_up == true ) {
 			$class .= ' tf-field-disable tf-field-upcoming';
 		}
@@ -204,6 +217,9 @@ class TF_Options {
 			<?php if ( ! empty( $field['label'] ) ): ?>
                 <label for="<?php echo esc_attr( $id ) ?>" class="tf-field-label">
 					<?php echo esc_html( $field['label'] ) ?>
+					<?php if ( $is_pro ): ?>
+                        <div class="tf-csf-badge"><span class="tf-pro"><?php esc_html_e( "Pro", "tourfic" ); ?></span></div>
+					<?php endif; ?>
 					<?php if ( $badge_up ): ?>
                         <div class="tf-csf-badge"><span class="tf-upcoming"><?php esc_html_e( "Upcoming", "tourfic" ); ?></span></div>
 					<?php endif; ?>
@@ -230,6 +246,14 @@ class TF_Options {
 			<?php endif; ?>
         </div>
 		<?php
+	}
+
+	public function is_tf_pro_active() {
+		if ( is_plugin_active( 'tourfic-pro/tourfic-pro.php' ) && defined( 'TF_PRO' ) ) {
+			return true;
+		}
+
+		return false;
 	}
 
 	function get_icon_list() {
@@ -277,8 +301,8 @@ class TF_Options {
 		}
 
 		$start_index = isset( $_POST['start_index'] ) ? intval( $_POST['start_index'] ) : 0;
-		$type        = isset( $_POST['type'] ) ? sanitize_text_field( wp_unslash($_POST['type']) ) : 'all';
-		$search      = isset( $_POST['search'] ) ? sanitize_text_field( wp_unslash($_POST['search']) ) : '';
+		$type        = isset( $_POST['type'] ) ? sanitize_text_field( $_POST['type'] ) : 'all';
+		$search      = isset( $_POST['search'] ) ? sanitize_text_field( $_POST['search'] ) : '';
 		$icon_list   = $this->get_icon_list();
 		$icons       = array_slice( $icon_list[ $type ]['icons'], $start_index, 100 );
 
@@ -313,8 +337,8 @@ class TF_Options {
 			return;
 		}
 
-		$search_text = isset( $_POST['search'] ) ? sanitize_text_field( wp_unslash($_POST['search']) ) : '';
-		$type        = isset( $_POST['type'] ) ? sanitize_text_field( wp_unslash($_POST['type']) ) : 'all';
+		$search_text = isset( $_POST['search'] ) ? sanitize_text_field( $_POST['search'] ) : '';
+		$type        = isset( $_POST['type'] ) ? sanitize_text_field( $_POST['type'] ) : 'all';
 		$icon_list   = $this->get_icon_list();
 		$icons       = $icon_list[ $type ]['icons'];
 
@@ -358,17 +382,17 @@ class TF_Options {
 		}
 
 		$date_format         = ! empty( Helper::tfopt( "tf-date-format-for-users" ) ) ? Helper::tfopt( "tf-date-format-for-users" ) : "Y/m/d";
-		$room_id             = isset( $_POST['room_id'] ) && ! empty( $_POST['room_id'] ) ? sanitize_text_field( wp_unslash($_POST['room_id']) ) : '';
-		$new_post            = isset( $_POST['new_post'] ) && ! empty( $_POST['new_post'] ) ? sanitize_text_field(wp_unslash($_POST['new_post'])) : '';
-		$check_in            = isset( $_POST['tf_room_check_in'] ) && ! empty( $_POST['tf_room_check_in'] ) ? sanitize_text_field( wp_unslash($_POST['tf_room_check_in']) ) : '';
-		$check_out           = isset( $_POST['tf_room_check_out'] ) && ! empty( $_POST['tf_room_check_out'] ) ? sanitize_text_field( wp_unslash($_POST['tf_room_check_out']) ) : '';
-		$status              = isset( $_POST['tf_room_status'] ) && ! empty( $_POST['tf_room_status'] ) ? sanitize_text_field( wp_unslash($_POST['tf_room_status']) ) : '';
-		$price_by            = isset( $_POST['price_by'] ) && ! empty( $_POST['price_by'] ) ? sanitize_text_field( wp_unslash($_POST['price_by']) ) : '';
-		$tf_room_price       = isset( $_POST['tf_room_price'] ) && ! empty( $_POST['tf_room_price'] ) ? sanitize_text_field( wp_unslash($_POST['tf_room_price'] )) : '';
-		$tf_room_adult_price = isset( $_POST['tf_room_adult_price'] ) && ! empty( $_POST['tf_room_adult_price'] ) ? sanitize_text_field( wp_unslash($_POST['tf_room_adult_price']) ) : '';
-		$tf_room_child_price = isset( $_POST['tf_room_child_price'] ) && ! empty( $_POST['tf_room_child_price'] ) ? sanitize_text_field( wp_unslash($_POST['tf_room_child_price']) ) : '';
-		$avail_date          = isset( $_POST['avail_date'] ) && ! empty( $_POST['avail_date'] ) ? sanitize_text_field( wp_unslash($_POST['avail_date'] )) : '';
-		$options_count       = isset( $_POST['options_count'] ) && ! empty( $_POST['options_count'] ) ? sanitize_text_field( wp_unslash($_POST['options_count'] )) : '';
+		$room_id             = isset( $_POST['room_id'] ) && ! empty( $_POST['room_id'] ) ? sanitize_text_field( $_POST['room_id'] ) : '';
+		$new_post            = isset( $_POST['new_post'] ) && ! empty( $_POST['new_post'] ) ? sanitize_text_field($_POST['new_post']) : '';
+		$check_in            = isset( $_POST['tf_room_check_in'] ) && ! empty( $_POST['tf_room_check_in'] ) ? sanitize_text_field( $_POST['tf_room_check_in'] ) : '';
+		$check_out           = isset( $_POST['tf_room_check_out'] ) && ! empty( $_POST['tf_room_check_out'] ) ? sanitize_text_field( $_POST['tf_room_check_out'] ) : '';
+		$status              = isset( $_POST['tf_room_status'] ) && ! empty( $_POST['tf_room_status'] ) ? sanitize_text_field( $_POST['tf_room_status'] ) : '';
+		$price_by            = isset( $_POST['price_by'] ) && ! empty( $_POST['price_by'] ) ? sanitize_text_field( $_POST['price_by'] ) : '';
+		$tf_room_price       = isset( $_POST['tf_room_price'] ) && ! empty( $_POST['tf_room_price'] ) ? sanitize_text_field( $_POST['tf_room_price'] ) : '';
+		$tf_room_adult_price = isset( $_POST['tf_room_adult_price'] ) && ! empty( $_POST['tf_room_adult_price'] ) ? sanitize_text_field( $_POST['tf_room_adult_price'] ) : '';
+		$tf_room_child_price = isset( $_POST['tf_room_child_price'] ) && ! empty( $_POST['tf_room_child_price'] ) ? sanitize_text_field( $_POST['tf_room_child_price'] ) : '';
+		$avail_date          = isset( $_POST['avail_date'] ) && ! empty( $_POST['avail_date'] ) ? sanitize_text_field( $_POST['avail_date'] ) : '';
+		$options_count       = isset( $_POST['options_count'] ) && ! empty( $_POST['options_count'] ) ? sanitize_text_field( $_POST['options_count'] ) : '';
 
 		if ( empty( $check_in ) || empty( $check_out ) ) {
 			wp_send_json_error( [
@@ -406,12 +430,12 @@ class TF_Options {
 			            'options_count' => $options_count,
 		            ];
 		            for ( $j = 0; $j <= $options_count - 1; $j ++ ) {
-			            $options_data[ 'tf_room_option_' . $j ]         = isset( $_POST[ 'tf_room_option_' . $j ] ) && ! empty( $_POST[ 'tf_room_option_' . $j ] ) ? sanitize_text_field( wp_unslash($_POST[ 'tf_room_option_' . $j ]) ) : '';
-			            $options_data[ 'tf_option_title_' . $j ]        = isset( $_POST[ 'tf_option_title_' . $j ] ) && ! empty( $_POST[ 'tf_option_title_' . $j ] ) ? sanitize_text_field( wp_unslash($_POST[ 'tf_option_title_' . $j ]) ) : '';
-			            $options_data[ 'tf_option_pricing_type_' . $j ] = isset( $_POST[ 'tf_option_pricing_type_' . $j ] ) && ! empty( $_POST[ 'tf_option_pricing_type_' . $j ] ) ? sanitize_text_field( wp_unslash($_POST[ 'tf_option_pricing_type_' . $j ]) ) : '';
-			            $options_data[ 'tf_option_room_price_' . $j ]   = isset( $_POST[ 'tf_option_room_price_' . $j ] ) && ! empty( $_POST[ 'tf_option_room_price_' . $j ] ) ? sanitize_text_field( wp_unslash($_POST[ 'tf_option_room_price_' . $j ]) ) : '';
-			            $options_data[ 'tf_option_adult_price_' . $j ]  = isset( $_POST[ 'tf_option_adult_price_' . $j ] ) && ! empty( $_POST[ 'tf_option_adult_price_' . $j ] ) ? sanitize_text_field( wp_unslash($_POST[ 'tf_option_adult_price_' . $j ]) ) : '';
-			            $options_data[ 'tf_option_child_price_' . $j ]  = isset( $_POST[ 'tf_option_child_price_' . $j ] ) && ! empty( $_POST[ 'tf_option_child_price_' . $j ] ) ? sanitize_text_field( wp_unslash($_POST[ 'tf_option_child_price_' . $j ]) ) : '';
+			            $options_data[ 'tf_room_option_' . $j ]         = isset( $_POST[ 'tf_room_option_' . $j ] ) && ! empty( $_POST[ 'tf_room_option_' . $j ] ) ? sanitize_text_field( $_POST[ 'tf_room_option_' . $j ] ) : '';
+			            $options_data[ 'tf_option_title_' . $j ]        = isset( $_POST[ 'tf_option_title_' . $j ] ) && ! empty( $_POST[ 'tf_option_title_' . $j ] ) ? sanitize_text_field( $_POST[ 'tf_option_title_' . $j ] ) : '';
+			            $options_data[ 'tf_option_pricing_type_' . $j ] = isset( $_POST[ 'tf_option_pricing_type_' . $j ] ) && ! empty( $_POST[ 'tf_option_pricing_type_' . $j ] ) ? sanitize_text_field( $_POST[ 'tf_option_pricing_type_' . $j ] ) : '';
+			            $options_data[ 'tf_option_room_price_' . $j ]   = isset( $_POST[ 'tf_option_room_price_' . $j ] ) && ! empty( $_POST[ 'tf_option_room_price_' . $j ] ) ? sanitize_text_field( $_POST[ 'tf_option_room_price_' . $j ] ) : '';
+			            $options_data[ 'tf_option_adult_price_' . $j ]  = isset( $_POST[ 'tf_option_adult_price_' . $j ] ) && ! empty( $_POST[ 'tf_option_adult_price_' . $j ] ) ? sanitize_text_field( $_POST[ 'tf_option_adult_price_' . $j ] ) : '';
+			            $options_data[ 'tf_option_child_price_' . $j ]  = isset( $_POST[ 'tf_option_child_price_' . $j ] ) && ! empty( $_POST[ 'tf_option_child_price_' . $j ] ) ? sanitize_text_field( $_POST[ 'tf_option_child_price_' . $j ] ) : '';
 		            }
 	            }
 	            if ( ! empty( $options_data ) ) {
@@ -460,9 +484,9 @@ class TF_Options {
 			return;
 		}
 
-		$new_post   = isset( $_POST['new_post'] ) && ! empty( $_POST['new_post'] ) ? sanitize_text_field( wp_unslash($_POST['new_post']) ) : '';
-		$room_id    = isset( $_POST['room_id'] ) && ! empty( $_POST['room_id'] ) ? sanitize_text_field( wp_unslash($_POST['room_id']) ) : '';
-		$avail_date = isset( $_POST['avail_date'] ) && ! empty( $_POST['avail_date'] ) ? sanitize_text_field( wp_unslash($_POST['avail_date']) ) : '';
+		$new_post   = isset( $_POST['new_post'] ) && ! empty( $_POST['new_post'] ) ? sanitize_text_field( $_POST['new_post'] ) : '';
+		$room_id    = isset( $_POST['room_id'] ) && ! empty( $_POST['room_id'] ) ? sanitize_text_field( $_POST['room_id'] ) : '';
+		$avail_date = isset( $_POST['avail_date'] ) && ! empty( $_POST['avail_date'] ) ? sanitize_text_field( $_POST['avail_date'] ) : '';
 		$option_arr = isset( $_POST['option_arr'] ) && ! empty( $_POST['option_arr'] )
 		? array_map( 'sanitize_text_field', wp_unslash( $_POST['option_arr'] ) )
 		: [];
@@ -640,17 +664,17 @@ class TF_Options {
 		}
 
 		$date_format         = ! empty( Helper::tfopt( "tf-date-format-for-users" ) ) ? Helper::tfopt( "tf-date-format-for-users" ) : "Y/m/d";
-		$apartment_id        = isset( $_POST['apartment_id'] ) && ! empty( $_POST['apartment_id'] ) ? sanitize_text_field( wp_unslash($_POST['apartment_id'] )) : '';
-		$new_post            = isset( $_POST['new_post'] ) && ! empty( $_POST['new_post'] ) ? sanitize_text_field(wp_unslash($_POST['new_post'])) : '';
-		$check_in            = isset( $_POST['tf_apt_check_in'] ) && ! empty( $_POST['tf_apt_check_in'] ) ? sanitize_text_field(wp_unslash( $_POST['tf_apt_check_in'] ) ): '';
-		$check_out           = isset( $_POST['tf_apt_check_out'] ) && ! empty( $_POST['tf_apt_check_out'] ) ? sanitize_text_field(wp_unslash( $_POST['tf_apt_check_out'] ) ): '';
-		$status              = isset( $_POST['tf_apt_status'] ) && ! empty( $_POST['tf_apt_status'] ) ? sanitize_text_field(wp_unslash( $_POST['tf_apt_status'] ) ): '';
-		$pricing_type        = isset( $_POST['pricing_type'] ) && ! empty( $_POST['pricing_type'] ) ? sanitize_text_field(wp_unslash( $_POST['pricing_type'] ) ): '';
-		$tf_apt_price        = isset( $_POST['tf_apt_price'] ) && ! empty( $_POST['tf_apt_price'] ) ? sanitize_text_field(wp_unslash( $_POST['tf_apt_price'] ) ): '';
-		$tf_apt_adult_price  = isset( $_POST['tf_apt_adult_price'] ) && ! empty( $_POST['tf_apt_adult_price'] ) ? sanitize_text_field(wp_unslash( $_POST['tf_apt_adult_price'] ) ): '';
-		$tf_apt_child_price  = isset( $_POST['tf_apt_child_price'] ) && ! empty( $_POST['tf_apt_child_price'] ) ? sanitize_text_field(wp_unslash( $_POST['tf_apt_child_price'] ) ): '';
-		$tf_apt_infant_price = isset( $_POST['tf_apt_infant_price'] ) && ! empty( $_POST['tf_apt_infant_price'] ) ? sanitize_text_field(wp_unslash( $_POST['tf_apt_infant_price'] ) ): '';
-		$apt_availability    = isset( $_POST['apt_availability'] ) && ! empty( $_POST['apt_availability'] ) ? sanitize_text_field(wp_unslash( $_POST['apt_availability'] ) ): '';
+		$apartment_id        = isset( $_POST['apartment_id'] ) && ! empty( $_POST['apartment_id'] ) ? sanitize_text_field( $_POST['apartment_id'] ) : '';
+		$new_post            = isset( $_POST['new_post'] ) && ! empty( $_POST['new_post'] ) ? sanitize_text_field($_POST['new_post']) : '';
+		$check_in            = isset( $_POST['tf_apt_check_in'] ) && ! empty( $_POST['tf_apt_check_in'] ) ? sanitize_text_field( $_POST['tf_apt_check_in'] ) : '';
+		$check_out           = isset( $_POST['tf_apt_check_out'] ) && ! empty( $_POST['tf_apt_check_out'] ) ? sanitize_text_field( $_POST['tf_apt_check_out'] ) : '';
+		$status              = isset( $_POST['tf_apt_status'] ) && ! empty( $_POST['tf_apt_status'] ) ? sanitize_text_field( $_POST['tf_apt_status'] ) : '';
+		$pricing_type        = isset( $_POST['pricing_type'] ) && ! empty( $_POST['pricing_type'] ) ? sanitize_text_field( $_POST['pricing_type'] ) : '';
+		$tf_apt_price        = isset( $_POST['tf_apt_price'] ) && ! empty( $_POST['tf_apt_price'] ) ? sanitize_text_field( $_POST['tf_apt_price'] ) : '';
+		$tf_apt_adult_price  = isset( $_POST['tf_apt_adult_price'] ) && ! empty( $_POST['tf_apt_adult_price'] ) ? sanitize_text_field( $_POST['tf_apt_adult_price'] ) : '';
+		$tf_apt_child_price  = isset( $_POST['tf_apt_child_price'] ) && ! empty( $_POST['tf_apt_child_price'] ) ? sanitize_text_field( $_POST['tf_apt_child_price'] ) : '';
+		$tf_apt_infant_price = isset( $_POST['tf_apt_infant_price'] ) && ! empty( $_POST['tf_apt_infant_price'] ) ? sanitize_text_field( $_POST['tf_apt_infant_price'] ) : '';
+		$apt_availability    = isset( $_POST['apt_availability'] ) && ! empty( $_POST['apt_availability'] ) ? sanitize_text_field( $_POST['apt_availability'] ) : '';
 
 		if ( empty( $check_in ) || empty( $check_out ) ) {
 			wp_send_json_error( [
@@ -731,9 +755,9 @@ class TF_Options {
 			return;
 		}
 
-		$new_post         = isset( $_POST['new_post'] ) && ! empty( $_POST['new_post'] ) ? sanitize_text_field( wp_unslash($_POST['new_post'] )) : '';
-		$apartment_id     = isset( $_POST['apartment_id'] ) && ! empty( $_POST['apartment_id'] ) ? sanitize_text_field( wp_unslash($_POST['apartment_id'] )) : '';
-		$apt_availability = isset( $_POST['apt_availability'] ) && ! empty( $_POST['apt_availability'] ) ? sanitize_text_field( wp_unslash($_POST['apt_availability'] )) : '';
+		$new_post         = isset( $_POST['new_post'] ) && ! empty( $_POST['new_post'] ) ? sanitize_text_field( $_POST['new_post'] ) : '';
+		$apartment_id     = isset( $_POST['apartment_id'] ) && ! empty( $_POST['apartment_id'] ) ? sanitize_text_field( $_POST['apartment_id'] ) : '';
+		$apt_availability = isset( $_POST['apt_availability'] ) && ! empty( $_POST['apt_availability'] ) ? sanitize_text_field( $_POST['apt_availability'] ) : '';
 
 		if ( $new_post != 'true' ) {
 			$apartment_data        = get_post_meta( $apartment_id, 'tf_apartment_opt', true );
@@ -844,9 +868,9 @@ class TF_Options {
 		//Verify Nonce
 		check_ajax_referer( 'updates', '_nonce' );
 
-		$categoryName = !empty($_POST['categoryName']) ? sanitize_title( wp_unslash($_POST['categoryName'] )) : '';
-		$categoryTitle = !empty($_POST['categoryTitle']) ? sanitize_text_field( wp_unslash($_POST['categoryTitle'] )) : '';
-		$parentCategory = !empty($_POST['parentCategory']) ? sanitize_key( $_POST['parentCategory'] ) : '';
+		$categoryName = sanitize_title( $_POST['categoryName'] );
+		$categoryTitle = sanitize_text_field( $_POST['categoryTitle'] );
+		$parentCategory = sanitize_key( $_POST['parentCategory'] );
 
 		$response = [];
 		if ( !empty($categoryName) && !empty($categoryTitle) ) {
@@ -879,8 +903,8 @@ class TF_Options {
 		//Verify Nonce
 		check_ajax_referer( 'updates', '_nonce' );
 
-		$categoryName = !empty($_POST['categoryName']) ? sanitize_title( wp_unslash($_POST['categoryName'] )) : '';
-		$term_id = !empty($_POST['term_id']) ? intval($_POST['term_id']) : '';
+		$categoryName = sanitize_title( $_POST['categoryName'] );
+		$term_id = intval($_POST['term_id']);
 
 		$response = [];
 
@@ -909,10 +933,10 @@ class TF_Options {
 		//Verify Nonce
 		check_ajax_referer( 'updates', '_nonce' );
 
-		$postType = !empty($_POST['postType']) ? sanitize_title( wp_unslash($_POST['postType'] )) : '';
-		$postTitle = !empty($_POST['postTitle']) ? sanitize_text_field(wp_unslash( $_POST['postTitle'] ) ): '';
-		$fieldId = !empty($_POST['fieldId']) ? sanitize_text_field(wp_unslash( $_POST['fieldId'] ) ): '';
-		$postId = !empty($_POST['postId']) ? sanitize_text_field(wp_unslash( $_POST['postId'] ) ): '';
+		$postType = !empty($_POST['postType']) ? sanitize_title( $_POST['postType'] ) : '';
+		$postTitle = !empty($_POST['postTitle']) ? sanitize_text_field( $_POST['postTitle'] ) : '';
+		$fieldId = !empty($_POST['fieldId']) ? sanitize_text_field( $_POST['fieldId'] ) : '';
+		$postId = !empty($_POST['postId']) ? sanitize_text_field( $_POST['postId'] ) : '';
 
 		$response = [];
 		if ( !empty($postType) && !empty($postTitle) ) {
@@ -949,8 +973,8 @@ class TF_Options {
 		//Verify Nonce
 		check_ajax_referer( 'updates', '_nonce' );
 
-		$categoryName = !empty($_POST['categoryName']) ? sanitize_title( wp_unslash($_POST['categoryName']) ) : '';
-		$term_id = !empty($_POST['term_id']) ? intval($_POST['term_id']) : '';
+		$categoryName = sanitize_title( $_POST['categoryName'] );
+		$term_id = intval($_POST['term_id']);
 
 		$response = [];
 

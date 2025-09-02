@@ -440,13 +440,24 @@ use \Tourfic\Classes\Apartment\Apartment;
         <div id="apartment-map" class="tf-apartment-map-wrapper">
             <div class="tf-container">
                 <div class="tf-row">
-                    <div class="tf-map-content-wrapper <?php echo empty( $map['address'] ) || empty( $meta['surroundings_places'] ) ? 'tf-map-content-full' : ''; ?>">
+                    <div class="tf-map-content-wrapper <?php echo empty( $map['address'] ) || empty( $meta['surroundings_places'] ) ? 'tf-map-content-full' : ''; ?> <?php echo ! function_exists( 'is_tf_pro' ) ? 'tf-map-content-full' : '' ?>">
 						<?php if ( ! empty( $map['address'] ) ): ?>
                             <div class="tf-apartment-map">
                                 <h2 class="section-heading"><?php echo ! empty( $meta['location_title'] ) ? esc_html( $meta['location_title'] ) : ''; ?></h2>
 
 								<?php if ( $tf_openstreet_map == "default" && ! empty( $map["latitude"] ) && ! empty( $map["longitude"] ) ) { ?>
                                     <div id="apartment-location" style="height: 500px;"></div>
+                                    <script>
+                                        const map = L.map('apartment-location').setView([<?php echo esc_html( $map["latitude"] ); ?>, <?php echo esc_html( $map["longitude"] ); ?>], <?php echo esc_html( $map["zoom"] ); ?>);
+
+                                        const tiles = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                                            maxZoom: 20,
+                                            attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                                        }).addTo(map);
+
+                                        const marker = L.marker([<?php echo esc_html( $map["latitude"] ); ?>, <?php echo esc_html( $map["longitude"] ); ?>], {alt: '<?php echo esc_html( $map["address"] ); ?>'}).addTo(map)
+                                            .bindPopup('<?php echo esc_html( $map["address"] ); ?>');
+                                    </script>
 								<?php } elseif ( $tf_openstreet_map != "default" && ! empty( $tf_google_map_key ) ){ ?>
                                     <iframe src="https://maps.google.com/maps?q=<?php echo esc_attr( str_replace( "#", "", $map["address"] ) ); ?>&output=embed" width="100%" height="600" style="border:0;"
                                             allowfullscreen=""
@@ -455,7 +466,7 @@ use \Tourfic\Classes\Apartment\Apartment;
                             </div>
 						<?php endif; ?>
 
-						<?php if ( isset( $meta['surroundings_places'] ) && ! empty( Helper::tf_data_types( $meta['surroundings_places'] ) ) ): ?>
+						<?php if ( function_exists( 'is_tf_pro' ) && is_tf_pro() && isset( $meta['surroundings_places'] ) && ! empty( Helper::tf_data_types( $meta['surroundings_places'] ) ) ): ?>
                             <div class="about-location">
 								<?php if ( ! empty( $meta['surroundings_sec_title'] ) ): ?>
                                     <h3 class="surroundings_sec_title"><?php echo esc_html( $meta['surroundings_sec_title'] ); ?></h3>
@@ -643,7 +654,6 @@ use \Tourfic\Classes\Apartment\Apartment;
 		'posts_per_page' => 8,
 		'orderby'        => 'title',
 		'order'          => 'ASC',
-        // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_tax_query
 		'tax_query'      => array( // WPCS: slow query ok.
 			array(
 				'taxonomy' => 'apartment_location',
@@ -652,7 +662,7 @@ use \Tourfic\Classes\Apartment\Apartment;
 			),
 		),
 	);
-    $related_args = array_merge( $args, array( 'post__not_in' => array( $post_id ) ) ); // phpcs:ignore WordPressVIPMinimum.Performance.WPQueryParams.PostNotIn_post__not_in
+    $related_args = array_merge( $args, array( 'post__not_in' => array( $post_id ) ) );
 	$related_apartment = new WP_Query( $args );
 	$related_apartment_check = new WP_Query( $related_args );
 
@@ -684,7 +694,7 @@ use \Tourfic\Classes\Apartment\Apartment;
 						<?php
 						endif;
 					endwhile;
-					wp_reset_postdata(); ?>
+					wp_reset_query(); ?>
                 </div>
             </div>
         </div>

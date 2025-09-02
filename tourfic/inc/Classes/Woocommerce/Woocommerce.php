@@ -129,9 +129,8 @@ class Woocommerce {
 	*/
 	function tf_order_status_changed( $order_id, $old_status, $new_status, $order ) {
 		global $wpdb;
-		$tf_order_checked = $wpdb->query( $wpdb->prepare( "SELECT * FROM {$wpdb->prefix}tf_order_data WHERE order_id=%s", $order_id ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		$tf_order_checked = $wpdb->query( $wpdb->prepare( "SELECT * FROM {$wpdb->prefix}tf_order_data WHERE order_id=%s", $order_id ) );
 		if ( ! empty( $tf_order_checked ) ) {
-			 // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 			$wpdb->query(
 				$wpdb->prepare( "UPDATE {$wpdb->prefix}tf_order_data SET ostatus=%s WHERE order_id=%s", $new_status, $order_id )
 			);
@@ -331,9 +330,10 @@ class Woocommerce {
 		 * @author Jahid
 		 */
 	
+		if ( function_exists( 'is_tf_pro' ) && is_tf_pro() ) {
 			do_action( 'tf_new_order_pabbly_form_trigger', $tf_integration_order_data, $billinginfo, $shippinginfo, $tf_integration_order_status );
 			do_action( 'tf_new_order_zapier_form_trigger', $tf_integration_order_data, $billinginfo, $shippinginfo, $tf_integration_order_status );
-		
+		}
 	
 	}
 
@@ -371,9 +371,8 @@ class Woocommerce {
 		];
 		$tf_payment_method = $items['_payment_method'];
 		global $wpdb;
-		$tf_order_checked = $wpdb->query( $wpdb->prepare( "SELECT * FROM {$wpdb->prefix}tf_order_data WHERE order_id=%s", $order_id ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		$tf_order_checked = $wpdb->query( $wpdb->prepare( "SELECT * FROM {$wpdb->prefix}tf_order_data WHERE order_id=%s", $order_id ) );
 		if ( ! empty( $tf_order_checked ) ) {
-			 // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 			$wpdb->query(
 				$wpdb->prepare( "UPDATE {$wpdb->prefix}tf_order_data SET billing_details=%s, shipping_details=%s, payment_method=%s WHERE order_id=%s", wp_json_encode( $billinginfo ), wp_json_encode( $shippinginfo ), $tf_payment_method, $order_id )
 			);

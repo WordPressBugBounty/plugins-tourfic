@@ -41,7 +41,7 @@ class Apartment_Type_Filter extends \WP_Widget {
 	public function widget( $args, $instance ) {
 
 		//check if is Apartment
-		$posttype = isset( $_GET['type'] ) ? sanitize_text_field( wp_unslash($_GET['type']) ) : get_post_type(); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$posttype = isset( $_GET['type'] ) ? sanitize_text_field( wp_unslash($_GET['type']) ) : get_post_type();
 
 		if ( is_admin() || $posttype == 'tf_apartment' ) {
 			extract( $args );
@@ -64,11 +64,11 @@ class Apartment_Type_Filter extends \WP_Widget {
 			$get_terms = get_terms( $taxonomy );
 
 			$search_types_query = array();
-            if ( isset( $_GET['types'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-                if ( is_array( $_GET['types'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-                    $search_types_query = array_map( 'sanitize_text_field', wp_unslash( $_GET['types'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+            if ( isset( $_GET['types'] ) ) {
+                if ( is_array( $_GET['types'] ) ) {
+                    $search_types_query = array_map( 'sanitize_text_field', wp_unslash( $_GET['types'] ) );
                 } else {
-                    $search_types_query = array( sanitize_text_field( wp_unslash( $_GET['types'] ) ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+                    $search_types_query = array( sanitize_text_field( wp_unslash( $_GET['types'] ) ) );
                 }
             }
 			
@@ -134,6 +134,17 @@ class Apartment_Type_Filter extends \WP_Widget {
             <label for="<?php echo esc_attr($this->get_field_id( 'hide_empty' )); ?>"><?php esc_html_e( 'Hide Empty Categories:', 'tourfic' )?></label>
             <input id="<?php echo esc_attr($this->get_field_id( 'hide_empty' )); ?>" name="<?php echo esc_attr($this->get_field_name( 'hide_empty' )); ?>" type="checkbox" <?php checked( 'on', $hide_empty );?>>
         </p>
+        <style>
+            .tf-widget-field label {
+                font-weight: 600;
+            }
+        </style>
+        <script>
+            jQuery('#<?php echo esc_attr($this->get_field_id( 'terms' )); ?>').select2({
+                width: '100%'
+            });
+            jQuery(document).trigger('tf_select2');
+        </script>
 		<?php
 	}
 

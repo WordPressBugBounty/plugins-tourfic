@@ -1,8 +1,12 @@
-<?php 
+<!-- Tour itenarary -->
+<?php
 // Don't load directly
 defined( 'ABSPATH' ) || exit;
-?>
 
+if ( function_exists('is_tf_pro') && is_tf_pro() ) {
+    do_action( 'after_itinerary_builder', $itineraries, $itinerary_map );
+} else {
+?>
 <!-- Travel Itinerary section Start -->
 <?php if ( $itineraries ) { ?>
 <div class="tf-itinerary-wrapper tf-mb-50 tf-template-section">
@@ -45,6 +49,17 @@ defined( 'ABSPATH' ) || exit;
     <div class="tf-map-area">
         <?php if ( $tf_openstreet_map=="default" && !empty($location_latitude) && !empty($location_longitude) && empty($tf_google_map_key) ) {  ?>
             <div id="tour-location"></div>
+            <script>
+            const map = L.map('tour-location').setView([<?php echo esc_html($location_latitude); ?>, <?php echo esc_html($location_longitude); ?>], <?php echo esc_html($location_zoom); ?>);
+
+            const tiles = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 20,
+                attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+            }).addTo(map);
+
+            const marker = L.marker([<?php echo esc_html($location_latitude); ?>, <?php echo esc_html($location_longitude); ?>], {alt: '<?php echo esc_html($location); ?>'}).addTo(map)
+                .bindPopup('<?php echo esc_html($location); ?>');
+            </script>
         <?php } ?>
         <?php if ( $tf_openstreet_map=="default" && (empty($location_latitude) || empty($location_longitude)) && empty($tf_google_map_key) ) {  ?>
             <iframe src="https://maps.google.com/maps?q=<?php echo esc_attr( str_replace( "#", "", $location ) ); ?>&output=embed" width="100%" height="500" style="border:0;" allowfullscreen="" loading="lazy"></iframe>
@@ -56,4 +71,4 @@ defined( 'ABSPATH' ) || exit;
 </div>
 <?php endif; ?>
 
-<?php } ?>
+<?php }} ?>

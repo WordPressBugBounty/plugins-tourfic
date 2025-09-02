@@ -278,9 +278,9 @@ defined( 'ABSPATH' ) || exit;
                                             }
                                             echo wp_kses(apply_filters("tf_apartment_archive_single_card_design_one", Apartment::tf_apartment_archive_single_item()), Helper::tf_custom_wp_kses_allow_tags());
                                         }
-                                        wp_reset_postdata();
+                                        wp_reset_query();
                                         ?>
-                                        <div id="map-datas" style="display: none"><?php echo array_filter( $locations ) ? esc_html(wp_json_encode( array_values( $locations ) )) : esc_html( wp_json_encode( [] ) ); ?></div>
+                                        <div id="map-datas" style="display: none"><?php echo array_filter($locations) ? wp_json_encode(array_values($locations)) : []; ?></div>
                                         <div class="tf-pagination-bar">
                                             <?php Helper::tourfic_posts_navigation(); ?>
                                         </div>

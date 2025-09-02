@@ -24,7 +24,6 @@ $args = array(
     'post_type' => $post_type,
     'orderby'   => apply_filters( 'tf_archive_post_orderby', 'date' ),
     'order'     => apply_filters( 'tf_archive_post_order', 'DESC' ),
-    // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_tax_query
     'tax_query' => array(
         array (
             'taxonomy' => $taxonomy,
@@ -754,9 +753,9 @@ elseif( ( $post_type == "tf_hotel" && $tf_hotel_arc_selected_template=="design-2
                                             echo wp_kses(apply_filters("tf_apartment_archive_single_featured_card_design_one", Apartment::tf_apartment_archive_single_item()), Helper::tf_custom_wp_kses_allow_tags());
                                         }
                                     }
-                                    wp_reset_postdata();
+                                    wp_reset_query();
                                     ?>
-                                    <div id="map-datas" style="display: none"><?php echo array_filter( $locations ) ? esc_html(wp_json_encode( array_values( $locations ) )) : esc_html( wp_json_encode( [] ) ); ?></div>
+                                    <div id="map-datas" style="display: none"><?php echo array_filter($locations) ? wp_json_encode(array_values($locations)) : wp_json_encode([]); ?></div>
                                     <div class="tf-pagination-bar">
                                         <?php Helper::tourfic_posts_navigation(); ?>
                                     </div>

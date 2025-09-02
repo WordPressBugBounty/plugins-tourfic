@@ -20,8 +20,9 @@ class Search_Result extends \Tourfic\Core\Shortcodes {
 	protected $shortcode = 'tf_search_result';
 
 	function render( $atts, $content = null ) {
+
 		// Get post type
-		$post_type = isset( $_GET['type'] ) ? sanitize_text_field(wp_unslash($_GET['type'] )) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$post_type = isset( $_GET['type'] ) ? sanitize_text_field( $_GET['type'] ) : '';
 		if ( empty( $post_type ) ) {
 			echo '<h3>' . esc_html__(" Please select fields from the search form! ", "tourfic") . '</h3>';
 
@@ -29,42 +30,42 @@ class Search_Result extends \Tourfic\Core\Shortcodes {
 		}
 		// Get hotel location or tour destination
 		$taxonomy     = $post_type == 'tf_hotel' ? 'hotel_location' : ( $post_type == 'tf_tours' ? 'tour_destination' : 'apartment_location' );
-		$place        = isset( $_GET['place'] ) ? sanitize_text_field(wp_unslash( $_GET['place'] ) ): ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-		$adults       = isset( $_GET['adults'] ) ? sanitize_text_field(wp_unslash( $_GET['adults'] ) ): ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-		$child        = isset( $_GET['children'] ) ? sanitize_text_field(wp_unslash( $_GET['children'] ) ): ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-		$infant       = isset( $_GET['infant'] ) ? sanitize_text_field(wp_unslash( $_GET['infant'] ) ): ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-		$room         = isset( $_GET['room'] ) ? sanitize_text_field(wp_unslash( $_GET['room'] ) ): ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-		$check_in_out = isset( $_GET['check-in-out-date'] ) ? sanitize_text_field(wp_unslash( $_GET['check-in-out-date'] ) ): ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$place        = isset( $_GET['place'] ) ? sanitize_text_field( $_GET['place'] ) : '';
+		$adults       = isset( $_GET['adults'] ) ? sanitize_text_field( $_GET['adults'] ) : '';
+		$child        = isset( $_GET['children'] ) ? sanitize_text_field( $_GET['children'] ) : '';
+		$infant       = isset( $_GET['infant'] ) ? sanitize_text_field( $_GET['infant'] ) : '';
+		$room         = isset( $_GET['room'] ) ? sanitize_text_field( $_GET['room'] ) : '';
+		$check_in_out = isset( $_GET['check-in-out-date'] ) ? sanitize_text_field( $_GET['check-in-out-date'] ) : '';
 		//get children ages
-		//$children_ages = isset( $_GET['children_ages'] ) ? sanitize_text_field(wp_unslash($_GET['children_ages']) ): '';
+		//$children_ages = isset( $_GET['children_ages'] ) ? sanitize_text_field($_GET['children_ages']) : '';
 
 
 		// Price Range
-		$startprice = isset( $_GET['from'] ) ? absint( sanitize_key( $_GET['from'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-		$endprice   = isset( $_GET['to'] ) ? absint( sanitize_key( $_GET['to'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$startprice = isset( $_GET['from'] ) ? absint( sanitize_key( $_GET['from'] ) ) : '';
+		$endprice   = isset( $_GET['to'] ) ? absint( sanitize_key( $_GET['to'] ) ) : '';
 
 		// Cars Data Start
-		$pickup   = isset( $_GET['pickup'] ) ? sanitize_text_field(wp_unslash( $_GET['pickup'] ) ): ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-		$dropoff = isset( $_GET['dropoff'] ) ? sanitize_text_field(wp_unslash( $_GET['dropoff'] ) ): ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-		$tf_pickup_date  = isset( $_GET['pickup-date'] ) ? sanitize_text_field(wp_unslash( $_GET['pickup-date'] ) ): ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-		$tf_dropoff_date  = isset( $_GET['dropoff-date'] ) ? sanitize_text_field(wp_unslash( $_GET['dropoff-date'] ) ): ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-		$tf_pickup_time  = isset( $_GET['pickup-time'] ) ? sanitize_text_field(wp_unslash( $_GET['pickup-time'] ) ): ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-		$tf_dropoff_time  = isset( $_GET['dropoff-time'] ) ? sanitize_text_field(wp_unslash( $_GET['dropoff-time'] ) ): ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$pickup   = isset( $_GET['pickup'] ) ? sanitize_text_field( $_GET['pickup'] ) : '';
+		$dropoff = isset( $_GET['dropoff'] ) ? sanitize_text_field( $_GET['dropoff'] ) : '';
+		$tf_pickup_date  = isset( $_GET['pickup-date'] ) ? sanitize_text_field( $_GET['pickup-date'] ) : '';
+		$tf_dropoff_date  = isset( $_GET['dropoff-date'] ) ? sanitize_text_field( $_GET['dropoff-date'] ) : '';
+		$tf_pickup_time  = isset( $_GET['pickup-time'] ) ? sanitize_text_field( $_GET['pickup-time'] ) : '';
+		$tf_dropoff_time  = isset( $_GET['dropoff-time'] ) ? sanitize_text_field( $_GET['dropoff-time'] ) : '';
 		// Cars Data End
 
 		// Author Id if any
-		$tf_author_ids = isset( $_GET['tf-author'] ) ? sanitize_key( $_GET['tf-author'] ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$tf_author_ids = isset( $_GET['tf-author'] ) ? sanitize_key( $_GET['tf-author'] ) : '';
 
 		if ( ! empty( $startprice ) && ! empty( $endprice ) ) {
-			if ( $_GET['type'] == "tf_tours" ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+			if ( $_GET['type'] == "tf_tours" ) {
 				$data = array( $adults, $child, $check_in_out, $startprice, $endprice );
-			} elseif ( $_GET['type'] == "tf_apartment" ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+			} elseif ( $_GET['type'] == "tf_apartment" ) {
 				$data = array( $adults, $child, $infant, $check_in_out, $startprice, $endprice );
 			} else {
 				$data = array( $adults, $child, $room, $check_in_out, $startprice, $endprice );
 			}
 		} else {
-			if ( $_GET['type'] == "tf_tours" ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+			if ( $_GET['type'] == "tf_tours" ) {
 				$data = array( $adults, $child, $check_in_out );
 			} else {
 				$data = array( $adults, $child, $room, $check_in_out );
@@ -72,20 +73,20 @@ class Search_Result extends \Tourfic\Core\Shortcodes {
 		}
 
 		// Gird or List View
-		if(!empty($_GET['type']) && $_GET['type'] == "tf_hotel"){ // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		if(!empty($_GET['type']) && $_GET['type'] == "tf_hotel"){
 			$tf_defult_views = ! empty( Helper::tf_data_types(Helper::tfopt( 'tf-template' ))['hotel_archive_view'] ) ? Helper::tf_data_types(Helper::tfopt( 'tf-template' ))['hotel_archive_view'] : 'list';
-		}elseif(!empty($_GET['type']) && $_GET['type'] == "tf_tours"){ // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		}elseif(!empty($_GET['type']) && $_GET['type'] == "tf_tours"){
 			$tf_defult_views = ! empty( Helper::tf_data_types(Helper::tfopt( 'tf-template' ))['tour_archive_view'] ) ? Helper::tf_data_types(Helper::tfopt( 'tf-template' ))['tour_archive_view'] : 'list';
-		}elseif(!empty($_GET['type']) && $_GET['type'] == "tf_apartment"){ // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		}elseif(!empty($_GET['type']) && $_GET['type'] == "tf_apartment"){
 			$tf_defult_views = ! empty( Helper::tf_data_types(Helper::tfopt( 'tf-template' ))['apartment_archive_view'] ) ? Helper::tf_data_types(Helper::tfopt( 'tf-template' ))['apartment_archive_view'] : 'list';
-		}elseif(!empty($_GET['type']) && $_GET['type'] == "tf_carrental"){ // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		}elseif(!empty($_GET['type']) && $_GET['type'] == "tf_carrental"){
 			$tf_defult_views = ! empty( Helper::tf_data_types(Helper::tfopt( 'tf-template' ))['car_archive_view'] ) ? Helper::tf_data_types(Helper::tfopt( 'tf-template' ))['car_archive_view'] : 'grid';
 		}else{
 
 		}
 
 		$paged          = ( get_query_var( 'paged' ) ) ? absint( get_query_var( 'paged' ) ) : 1;
-		$checkInOutDate = ! empty( $_GET['check-in-out-date'] ) ? explode( ' - ', sanitize_text_field( wp_unslash($_GET['check-in-out-date'])) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$checkInOutDate = ! empty( $_GET['check-in-out-date'] ) ? explode( ' - ', sanitize_text_field( wp_unslash($_GET['check-in-out-date'])) ) : '';
 		if ( ! empty( $checkInOutDate ) ) {
 			$period = new \DatePeriod(
 				new \DateTime( $checkInOutDate[0] ),
@@ -136,7 +137,7 @@ class Search_Result extends \Tourfic\Core\Shortcodes {
 			foreach ( $taxonomy_query->get_terms() as $term ) {
 				$place_ids[] = $term->term_id;
 			}
-			// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_tax_query
+
 			$args['tax_query'] = array(
 				'relation' => 'AND',
 				array(
@@ -151,27 +152,24 @@ class Search_Result extends \Tourfic\Core\Shortcodes {
 
 
 		// Hotel/Apartment Features
-		if ( ! empty( $_GET['features'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-			// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_tax_query
+		if ( ! empty( $_GET['features'] ) ) {
 			$args['tax_query'][] = array(
 				'taxonomy' => $post_type == 'tf_hotel' ? 'hotel_feature' : 'apartment_feature',
 				'field'    => 'slug',
-				'terms'    => sanitize_text_field( wp_unslash($_GET['features']) ), // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+				'terms'    => sanitize_text_field( wp_unslash($_GET['features']) ),
 			);
 		}
 		// Hotel/Tour/Apartment Types
-		if ( ! empty( $_GET['types'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-			// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_tax_query
+		if ( ! empty( $_GET['types'] ) ) {
 			$args['tax_query'][] = array(
 				'taxonomy' => $post_type == 'tf_hotel' ? 'hotel_type' : ($post_type == 'tf_tours' ? 'tour_type' : 'apartment_type'),
 				'field'    => 'slug',
-				'terms'    => sanitize_text_field( wp_unslash($_GET['types']) ), // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+				'terms'    => sanitize_text_field( wp_unslash($_GET['types']) ),
 			);
 		}
 
 		// Car Data Filter Start
 		if(!empty($pickup)){
-			// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_tax_query
 			$args['tax_query'] = array(
 				'relation' => 'AND',
 				array(
@@ -183,7 +181,6 @@ class Search_Result extends \Tourfic\Core\Shortcodes {
 		}
 
 		if(!empty($startprice) && !empty($endprice) && $post_type == 'tf_carrental'){
-			// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
 			$args['meta_query'] = array(
 				array(
 					'key' => 'tf_search_car_rent',
@@ -195,8 +192,7 @@ class Search_Result extends \Tourfic\Core\Shortcodes {
 		}
 		$car_driver_min_age = ! empty( Helper::tf_data_types( Helper::tfopt( 'tf-template' ) )['car_archive_driver_min_age'] ) ? Helper::tf_data_types( Helper::tfopt( 'tf-template' ) )['car_archive_driver_min_age'] : 18;
         $car_driver_max_age = ! empty( Helper::tf_data_types( Helper::tfopt( 'tf-template' ) )['car_archive_driver_max_age'] ) ? Helper::tf_data_types( Helper::tfopt( 'tf-template' ) )['car_archive_driver_max_age'] : 40;
-		if(!empty($_GET['driver_age']) && 'on'==$_GET['driver_age'] && $post_type == 'tf_carrental'){ // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-			// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
+		if(!empty($_GET['driver_age']) && 'on'==$_GET['driver_age'] && $post_type == 'tf_carrental'){
 			$args['meta_query'] = array(
 				array(
 					'key' => 'tf_search_driver_age',
@@ -813,7 +809,6 @@ class Search_Result extends \Tourfic\Core\Shortcodes {
 							$post_per_page = Helper::tfopt( 'posts_per_page' ) ? Helper::tfopt( 'posts_per_page' ) : 10;
 
 							$total_filtered_results = count( $tf_total_filters );
-							// phpcs:ignore WordPress.Security.NonceVerification.Missing
 							$current_page           = ! empty( $_POST['page'] ) ? absint( $_POST['page'] ) : 1;
 							$offset                 = ( $current_page - 1 ) * $post_per_page;
 							$displayed_results      = array_slice( $tf_total_filters, $offset, $post_per_page );
@@ -879,9 +874,9 @@ class Search_Result extends \Tourfic\Core\Shortcodes {
 
 			</div>
 			<?php
-		} elseif ( ( $post_type == "tf_tours" && $tf_tour_arc_selected_template == "design-3") ||
-		           ( $post_type == "tf_hotel" && $tf_hotel_arc_selected_template == "design-3") ||
-		           ( $post_type == "tf_apartment" && $tf_apartment_arc_selected_template == "design-2") ) {
+		} elseif ( ( $post_type == "tf_tours" && $tf_tour_arc_selected_template == "design-3" && function_exists( 'is_tf_pro' ) && is_tf_pro()) ||
+		           ( $post_type == "tf_hotel" && $tf_hotel_arc_selected_template == "design-3" && function_exists( 'is_tf_pro' ) && is_tf_pro()) ||
+		           ( $post_type == "tf_apartment" && $tf_apartment_arc_selected_template == "design-2" && function_exists( 'is_tf_pro' ) && is_tf_pro()) ) {
 
 			if($post_type == "tf_hotel") {
 				$found_post_label = esc_html__( "Hotels", "tourfic" );
@@ -1536,7 +1531,7 @@ class Search_Result extends \Tourfic\Core\Shortcodes {
 
 							}
                             ?>
-                            <div id="map-datas" style="display: none"><?php echo array_filter( $locations ) ? esc_html(wp_json_encode( array_values( $locations ) )) : esc_html( wp_json_encode( [] ) ); ?></div>
+                            <div id="map-datas" style="display: none"><?php echo array_filter( $locations ) ? wp_json_encode( array_values( $locations ) ) : []; ?></div>
                             <?php
 						}
 						$total_pages = ceil( $total_filtered_results / $post_per_page );

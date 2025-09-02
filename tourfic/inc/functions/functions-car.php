@@ -43,10 +43,10 @@ $car_extra = !empty($meta['extras']) ? $meta['extras'] : '';
 $car_extra_pass = isset( $_POST['extra_key'] ) ? sanitize_text_field( wp_unslash( $_POST['extra_key'] ) ) : '';
 // Quantity from POST
 $extra_qty = isset( $_POST['qty'] ) ? absint( wp_unslash( $_POST['qty'] ) ) : 0;
-$pickup_date = !empty($_POST['pickup_date']) ? sanitize_text_field(wp_unslash($_POST['pickup_date'])) : '';
-$dropoff_date = !empty($_POST['dropoff_date']) ? sanitize_text_field(wp_unslash($_POST['dropoff_date'])) : '';
-$pickup_time = !empty($_POST['pickup_time']) ? sanitize_text_field(wp_unslash($_POST['pickup_time'])) : '';
-$dropoff_time = !empty($_POST['dropoff_time']) ? sanitize_text_field(wp_unslash($_POST['dropoff_time'])) : '';
+$pickup_date = !empty($_POST['pickup_date']) ? sanitize_text_field($_POST['pickup_date']) : '';
+$dropoff_date = !empty($_POST['dropoff_date']) ? sanitize_text_field($_POST['dropoff_date']) : '';
+$pickup_time = !empty($_POST['pickup_time']) ? sanitize_text_field($_POST['pickup_time']) : '';
+$dropoff_time = !empty($_POST['dropoff_time']) ? sanitize_text_field($_POST['dropoff_time']) : '';
 
 $get_prices = Pricing::set_total_price($meta, $pickup_date, $dropoff_date, $pickup_time, $dropoff_time);
 $total_prices = $get_prices['sale_price'] ? $get_prices['sale_price'] : 0;
@@ -539,7 +539,7 @@ if ( ! function_exists( 'get_cars_min_max_price' ) ) {
 			endwhile;
 
 		endif;
-		wp_reset_postdata();
+		wp_reset_query();
 		if ( ! empty( $tf_car_min_maxprices ) && count( $tf_car_min_maxprices ) > 1 ) {
 			$car_max_price_val = max( $tf_car_min_maxprices );
 			$car_min_price_val = min( $tf_car_min_maxprices );
@@ -606,7 +606,7 @@ if ( ! function_exists( 'tf_car_search_ajax_callback' ) ) {
 			'message' => '',
 		];
 
-		if('on'==$_POST['same_location']){ // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotValidated
+		if('on'==$_POST['same_location']){
 			$_POST['dropoff-name'] = !empty($_POST['pickup-name']) ? sanitize_text_field( wp_unslash($_POST['pickup-name']) ) : '';
 			$_POST['dropoff'] = !empty($_POST['pickup']) ? sanitize_text_field( wp_unslash($_POST['pickup']) ) : '';
 		}
@@ -754,7 +754,7 @@ function tf_car_booking_pupup_callback() {
 			<?php if(!empty($car_protection_section_status) && !empty($car_protections)){ ?>
 				<li class="protection active"><?php echo esc_html($car_protection_tab_title); ?></li>
 			<?php } ?>
-			<?php if( $car_booking_by=='3'){ ?>
+			<?php if(function_exists( 'is_tf_pro' ) && is_tf_pro() && $car_booking_by=='3'){ ?>
 			<li class="booking <?php echo empty($car_protection_section_status) ? esc_attr('active') : ''; ?>"><?php esc_html_e("Booking", "tourfic"); ?></li>
 			<?php } ?>
 		</ul>
@@ -850,7 +850,7 @@ function tf_car_booking_pupup_callback() {
 	</div>
 
 	<div class="tf-booking-bar tf-flex tf-flex-gap-24">
-		<button class="with-charge <?php echo '3'==$car_booking_by ? esc_attr('booking-next') : esc_attr('booking-process'); ?>">
+		<button class="with-charge <?php echo function_exists( 'is_tf_pro' ) && is_tf_pro() && '3'==$car_booking_by ? esc_attr('booking-next') : esc_attr('booking-process'); ?>">
 			<?php esc_html_e("Next", "tourfic"); ?>
 			<i class="ri-arrow-right-s-line"></i>
 		</button>
@@ -858,7 +858,7 @@ function tf_car_booking_pupup_callback() {
 
 	<?php } ?>
 	
-	<div class="tf-booking-form-fields" style="<?php echo $car_booking_by=='3' && empty($car_protection_section_status) ? esc_attr('display: block') : ''; ?>">
+	<div class="tf-booking-form-fields" style="<?php echo function_exists( 'is_tf_pro' ) && is_tf_pro() && $car_booking_by=='3' && empty($car_protection_section_status) ? esc_attr('display: block') : ''; ?>">
 		<div class="tf-form-fields tf-flex tf-flex-gap-24 tf-flex-w">
 			<?php 
 			$traveller_info_fields = ! empty( Helper::tf_data_types( Helper::tfopt( 'car-book-confirm-field' ) ) ) ? Helper::tf_data_types( Helper::tfopt( 'car-book-confirm-field' ) ) : '';
@@ -1023,11 +1023,11 @@ function tf_car_price_calculation_callback() {
 	/**
 	 * Get car meta values
 	 */
-	$post_id   = isset( $_POST['post_id'] ) ? intval( sanitize_text_field(wp_unslash( $_POST['post_id'] )) ) : null;
-	$tf_pickup_date  = isset( $_POST['pickup_date'] ) ? sanitize_text_field(wp_unslash( $_POST['pickup_date'] )) : '';
-	$tf_dropoff_date  = isset( $_POST['dropoff_date'] ) ? sanitize_text_field(wp_unslash( $_POST['dropoff_date'] )) : '';
-	$tf_pickup_time  = isset( $_POST['pickup_time'] ) ? sanitize_text_field(wp_unslash( $_POST['pickup_time'] )) : '';
-	$tf_dropoff_time  = isset( $_POST['dropoff_time'] ) ? sanitize_text_field(wp_unslash( $_POST['dropoff_time'] )) : '';
+	$post_id   = isset( $_POST['post_id'] ) ? intval( sanitize_text_field( $_POST['post_id'] ) ) : null;
+	$tf_pickup_date  = isset( $_POST['pickup_date'] ) ? sanitize_text_field( $_POST['pickup_date'] ) : '';
+	$tf_dropoff_date  = isset( $_POST['dropoff_date'] ) ? sanitize_text_field( $_POST['dropoff_date'] ) : '';
+	$tf_pickup_time  = isset( $_POST['pickup_time'] ) ? sanitize_text_field( $_POST['pickup_time'] ) : '';
+	$tf_dropoff_time  = isset( $_POST['dropoff_time'] ) ? sanitize_text_field( $_POST['dropoff_time'] ) : '';
 
 
 	$extra_ids = isset( $_POST['extra_ids'] ) && is_array( $_POST['extra_ids'] )
@@ -1047,7 +1047,7 @@ function tf_car_price_calculation_callback() {
 		$total_prices = $total_prices + $total_extra['price'];
 	}
 	
-	$car_calcellation_policy = ! empty( $meta['calcellation_policy'] ) ? $meta['calcellation_policy'] : '';
+	$car_calcellation_policy = function_exists( 'is_tf_pro' ) && is_tf_pro() && ! empty( $meta['calcellation_policy'] ) ? $meta['calcellation_policy'] : '';
 	$bestRefundPolicy = tf_getBestRefundPolicy($car_calcellation_policy, $tf_pickup_date, $tf_pickup_time);
 	$twobestRefundPolicy = tf_getRefundPolicy($car_calcellation_policy, $tf_pickup_date, $tf_pickup_time);
 	
@@ -1088,7 +1088,7 @@ function tf_car_price_calculation_callback() {
 
 	$cancellation = '';
 	
-	if( !$less_current_day && !empty($bestRefundPolicy) ){
+	if( function_exists( 'is_tf_pro' ) && is_tf_pro() && !$less_current_day && !empty($bestRefundPolicy) ){
 		if ( isset( $bestRefundPolicy['cancellation_type'] ) ) {
 			// Determine cancellation message
 			if ( $bestRefundPolicy['cancellation_type'] === 'free' ) {
@@ -1113,7 +1113,7 @@ function tf_car_price_calculation_callback() {
 		}		
 	}
 
-	if( !$less_current_day && !empty($bestRefundPolicy) ){
+	if( function_exists( 'is_tf_pro' ) && is_tf_pro() && !$less_current_day && !empty($bestRefundPolicy) ){
     $cancellation .= '
     <div class="tf-cancellation-timeline">
         <div class="tf-timeline">

@@ -20,25 +20,23 @@ class Apartment_Enquiry extends \Tourfic\Core\Enquiry {
 	public function tf_enquiry_page_callback() {
 
         global $wpdb;
-        // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+
         if( !empty($_GET['enquiry_id'] ) && !empty($_GET['action'] )  ){
 
-            $status = $wpdb->get_results( $wpdb->prepare( "SELECT enquiry_status FROM {$wpdb->prefix}tf_enquiry_data WHERE id = %s", sanitize_key( $_GET['enquiry_id'] ) ), ARRAY_A ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+            $status = $wpdb->get_results( $wpdb->prepare( "SELECT enquiry_status FROM {$wpdb->prefix}tf_enquiry_data WHERE id = %s", sanitize_key( $_GET['enquiry_id'] ) ), ARRAY_A );
             $status = !empty($status[0]["enquiry_status"]) ? $status[0]["enquiry_status"] : 'unread';
             
             if( $status == 'unread') {
-                // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
                 $wpdb->query(
                     $wpdb->prepare(
                         "UPDATE {$wpdb->prefix}tf_enquiry_data SET enquiry_status=%s WHERE id=%d",
                         'read',
-                        // phpcs:ignore WordPress.Security.NonceVerification.Recommended
                         sanitize_key( $_GET['enquiry_id'] )
                     )
                 );
             }
 
-            $data = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$wpdb->prefix}tf_enquiry_data WHERE id = %s", sanitize_key( $_GET['enquiry_id'] ) ), ARRAY_A ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+            $data = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$wpdb->prefix}tf_enquiry_data WHERE id = %s", sanitize_key( $_GET['enquiry_id'] ) ), ARRAY_A );
 
             $this->single_enquiry_details( $data );
         } else {
@@ -67,8 +65,7 @@ class Apartment_Enquiry extends \Tourfic\Core\Enquiry {
                     
                     $enquiry_data = $this->enquiry_table_data('tf_apartment');
                     $total_data = ! empty( count( $enquiry_data ) ) ? count( $enquiry_data ) : 0;;
-                    // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-                    $paged = !empty( $_GET['paged'] ) ? sanitize_text_field( wp_unslash( $_GET["paged"])) : 1;
+                    $paged = !empty( $_GET['paged'] ) ? sanitize_text_field( $_GET["paged"]) : 1;
                     $per_page = 20;
                     $offset = ( $paged - 1 ) * $per_page;
                     $enquiry_data = array_slice($enquiry_data, $offset, $per_page);

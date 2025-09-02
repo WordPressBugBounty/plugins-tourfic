@@ -97,14 +97,14 @@ class Map_Filter extends \WP_Widget {
         } else {
             extract($args);
             echo wp_kses_post($before_widget);
-            if (!empty($_GET['type']) && $_GET['type'] == "tf_tours" && !empty($_GET['from']) && !empty($_GET['to'])) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-                $this->widget_html($button_title, sanitize_text_field( wp_unslash($_GET['type']) )); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+            if (!empty($_GET['type']) && $_GET['type'] == "tf_tours" && !empty($_GET['from']) && !empty($_GET['to'])) {
+                $this->widget_html($button_title, sanitize_text_field( wp_unslash($_GET['type']) ));
             }
-            if (!empty($_GET['type']) && $_GET['type'] == "tf_hotel" && !empty($_GET['from']) && !empty($_GET['to'])) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-                $this->widget_html($button_title, sanitize_text_field( wp_unslash($_GET['type']) )); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+            if (!empty($_GET['type']) && $_GET['type'] == "tf_hotel" && !empty($_GET['from']) && !empty($_GET['to'])) {
+                $this->widget_html($button_title, sanitize_text_field( wp_unslash($_GET['type']) ));
             }
-            if (!empty($_GET['type']) && $_GET['type'] == "tf_apartment" && !empty($_GET['from']) && !empty($_GET['to'])) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-                $this->widget_html($button_title, sanitize_text_field( wp_unslash($_GET['type']) )); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+            if (!empty($_GET['type']) && $_GET['type'] == "tf_apartment" && !empty($_GET['from']) && !empty($_GET['to'])) {
+                $this->widget_html($button_title, sanitize_text_field( wp_unslash($_GET['type']) ));
             }
         } ?>
         <!-- End Price Range widget -->
@@ -671,9 +671,9 @@ class Map_Filter extends \WP_Widget {
                                                     echo wp_kses(apply_filters("tf_apartment_archive_single_featured_card_design_one", Apartment::tf_apartment_archive_single_item()), Helper::tf_custom_wp_kses_allow_tags());
                                                 }
                                             }
-                                            wp_reset_postdata();
+                                            wp_reset_query();
                                             ?>
-                                            <div id="map-datas" style="display: none"><?php echo array_filter( $locations ) ? esc_html(wp_json_encode( array_values( $locations ) )) : esc_html( wp_json_encode( [] ) ); ?></div>
+                                            <div id="map-datas" style="display: none"><?php echo array_filter($locations) ? wp_json_encode(array_values($locations)) : []; ?></div>
                                             <div class="tf-pagination-bar">
                                                 <?php Helper::tourfic_posts_navigation(); ?>
                                             </div>

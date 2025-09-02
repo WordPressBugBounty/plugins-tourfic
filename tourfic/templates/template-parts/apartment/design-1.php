@@ -195,7 +195,7 @@ use \Tourfic\Classes\Apartment\Pricing as Apt_Pricing;
                 <?php Apartment::tf_apartment_single_booking_form( $comments, $disable_review_sec ); ?>
             </div>
 
-            <?php if ( isset( $meta['surroundings_places'] ) && ! empty( Helper::tf_data_types( $meta['surroundings_places'] ) ) ): ?>
+            <?php if ( function_exists( 'is_tf_pro' ) && is_tf_pro() && isset( $meta['surroundings_places'] ) && ! empty( Helper::tf_data_types( $meta['surroundings_places'] ) ) ): ?>
             <div class="tf-whats-around tf-single-widgets">
                 <?php if ( ! empty( $meta['surroundings_sec_title'] ) ): ?>
                     <h3 class="tf-section-title"><?php echo esc_html( $meta['surroundings_sec_title'] ); ?></h3>
@@ -222,17 +222,49 @@ use \Tourfic\Classes\Apartment\Pricing as Apt_Pricing;
 
             <div id="hotel-map-location" class="tf-location tf-single-widgets">
                 <h3 class="tf-section-title"><?php echo ! empty( $meta['location_title'] ) ? esc_html( $meta['location_title'] ) : ''; ?></h3>
-                
+                <?php if ( !defined( 'TF_PRO' ) ) { ?>
                     <?php
                     if( $address && $tf_openstreet_map!="default" && ( empty($address_latitude) || empty($address_longitude) ) ){ ?>
                         <iframe src="https://maps.google.com/maps?q=<?php echo esc_attr( $address ); ?>&output=embed" width="100%" height="250" style="border:0;" allowfullscreen="" loading="lazy"></iframe>
                     <?php } elseif( $address && $tf_openstreet_map=="default" && !empty($address_latitude) && !empty($address_longitude)) {
                     ?>
-                        <div id="apartment-location" style="height: 250px"></div>
+                        <div id="hotel-location" style="height: 250px"></div>
+                        <script>
+                            const map = L.map('hotel-location').setView([<?php echo esc_html( $address_latitude ); ?>, <?php echo esc_html( $address_longitude ); ?>], <?php echo esc_html( $address_zoom ); ?>);
+
+                            const tiles = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                                maxZoom: 20,
+                                attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                            }).addTo(map);
+
+                            const marker = L.marker([<?php echo esc_html( $address_latitude ); ?>, <?php echo esc_html( $address_longitude ); ?>], {alt: '<?php echo esc_html( $address ); ?>'}).addTo(map)
+                                .bindPopup('<?php echo esc_html( $address ); ?>');
+                        </script>
                     <?php }else{ ?>
                         <iframe src="https://maps.google.com/maps?q=<?php echo esc_attr( $address ); ?>&output=embed" width="100%" height="250" style="border:0;" allowfullscreen="" loading="lazy"></iframe>
                     <?php } ?>
-                
+                <?php }else{ ?>
+                    <?php
+                    if( $address && $tf_openstreet_map!="default" && ( empty($address_latitude) || empty($address_longitude) ) ){ ?>
+                        <iframe src="https://maps.google.com/maps?q=<?php echo esc_attr( $address ); ?>&output=embed" width="100%" height="250" style="border:0;" allowfullscreen="" loading="lazy"></iframe>
+                    <?php } elseif( $address && $tf_openstreet_map=="default" && !empty($address_latitude) && !empty($address_longitude)) {
+                    ?>
+                        <div id="hotel-location" style="height: 250px"></div>
+                        <script>
+                            const map = L.map('hotel-location').setView([<?php echo esc_html( $address_latitude ); ?>, <?php echo esc_html( $address_longitude ); ?>], <?php echo esc_html( $address_zoom ); ?>);
+
+                            const tiles = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                                maxZoom: 20,
+                                attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                            }).addTo(map);
+
+                            const marker = L.marker([<?php echo esc_html( $address_latitude ); ?>, <?php echo esc_html( $address_longitude ); ?>], {alt: '<?php echo esc_html( $address ); ?>'}).addTo(map)
+                                .bindPopup('<?php echo esc_html( $address ); ?>');
+                        </script>
+                    <?php }else{ ?>
+                        <iframe src="https://maps.google.com/maps?q=<?php echo esc_attr( $address ); ?>&output=embed" width="100%" height="250" style="border:0;" allowfullscreen="" loading="lazy"></iframe>
+                    <?php } ?>
+                <?php } ?>
             </div>
 
 
@@ -424,7 +456,6 @@ if ( $disable_related_sec !== '1' ) {
         'posts_per_page' => 8,
         'orderby'        => 'title',
         'order'          => 'ASC',
-        // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_tax_query
         'tax_query'      => array( // WPCS: slow query ok.
             array(
                 'taxonomy' => 'apartment_location',
