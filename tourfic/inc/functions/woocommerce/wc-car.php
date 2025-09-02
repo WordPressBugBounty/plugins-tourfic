@@ -31,20 +31,24 @@ function tf_car_booking_callback() {
 	/**
 	 * Get car meta values
 	 */
-	$post_id   = isset( $_POST['post_id'] ) ? intval( sanitize_text_field( $_POST['post_id'] ) ) : null;
-	$pickup   = isset( $_POST['pickup'] ) ? sanitize_text_field( $_POST['pickup'] ) : '';
-	$dropoff = isset( $_POST['dropoff'] ) ? sanitize_text_field( $_POST['dropoff'] ) : '';
-	$tf_pickup_date  = isset( $_POST['pickup_date'] ) ? sanitize_text_field( $_POST['pickup_date'] ) : '';
-	$tf_dropoff_date  = isset( $_POST['dropoff_date'] ) ? sanitize_text_field( $_POST['dropoff_date'] ) : '';
-	$tf_pickup_time  = isset( $_POST['pickup_time'] ) ? sanitize_text_field( $_POST['pickup_time'] ) : '';
-	$tf_dropoff_time  = isset( $_POST['dropoff_time'] ) ? sanitize_text_field( $_POST['dropoff_time'] ) : '';
-	$tf_protection  = isset( $_POST['protection'] ) ? $_POST['protection'] : '';
-	$extra_ids  = isset( $_POST['extra_ids'] ) ? $_POST['extra_ids'] : '';
-	$extra_qty  = isset( $_POST['extra_qty'] ) ? $_POST['extra_qty'] : '';
-	$partial_payment  = isset( $_POST['partial_payment'] ) ? $_POST['partial_payment'] : 'no';
+	$post_id   = isset( $_POST['post_id'] ) ? intval( sanitize_text_field(wp_unslash( $_POST['post_id'] )) ) : null;
+	$pickup   = isset( $_POST['pickup'] ) ? sanitize_text_field(wp_unslash( $_POST['pickup'] )) : '';
+	$dropoff = isset( $_POST['dropoff'] ) ? sanitize_text_field(wp_unslash( $_POST['dropoff'] )) : '';
+	$tf_pickup_date  = isset( $_POST['pickup_date'] ) ? sanitize_text_field(wp_unslash( $_POST['pickup_date'] )) : '';
+	$tf_dropoff_date  = isset( $_POST['dropoff_date'] ) ? sanitize_text_field(wp_unslash( $_POST['dropoff_date'] )) : '';
+	$tf_pickup_time  = isset( $_POST['pickup_time'] ) ? sanitize_text_field(wp_unslash( $_POST['pickup_time'] )) : '';
+	$tf_dropoff_time  = isset( $_POST['dropoff_time'] ) ? sanitize_text_field(wp_unslash( $_POST['dropoff_time'] )) : '';
+	$tf_protection = isset( $_POST['protection'] ) && is_array( $_POST['protection'] )
+    ? array_map( 'sanitize_text_field', wp_unslash( $_POST['protection'] ) )
+    : [];
+	$extra_ids  = isset( $_POST['extra_ids'] ) ? array_map( 'sanitize_text_field', wp_unslash( $_POST['extra_ids'] ) ) : '';
+	$extra_qty  = isset( $_POST['extra_qty'] ) ? array_map( 'sanitize_text_field', wp_unslash( $_POST['extra_qty'] ) ) : '';
+	$partial_payment  = isset( $_POST['partial_payment'] ) ? sanitize_text_field(wp_unslash($_POST['partial_payment'])) : 'no';
 
 	// Booking Confirmation Details
-	$tf_confirmation_details = !empty($_POST['travellerData']) ? $_POST['travellerData'] : "";
+	$tf_confirmation_details = isset( $_POST['travellerData'] ) && is_array( $_POST['travellerData'] )
+    ? array_map( 'sanitize_text_field', wp_unslash( $_POST['travellerData'] ) )
+    : [];
 
 	$meta = get_post_meta( $post_id, 'tf_carrental_opt', true );
 	$post_author   = get_post_field( 'post_author', $post_id );
@@ -109,7 +113,7 @@ function tf_car_booking_callback() {
 		$tf_cars_data['tf_car_data']['price_total']    	   = $total_prices;
 
 		# Deposit information
-		if ( function_exists( 'is_tf_pro' ) && is_tf_pro() && !empty($car_allow_deposit) && 'none'!=$car_deposit_type && 'yes'==$partial_payment) {
+		if ( !empty($car_allow_deposit) && 'none'!=$car_deposit_type && 'yes'==$partial_payment) {
 			if( !empty($car_deposit_amount) ){
 				if ( 'percent'==$car_deposit_type ) {
 					$deposit_amount = ($tf_cars_data['tf_car_data']['price_total'] * $car_deposit_amount)/100;
@@ -122,7 +126,7 @@ function tf_car_booking_callback() {
 			}
 		}
 		
-		if( function_exists( 'is_tf_pro' ) && is_tf_pro() && !empty($car_booking_by) && '3'==$car_booking_by ){
+		if( !empty($car_booking_by) && '3'==$car_booking_by ){
 
 			$tf_booking_fields = !empty(Helper::tfopt( 'car-book-confirm-field' )) ? Helper::tf_data_types(Helper::tfopt( 'car-book-confirm-field' )) : '';
 			if(empty($tf_booking_fields)){
@@ -231,7 +235,7 @@ function tf_car_booking_callback() {
 			$response['without_payment'] = 'true';
 			$order_id = Helper::tf_set_order( $order_data );
 			
-			if ( function_exists('is_tf_pro') && is_tf_pro() && !empty($order_id) ) {
+			if ( !empty($order_id) ) {
 				do_action( 'tf_offline_payment_booking_confirmation', $order_id, $order_data );
 
 				if ( ! empty( Helper::tf_data_types( Helper::tfopt( 'tf-integration' ) )['tf-new-order-google-calendar'] ) && Helper::tf_data_types( Helper::tfopt( 'tf-integration' ) )['tf-new-order-google-calendar'] == "1" ) {
@@ -248,7 +252,7 @@ function tf_car_booking_callback() {
 			}
 
 		}else{
-			if( function_exists( 'is_tf_pro' ) && is_tf_pro() && '2'==$car_booking_by && !empty($tf_booking_url) ){
+			if( '2'==$car_booking_by && !empty($tf_booking_url) ){
 				$external_search_info = array(
 					'{pickup}'    => $pickup,
 					'{dropoff}'    => $dropoff,
@@ -454,7 +458,7 @@ function tf_add_car_data_checkout_order_processed( $order_id, $posted_data, $ord
 			//Tax Calculation
 			$meta = get_post_meta( $post_id, 'tf_carrental_opt', true );
 			$tax_labels = array();
-			if( function_exists( 'is_tf_pro' ) && is_tf_pro() && !empty($meta['is_taxable'])){
+			if( !empty($meta['is_taxable'])){
 				$single_price = $item->get_subtotal();
 				$finding_location = array(
 					'country' => !empty($order->get_billing_country()) ? $order->get_billing_country() : '',
@@ -579,6 +583,7 @@ function tf_add_car_data_checkout_order_processed( $order_id, $posted_data, $ord
 
 
 			global $wpdb;
+			 // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 			$wpdb->query(
 				$wpdb->prepare(
 					"INSERT INTO {$wpdb->prefix}tf_order_data
@@ -609,7 +614,7 @@ function tf_add_car_data_checkout_order_processed( $order_id, $posted_data, $ord
 	 * @author Jahid
 	 */
 
-	if ( function_exists( 'is_tf_pro' ) && is_tf_pro() && ! empty( $tf_integration_order_status ) ) {
+	if ( ! empty( $tf_integration_order_status ) ) {
 		do_action( 'tf_new_order_pabbly_form_trigger', $tf_integration_order_data, $billinginfo, $shippinginfo, $tf_integration_order_status );
 		do_action( 'tf_new_order_zapier_form_trigger', $tf_integration_order_data, $billinginfo, $shippinginfo, $tf_integration_order_status );
 	}
@@ -644,7 +649,7 @@ function tf_add_car_data_checkout_order_processed_block_checkout( $order ) {
 			//Tax Calculation
 			$meta = get_post_meta( $post_id, 'tf_carrental_opt', true );
 			$tax_labels = array();
-			if( function_exists( 'is_tf_pro' ) && is_tf_pro() && !empty($meta['is_taxable'])){
+			if( !empty($meta['is_taxable'])){
 				$single_price = $item->get_subtotal();
 				$finding_location = array(
 					'country' => !empty($order->get_billing_country()) ? $order->get_billing_country() : '',
@@ -769,6 +774,7 @@ function tf_add_car_data_checkout_order_processed_block_checkout( $order ) {
 
 
 			global $wpdb;
+			 // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 			$wpdb->query(
 				$wpdb->prepare(
 					"INSERT INTO {$wpdb->prefix}tf_order_data
@@ -799,7 +805,7 @@ function tf_add_car_data_checkout_order_processed_block_checkout( $order ) {
 	 * @author Jahid
 	 */
 
-	if ( function_exists( 'is_tf_pro' ) && is_tf_pro() && ! empty( $tf_integration_order_status ) ) {
+	if ( ! empty( $tf_integration_order_status ) ) {
 		do_action( 'tf_new_order_pabbly_form_trigger', $tf_integration_order_data, $billinginfo, $shippinginfo, $tf_integration_order_status );
 		do_action( 'tf_new_order_zapier_form_trigger', $tf_integration_order_data, $billinginfo, $shippinginfo, $tf_integration_order_status );
 	}

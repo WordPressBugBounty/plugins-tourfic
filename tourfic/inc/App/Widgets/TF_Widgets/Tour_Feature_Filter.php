@@ -39,7 +39,7 @@ class Tour_Feature_Filter extends \WP_Widget {
     public function widget( $args, $instance ) {
 
         //check if is Tours
-        $posttype = isset( $_GET['type'] ) ? $_GET['type'] : get_post_type();
+        $posttype = isset( $_GET['type'] ) ? sanitize_text_field( wp_unslash($_GET['type']) ) : get_post_type(); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 
         if ( is_admin() || $posttype == 'tf_tours' ) {
             extract( $args );
@@ -122,17 +122,6 @@ class Tour_Feature_Filter extends \WP_Widget {
             <label for="<?php echo esc_attr($this->get_field_id( 'hide_empty' )); ?>"><?php esc_html_e( 'Hide Empty Categories:', 'tourfic' )?></label>
             <input id="<?php echo esc_attr($this->get_field_id( 'hide_empty' )); ?>" name="<?php echo esc_attr($this->get_field_name( 'hide_empty' )); ?>" type="checkbox" <?php checked( 'on', $hide_empty );?>>
         </p>
-        <style>
-            .tf-widget-field label {
-                font-weight: 600;
-            }
-        </style>
-        <script>
-            jQuery('#<?php echo esc_attr($this->get_field_id( 'terms' )); ?>').select2({
-                width: '100%'
-            });
-            jQuery(document).trigger('tf_select2');
-        </script>
     <?php
     }
 

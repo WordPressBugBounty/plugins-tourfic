@@ -66,9 +66,12 @@ abstract class Enquiry {
 						</div>
 						<div class="tf-filter-options">
 							<div class="tf-order-status-filter">
-								<select class="tf-tour-filter-options tf-filter-hotel-name tf-enquiry-filter-<?php esc_html_e( !empty($args['name']) ? strtolower($args['name']) : ''); ?>-name">
-									<?php $hotel_enquiry_title = esc_html__( sprintf( "%s Enquiry Details", $args['name'] ), 'tourfic' ); ?>
-									<option value=""><?php esc_html($hotel_enquiry_title); ?></option>
+								<select class="tf-tour-filter-options tf-filter-hotel-name tf-enquiry-filter-<?php echo esc_html( !empty($args['name']) ? strtolower($args['name']) : ''); ?>-name">
+								<?php 
+								/* translators: %s hotel name */
+								$hotel_enquiry_title = sprintf( esc_html__( '%s Enquiry Details', 'tourfic' ), $args['name'] );
+								?>
+									<option value=""><?php echo esc_html($hotel_enquiry_title); ?></option>
 									<?php
 									$tf_posts_list       = array(
 										'posts_per_page' => - 1,
@@ -79,11 +82,11 @@ abstract class Enquiry {
 									if ( $tf_posts_list_query->have_posts() ):
 										while ( $tf_posts_list_query->have_posts() ) : $tf_posts_list_query->the_post();
 											?>
-											<option value="<?php echo esc_attr(get_the_ID()); ?>" <?php echo ! empty( $_GET['post'] ) && get_the_ID() == $_GET['post'] ? esc_attr( 'selected' ) : ''; ?>><?php echo esc_html(get_the_title()); ?></option>
+											<option value="<?php echo esc_attr(get_the_ID()); ?>" <?php echo ! empty( $_GET['post'] ) && get_the_ID() == $_GET['post'] ? esc_attr( 'selected' ) : ''; ?>><?php echo esc_html(get_the_title()); // phpcs:ignore WordPress.Security.NonceVerification.Recommended ?></option>
 										<?php
 										endwhile;
 									endif;
-									wp_reset_query();
+									wp_reset_postdata();
 									?>
 
 								</select>
@@ -95,16 +98,6 @@ abstract class Enquiry {
 							<select class="tf-tour-filter-options tf-filter-mail-option-enquiry">
 									<option value=""><?php esc_html_e( "Filters", "tourfic" ); ?></option>
 									<option value="unread"><?php esc_html_e( "Unread", "tourfic" ); ?></option>
-									<?php if( function_exists( 'is_tf_pro' ) && is_tf_pro() ): ?>
-										<option value="replied"><?php esc_html_e( "Replied", "tourfic" ); ?></option>
-										<option value="not-replied"><?php esc_html_e( "Not Replied", "tourfic" ); ?></option>
-										
-										<?php if( is_plugin_active( 'tourfic-email-piping/tourfic-email-piping.php' ) ) : ?>
-											<option value="responded"><?php esc_html_e( "Responded", "tourfic" ); ?></option>
-											<option value="not-responded"><?php esc_html_e( "Not Responded", "tourfic" ); ?></option>
-										<?php endif; ?>
-
-									<?php endif; ?>
 								</select>
 							</div>
 						</div>
@@ -112,7 +105,10 @@ abstract class Enquiry {
 					</div>
 				</div>
 				<form class="tf-enquiry-right-search-filter">
-					<input type="number" value="" placeholder="<?php esc_html_e("Search by " . $args["name"] . " ID") ?>" id="tf-searching-enquiry-key">
+					<input type="number" value="" placeholder="<?php
+					// translators: %s is the item name.
+					printf( esc_html__( 'Search by %s ID', 'tourfic' ), esc_html( $args['name'] ) );
+					?>" id="tf-searching-enquiry-key">
 					<button class="tf-search-by-id" type="submit">
 						<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20" fill="none">
 							<path d="M17.5 17.5L14.5834 14.5833M16.6667 9.58333C16.6667 13.4954 13.4954 16.6667 9.58333 16.6667C5.67132 16.6667 2.5 13.4954 2.5 9.58333C2.5 5.67132 5.67132 2.5 9.58333 2.5C13.4954 2.5 16.6667 5.67132 16.6667 9.58333Z" stroke="#87888B" stroke-width="1.66667" stroke-linecap="round" stroke-linejoin="round"></path>
@@ -127,16 +123,15 @@ abstract class Enquiry {
 
 		$post_type = !empty($data) ? $data[0]["post_type"] : '';
 
-		if ( function_exists( 'is_tf_pro' ) && is_tf_pro() ) {
 
-			if ( isset( $_GET['paged'] ) ) {
-				$paged = $_GET['paged'];
+			if ( isset( $_GET['paged'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+				$paged = sanitize_text_field( wp_unslash( $_GET['paged'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 			} else {
 				$paged = 1;
 			}
-		}
+		
 		?>
-		<div class="<?php echo apply_filters( $post_type . '_booking_oder_table_class', "tf-order-table-responsive") ?> tf-enquiry-table">
+		<div class="<?php echo esc_attr(apply_filters( $post_type . '_booking_oder_table_class', "tf-order-table-responsive")) ?> tf-enquiry-table">
             <table class="wp-list-table table" cellpadding="0" cellspacing="0">
                 <thead>
 					<tr>
@@ -169,7 +164,7 @@ abstract class Enquiry {
 				if( !empty( $data )) :
 					foreach ( $data as $enquiry ) { ?>
 						<?php 
-							$tr_unread_class = $enquiry["status"] == 'unread' ? 'tf-enquiry-unread' : ( $enquiry["status"] == 'responded' && function_exists( 'is_tf_pro' ) && is_tf_pro() ? 'tf-enquiry-responded' : '' );
+							$tr_unread_class = $enquiry["status"] == 'unread' ? 'tf-enquiry-unread' : ( $enquiry["status"] == 'responded' ? 'tf-enquiry-responded' : '' );
 							$submit_time = self::convert_to_wp_timezone($enquiry["submit_time"]);
 						
 						?>
@@ -196,8 +191,8 @@ abstract class Enquiry {
 								<?php 
 								$date_format = !empty(Helper::tfopt("tf-date-format-for-users")) ? Helper::tfopt("tf-date-format-for-users") : get_option('date_format');
 								list($date, $time) = explode(" ", $submit_time);
-								$formateed_time = date( get_option('time_format'), strtotime($time));
-								$formateed_date = date( $date_format, strtotime($date));
+								$formateed_time = gmdate( get_option('time_format'), strtotime($time));
+								$formateed_date = gmdate( $date_format, strtotime($date));
 								?>
 								<div class="email-time-date">
 									<span class="email-date"><?php echo $formateed_date ? esc_html( $formateed_date ) : ''; ?></span>
@@ -215,32 +210,7 @@ abstract class Enquiry {
 								?>
 							</td>
 						</tr>
-						<?php if ( ! defined( 'TF_PRO' ) && $tf_key == 15 ) { ?>
-							<tr class="pro-row" style="text-align: center; background-color: #ededf8">
-								<td colspan="8" style="text-align: center;">
-									<a href="https://tourfic.com/" target="_blank">
-										<h3 class="tf-admin-btn tf-btn-secondary" style="color:#fff;margin: 15px 0;"><?php esc_html_e( 'Upgrade to Pro Version to See More', 'tourfic' ); ?></h3>
-									</a>
-								</td>
-							</tr>
-							<tr class="pro-row pro-notice-row" style="text-align: center; background-color: #ededf8">
-								<td colspan="8" style="text-align: center;">
-									<div class="tf-field tf-field-notice tf-pro-notice " style="width:100%;">
-										<div class="tf-fieldset">
-											<div class="tf-field-notice-inner tf-notice-info">
-												<div class="tf-field-notice-icon">
-													<i class="ri-information-fill"></i>
-												</div>
-												<div class="tf-field-notice-content has-content">
-												<?php echo wp_kses_post(sprintf(__("We're offering some extra filter features like %1s replied %2s, %1s not replied %2s, %1s not responded %2s, and %1s not responded %2s in our pro plan.", 'tourfic'), '<b>', '</b>', '<b>', '</b>', '<b>', '</b>', '<b>', '</b>')) ?> <a href="https://themefic.com/tourfic/pricing" target="_blank"> <?php echo esc_html__("Upgrade to our pro package today to take advantage of these fantastic options!", 'tourfic') ?></a>                
-												</div>
-											</div>
-										</div>
-									</div>
-								</td>
-							</tr>
-						<?php break;}
-						$tf_key ++;
+						<?php 
 					} ?>
 				<?php else: ?>
 					<tr class="no-result-found" style="text-align: center">
@@ -255,7 +225,6 @@ abstract class Enquiry {
 					<tr>
 						<th colspan="8">
 							<ul class="tf-booking-details-pagination">
-								<?php if( function_exists( 'is_tf_pro' ) && is_tf_pro() ): ?>
 									<?php if ( ! empty( $paged ) && $paged >= 2 ) { ?>
 									<li><a href="<?php echo esc_url($this->enquiry_details_pagination( $paged - 1 )); ?>">
 											<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20" fill="none">
@@ -285,7 +254,6 @@ abstract class Enquiry {
 												</svg>
 											</a></li>
 									<?php } ?>
-								<?php endif; ?>
 							</ul>
 						</th>
 					</tr>
@@ -295,21 +263,27 @@ abstract class Enquiry {
 		<?php 
 	}
 
-	function enquiry_details_pagination($page){
-        $currentURL = home_url($_SERVER['REQUEST_URI']);
-        $BaseURL = strtok($currentURL, '?');
-        $queryString = isset($_SERVER['QUERY_STRING']) ? $_SERVER['QUERY_STRING'] : '';
-        
-        parse_str($queryString, $currentURLParams);
-
-        if (array_key_exists('paged', $currentURLParams)) {
-            $currentURLParams['paged'] = $page;
-            $updatedQuery = http_build_query($currentURLParams);
-            return $updatedUrl = $BaseURL . '?' . $updatedQuery;
-        } else {
-            return $updatedUrl = $currentURL . '&paged=' . $page;
-        }
-    }
+	function enquiry_details_pagination( $page ) {
+		// Safely get request URI
+		$request_uri = isset( $_SERVER['REQUEST_URI'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) ) : '';
+		$query_str   = isset( $_SERVER['QUERY_STRING'] ) ? sanitize_text_field( wp_unslash( $_SERVER['QUERY_STRING'] ) ) : '';
+	
+		// Use WordPress helper instead of raw $_SERVER when possible
+		$current_url = home_url( $request_uri );
+		$base_url    = strtok( $current_url, '?' );
+	
+		// Parse existing query args
+		$current_params = [];
+		if ( ! empty( $query_str ) ) {
+			parse_str( $query_str, $current_params );
+		}
+	
+		// Force page to be integer
+		$current_params['paged'] = absint( $page );
+	
+		// Rebuild the URL
+		return esc_url( $base_url . '?' . http_build_query( $current_params ) );
+	}	
 
 	public function single_enquiry_details($data) {
 
@@ -320,10 +294,10 @@ abstract class Enquiry {
 		$date_time_format = self::convert_to_wp_timezone( $data["created_at"] );
 
 		list($date, $time) = explode(" ", $date_time_format);
-		$formateed_date = date( "M d, Y", strtotime($date));
-		$formateed_time = date( "h:i:s A", strtotime($time));
+		$formateed_date = gmdate( "M d, Y", strtotime($date));
+		$formateed_time = gmdate( "h:i:s A", strtotime($time));
 		$reply_data = !empty( $data["reply_data"] ) ? json_decode($data["reply_data"], true) : array();
-		$reply_user = isset( $_POST['user_name'] ) ? sanitize_text_field( $_POST['user_name'] ) : '';
+		$reply_user = isset( $_POST['user_name'] ) ? sanitize_text_field( wp_unslash($_POST['user_name'] )) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Missing
 		$current_user = wp_get_current_user();
 		$_SESSION["WP"]["userId"] = $current_user->ID;
 		$email_body_setting = !empty( Helper::tfopt("tf-email-piping")["email_body_type"] ) ? Helper::tfopt("tf-email-piping")["email_body_type"] : 'text';
@@ -338,9 +312,9 @@ abstract class Enquiry {
 			<div class="tf_booking_wrap_header">
 				<div class="tf-enquiry-single-header-details">
 					<div class="tf-single-enquiry-header-logo">
-						<img src="<?php echo esc_url( esc_url(TF_ASSETS_APP_URL.'images/tourfic-logo-icon-blue.png') ); ?>" alt="<?php esc_html_e( get_the_title($data["post_id"])) ?>">
+						<img src="<?php echo esc_url( esc_url(TF_ASSETS_APP_URL.'images/tourfic-logo-icon-blue.png') ); ?>" alt="<?php echo esc_html( get_the_title( $data['post_id'] ) ); ?>">
 					</div>
-					<h1 class="wp-heading-inline"> <?php esc_html_e( get_the_title($data["post_id"])) . esc_html_e(" / ID #") . esc_html_e($data["id"]) ?></h1>
+					<h1 class="wp-heading-inline"> <?php echo esc_html( get_the_title($data["post_id"])); ?> <?php echo esc_html(" / ID #"); ?><?php echo esc_html($data["id"]) ?></h1>
 				</div>
 			</div>
 			<!-- Header Wrap - End -->
@@ -379,7 +353,6 @@ abstract class Enquiry {
 							</div>
 						</div>
 					</div> <!-- Enquiry mail Details Wrapper - End -->
-					<?php if( function_exists( 'is_tf_pro' ) && is_tf_pro() ): ?>
 						<?php if( count($reply_data) == 0 ): ?>
 							<div class="tf-single-enquiry-reply-mail-button">
 								<span> <?php esc_html_e( "Reply to Email", 'tourfic') ?> </span>
@@ -389,7 +362,7 @@ abstract class Enquiry {
 						<?php $display = count($reply_data) > 0 ? '' : 'display:none;' ?>
 						<div class="tf-enquiry-details tf-single-enquiry-reply-wrapper" style="<?php echo esc_attr($display); ?>"> <!-- Enquiry mail Reply Wrapper - Start -->
 							<div class="tf-enquiry-details-single-heading">
-								<h2><?php esc_html_e('To:', 'tourfic') ; ?> <span class="tf-single-enquiry-reply-mail"> <?php esc_html_e( $data["uemail"]); ?> </span></h2>
+								<h2><?php esc_html_e('To:', 'tourfic') ; ?> <span class="tf-single-enquiry-reply-mail"> <?php echo esc_html( $data["uemail"]); ?> </span></h2>
 							</div>
 							<hr class="enqury-single-title-line">
 							<div class="tf-single-enquiry-accordion">
@@ -401,7 +374,7 @@ abstract class Enquiry {
 												<div class="tf-single-enquiry-accordion-head-left">
 													<?php if( !empty( $reply["type"]) && "response" == $reply["type"]) : ?>
 														<i class="ri-reply-all-line tf-enquiry-response-user"></i>
-														<?php echo !empty( $reply["reply_user"]) ? $reply["reply_user"] : esc_html__("User", "tourfic"); ?>
+														<?php echo !empty( $reply["reply_user"]) ? esc_html($reply["reply_user"]) : esc_html__("User", "tourfic"); ?>
 													<?php else: ?>
 														<i class="ri-reply-all-line"></i>
 														<?php esc_html_e("You", 'tourfic') ?>
@@ -409,24 +382,50 @@ abstract class Enquiry {
 													<span class="tf-single-accordion-dash"><?php esc_html_e('―', 'tourfic') ?></span>
 													<span class="tf-single-accordion-subject">
 														<?php if( $email_body_setting == 'html'): ?>
-															<?php echo !empty($reply["reply_message_html"]) ? ( wp_kses_post( strlen( strip_tags( $reply["reply_message_html"] ) ) > 75 ? esc_html__( Helper::tourfic_character_limit_callback( strip_tags( $reply["reply_message_html"] ), 75 ) , 'tourfic' ) : esc_html__( strip_tags( $reply["reply_message_html"] ) ), 'tourfic' )) : esc_html__( Helper::tourfic_character_limit_callback( strip_tags( $reply["reply_message"] ), 75 ), "tourfic"); ?>
+															<?php
+															if ( ! empty( $reply['reply_message_html'] ) ) {
+																$plain_text = wp_strip_all_tags( $reply['reply_message_html'] );
+																$output = strlen( $plain_text ) > 75
+																	? Helper::tourfic_character_limit_callback( $plain_text, 75 )
+																	: $plain_text;
+																echo wp_kses_post( esc_html( $output ) );
+															} else {
+																$plain_text = wp_strip_all_tags( $reply['reply_message'] );
+																$output = Helper::tourfic_character_limit_callback( $plain_text, 75 );
+																echo esc_html( $output );
+															}
+															?>
 														<?php elseif( $email_body_setting == 'text'): ?>
-															<?php echo !empty($reply["reply_message_text"]) ? ( wp_kses_post( strlen( $reply["reply_message_text"] ) > 75 ? esc_html__( Helper::tourfic_character_limit_callback( $reply["reply_message_text"], 75 ) , 'tourfic' ) : esc_html__( $reply["reply_message_text"] ) , 'tourfic' )) :  esc_html__( Helper::tourfic_character_limit_callback( strip_tags( $reply["reply_message"] ), 75 ), "tourfic"); ?>
+															<?php
+															if ( ! empty( $reply['reply_message_text'] ) ) {
+																$message_text = $reply['reply_message_text'];
+																$output = strlen( $message_text ) > 75
+																	? Helper::tourfic_character_limit_callback( $message_text, 75 )
+																	: $message_text;
+
+																echo wp_kses_post( esc_html( $output ) );
+															} else {
+																$plain_text = wp_strip_all_tags( $reply['reply_message'] );
+																$output = Helper::tourfic_character_limit_callback( $plain_text, 75 );
+
+																echo esc_html( $output );
+															}
+															?>
+
 														<?php endif; ?>
 													</span>
 												</div>
 												<div class="tf-single-enquiry-accordion-head-right">
-													<?php // esc_html_e( date( "M d, Y h:i:s A", strtotime($reply["submit_time"])) ); ?>
-													<?php  esc_html_e( self::time_elapsed_string( $reply["submit_time"]) ); ?>
+													<?php  echo esc_html( self::time_elapsed_string( $reply["submit_time"]) ); ?>
 												</div>
 											</div>
 											<div id="tf-single-enquiry-accordion-<?php echo esc_attr($key) ?>" class="tf-single-enquiry-collapse">
 												<div class="tf-single-accordion-body">
 													<?php
 														if( $email_body_setting == 'html' ) {
-															echo !empty($reply["reply_message_html"]) ? wp_kses_post($reply["reply_message_html"]) : $reply["reply_message"];
+															echo !empty($reply["reply_message_html"]) ? wp_kses_post($reply["reply_message_html"]) : wp_kses_post($reply["reply_message"]);
 														} else if( $email_body_setting == 'text' ) {
-															echo !empty($reply["reply_message_text"]) ? wp_kses_post(wpautop($reply["reply_message_text"])) : $reply["reply_message"];
+															echo !empty($reply["reply_message_text"]) ? wp_kses_post(wpautop($reply["reply_message_text"])) : wp_kses_post($reply["reply_message"]);
 														}
 													?>
 												</div>
@@ -461,7 +460,10 @@ abstract class Enquiry {
 									<input type="hidden" class="tf-enquiry-reply-name" value="<?php echo esc_html($data["uname"]); ?>">
 									<input type="hidden" class="tf-enquiry-reply-id" value="<?php echo esc_html($data["id"]); ?>">
 									<input type="hidden" class="tf-enquiry-reply-post-id" value="<?php echo esc_html($data["post_id"]); ?>">
-									<input type="hidden" name="tf-enquiry-reply-post-userID" value="<?php echo $_SESSION['WP']['userId']; ?>" />
+									<input type="hidden" name="tf-enquiry-reply-post-userID" value="<?php 
+										echo isset( $_SESSION['WP']['userId'] ) ? esc_attr( sanitize_text_field( wp_unslash( $_SESSION['WP']['userId'] ) ) ) : ''; 
+									?>" />
+
 
 									<button class="tf-enquiry-reply-button" type="submit"> 
 										<?php esc_html_e('Send', 'tourfic') ?>
@@ -480,31 +482,18 @@ abstract class Enquiry {
 								</form>
 							</div>
 						</div> <!-- Enquiry mail Reply Wrapper - End -->
-					<?php else: ?>
-						<div class="tf-field tf-field-notice tf-pro-notice " style="width:100%;">
-							<div class="tf-fieldset">
-				            	<div class="tf-field-notice-inner tf-notice-info">
-									<div class="tf-field-notice-icon">
-										<i class="ri-information-fill"></i>
-									</div>
-                					<div class="tf-field-notice-content has-content">
-									<?php echo wp_kses_post(sprintf(__("We're offering some exiting features like %1s sending reply from enquiry details page %2s and %1s get replies using email piping %2s in our pro plan.", 'tourfic'), '<b>', '</b>', '<b>', '</b>')) ?> <a href="https://themefic.com/tourfic/pricing" target="_blank"> <?php echo esc_html__("Upgrade to our pro package today to take advantage of these fantastic options!", 'tourfic') ?></a>                
-									</div>
-            					</div>
-			            	</div>
-			        	</div>
-					<?php endif; ?>
+					
 				</div> <!-- Enquiry Details Left - End -->
 				<div class="tf-single-enquiry-right"> <!-- Enquiry Details Right - Start -->
 					<div class="tf-enquiry-single-log-details">
 						<div class="tf-singe-enquiry-log-details-heading">
-							<h2> <?php esc_html_e("Log Details #", 'tourfic') . esc_html_e($data["id"]); ?> </h2>
+							<h2> <?php esc_html_e("Log Details #", 'tourfic'); ?><?php echo esc_html($data["id"]); ?> </h2>
 							<div class="enquiry-details-status">
 								<svg xmlns="http://www.w3.org/2000/svg" width="6" height="6" viewBox="0 0 6 6" fill="none">
 									<circle cx="3" cy="3" r="3" fill="#27BE69"/>
 								</svg>
 
-								<div class="enquiry-status-value"> <?php !empty( $data["enquiry_status"] ) ? esc_html_e(ucfirst( $data["enquiry_status"] ), 'tourfic') : '' ?> </div>
+								<div class="enquiry-status-value"> <?php echo !empty( $data["enquiry_status"] ) ? esc_html(ucfirst( $data["enquiry_status"] )) : '' ?> </div>
 							</div>
 						</div>
 						<hr class="enqury-single-title-line">
@@ -540,7 +529,7 @@ abstract class Enquiry {
 											</clipPath>
 										</defs>
 									</svg>
-									<span class="tf-single-enquiry-log-details-single-value"> <?php echo esc_html__($server_data["browser_name"], 'tourfic'); ?> </span>
+									<span class="tf-single-enquiry-log-details-single-value"> <?php echo esc_html($server_data["browser_name"]); ?> </span>
 								</div>
 								<div class="tf-single-enquiry-log-details-single"> <!-- Single Log Details Device - Start -->
 									<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20" fill="none">
@@ -605,6 +594,7 @@ abstract class Enquiry {
 			} elseif ($minutes == 1) {
 				return '1 minute ago';
 			} else {
+				/* translators: %s number of minutes */
 				return sprintf(esc_html__('%s minutes ago', 'tourfic'), $minutes);
 			}
 		}
@@ -641,45 +631,29 @@ abstract class Enquiry {
 	public function enquiry_table_data( $post_type = '', $post_id = '', $status = '', $offset = 0, $per_page = 0 ) {
 
 		 global $wpdb;
-		 $query = "SELECT * FROM {$wpdb->prefix}tf_enquiry_data WHERE ";
 		 $enquiry_data = array();
  
-		 if( !empty($post_type) ) {
-			$query .= sprintf(' post_type = "%s"', $post_type);
-		 }
-
-		if(!empty($post_type) && ( !empty($post_id) || !empty($status)) ) {
-			$query .= ' AND';
+		$tf_filter_query = "";
+		if ( $post_id ) {
+			$tf_filter_query .= " AND post_id = '$post_id'";
 		}
-		 
-		if( !empty($post_id) ) {
-			$query.= sprintf(' post_id = %d', $post_id );
-		 }
-
-		 if( !empty($post_type) && !empty($post_id) && !empty($status) ) {
-			$query .= ' AND';
-		 }
-		 
-		 if( !empty($status) ) {
-
+		if( !empty($status) ) {
 			if( $status == 'not-replied') {
-				$query.= sprintf(' enquiry_status != "%s"', 'replied' );
+				$tf_filter_query .= sprintf(' AND enquiry_status != "%s"', 'replied' );
 			} elseif( $status == 'not-responded') {
-				$query.= sprintf(' enquiry_status != "%s"', 'responded' );
+				$tf_filter_query .= sprintf(' AND enquiry_status != "%s"', 'responded' );
 			} else {
-				$query.= sprintf(' enquiry_status = "%s"', $status );
+				$tf_filter_query .= sprintf(' AND enquiry_status = "%s"', $status );
 			}
-		 }
+		}
 
-		 $query .= " ORDER BY id DESC";
+		if( !empty( $offset ) && !empty( $per_page ) ) {
+			$tf_filter_query .= sprintf(' LIMIT %d, %d', $offset, $per_page);
+		}
 
-		 if( !empty( $offset ) && !empty( $per_page ) ) {
-			$query .= sprintf(' LIMIT %d, %d', $offset, $per_page);
-		 }
+		$results = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM {$wpdb->prefix}tf_enquiry_data WHERE post_type = %s {$tf_filter_query} ORDER BY id DESC", $post_type ), ARRAY_A );  // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 
-		 $results = $wpdb->get_results( $wpdb->prepare( $query ), ARRAY_A );
-
-		 if( !empty($results) ) {
+		if( !empty($results) ) {
 			foreach( $results as $result ) {
 				$enquiry_data[] = array(
 					'id' => $result['id'],
@@ -709,19 +683,19 @@ abstract class Enquiry {
 			wp_die();
 		}
 
-		$name     = isset( $_POST['your-name'] ) ? sanitize_text_field( $_POST['your-name'] ) : null;
-		$email    = isset( $_POST['your-email'] ) ? sanitize_email( $_POST['your-email'] ) : null;
-		$question = isset( $_POST['your-question'] ) ? sanitize_text_field( $_POST['your-question'] ) : null;
+		$name     = isset( $_POST['your-name'] ) ? sanitize_text_field( wp_unslash($_POST['your-name']) ) : null;
+		$email    = isset( $_POST['your-email'] ) ? sanitize_email( wp_unslash($_POST['your-email']) ) : null;
+		$question = isset( $_POST['your-question'] ) ? sanitize_text_field( wp_unslash($_POST['your-question']) ) : null;
 		$from = "From: " . get_option( 'blogname' ) . " <" . get_option( 'admin_email' ) . ">\r\n";
 
 		$post_id    = isset( $_POST['post_id'] ) ? intval( $_POST['post_id'] ) : null;
 		$post_title = get_the_title( $post_id );
 
 		// Server Details
-		$user_agent = isset( $_SERVER['HTTP_USER_AGENT'] ) ? $_SERVER['HTTP_USER_AGENT'] : '';
+		$user_agent = isset( $_SERVER['HTTP_USER_AGENT'] ) ? sanitize_text_field( wp_unslash( $_SERVER['HTTP_USER_AGENT'] ) ) : '';
 		$browser_name = $this->tf_get_browser_name( $user_agent );
 		$os_name = php_uname( 's' );
-		$ip_address = isset( $_SERVER['REMOTE_ADDR'] ) ? $_SERVER['REMOTE_ADDR'] : '';
+		$ip_address = isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : '';
 
 		$server_details = array(
 			'browser_name' => $browser_name,
@@ -748,10 +722,9 @@ abstract class Enquiry {
 		 * Enquiry Pabbly Integration
 		 * @author Jahid
 		 */
-		if ( function_exists( 'is_tf_pro' ) && is_tf_pro() ) {
 			do_action( 'enquiry_pabbly_form_trigger', $post_id, $name, $email, $question );
 			do_action( 'enquiry_zapier_form_trigger', $post_id, $name, $email, $question );
-		}
+		
 
 		if ( "tf_hotel" == get_post_type( $post_id ) ) {
 			$send_email_to[] = ! empty( Helper::tfopt( 'h-enquiry-email' ) ) ? sanitize_email( Helper::tfopt( 'h-enquiry-email' ) ) : sanitize_email( get_option( 'admin_email' ) );
@@ -764,7 +737,7 @@ abstract class Enquiry {
 		$tf_vendor_email_enable_setting = ! empty( Helper::tfopt( 'email_template_settings' )['enable_vendor_enquiry_email'] ) ? Helper::tfopt( 'email_template_settings' )['enable_vendor_enquiry_email'] : 0;
 
 
-		if ( function_exists( 'is_tf_pro' ) && is_tf_pro() && ( $tf_vendor_email_enable_setting == 1 ) ) {
+		if ( ( $tf_vendor_email_enable_setting == 1 ) ) {
 			if ( in_array( "tf_vendor", $tf_user_roles ) ) {
 				if ( "tf_hotel" == get_post_type( $post_id ) ) {
 					$send_email_to[] = ! empty( $author_mail ) ? $author_mail : '';
@@ -800,6 +773,7 @@ abstract class Enquiry {
 
 			// Data Store to the DB
 			global $wpdb;
+			 // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 			$wpdb->query(
 				$wpdb->prepare(
 					"INSERT INTO {$wpdb->prefix}tf_enquiry_data
@@ -825,7 +799,7 @@ abstract class Enquiry {
 			$response['msg']    = esc_html__( 'Message sent failed!', 'tourfic' );
 		}
 
-		if ( function_exists( 'is_tf_pro' ) && is_tf_pro() && $tf_vendor_email_enable_setting != 1 ) {
+		if ( $tf_vendor_email_enable_setting != 1 ) {
 			if ( in_array( "tf_vendor", $tf_user_roles ) ) {
 				if( self::tf_vendor_default_enquiry_mail( $author_mail, $post_id, $name, $question, $this->last_id ) ) {
 				} else {
@@ -850,8 +824,15 @@ abstract class Enquiry {
 			wp_die();
 		}
 
-		$enquiry_ids = isset( $_POST['selected_items'] ) ? $_POST['selected_items'] : array();
-		$bulk_action = isset( $_POST['bulk_action'] ) ? $_POST['bulk_action'] : '';
+		$enquiry_ids = array();
+		if ( isset( $_POST['selected_items'] ) ) {
+			if ( is_array( $_POST['selected_items'] ) ) {
+				$enquiry_ids = array_map( 'absint', wp_unslash( $_POST['selected_items'] ) ); // IDs → ensure integers
+			} else {
+				$enquiry_ids = array( absint( wp_unslash( $_POST['selected_items'] ) ) );
+			}
+		}
+		$bulk_action = isset( $_POST['bulk_action'] ) ? sanitize_text_field( wp_unslash( $_POST['bulk_action'] ) ) : '';
 
 		if ( empty( $enquiry_ids ) ) {
 			$response['status'] = 'error';
@@ -871,6 +852,7 @@ abstract class Enquiry {
 
 		if ( 'trash' == $bulk_action ) {
 			foreach ( $enquiry_ids as $enquiry_id ) {
+				 // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 				$wpdb->query(
 					$wpdb->prepare(
 						"DELETE FROM {$wpdb->prefix}tf_enquiry_data WHERE id=%d",
@@ -880,6 +862,7 @@ abstract class Enquiry {
 			}
 		} else if( 'mark-as-read' == $bulk_action ) {
 			foreach ( $enquiry_ids as $enquiry_id ) {
+				 // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 				$wpdb->query(
 					$wpdb->prepare(
 						"UPDATE {$wpdb->prefix}tf_enquiry_data SET enquiry_status=%s WHERE id=%d",
@@ -893,9 +876,9 @@ abstract class Enquiry {
 
 	function tf_enquiry_filter_post_callback() {
 
-		$post_id = isset( $_POST['post_id'] ) ? sanitize_text_field( $_POST['post_id'] ) : '';
-		$post_type = isset( $_POST['post_type'] ) ? sanitize_text_field( $_POST['post_type'] ) : '';
-		$filter = isset( $_POST['filter'] ) ? sanitize_text_field ( $_POST['filter'] ) : '';
+		$post_id = isset( $_POST['post_id'] ) ? sanitize_text_field( wp_unslash($_POST['post_id'] )) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Missing
+		$post_type = isset( $_POST['post_type'] ) ? sanitize_text_field( wp_unslash($_POST['post_type'] )) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Missing
+		$filter = isset( $_POST['filter'] ) ? sanitize_text_field( wp_unslash($_POST['filter'] )) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Missing
 
 		$enquiry_data = $this->enquiry_table_data( $post_type, $post_id, $filter );
 
@@ -911,21 +894,29 @@ abstract class Enquiry {
 		$response = array();
 		global $wpdb;
 		global $current_user;
-		$reply_data = $wpdb->get_results( 
-			$wpdb->prepare(
-				"SELECT reply_data FROM {$wpdb->prefix}tf_enquiry_data WHERE id= %s",
-				$_POST['enquiry_id']
-			)
-		);
+		$reply_data = array();
+
+		if ( isset( $_POST['enquiry_id'] ) ) {
+			$enquiry_id = absint( wp_unslash( $_POST['enquiry_id'] ) ); // sanitize as integer
+
+			 // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			$reply_data = $wpdb->get_results( 
+				$wpdb->prepare(
+					"SELECT reply_data FROM {$wpdb->prefix}tf_enquiry_data WHERE id = %d",
+					$enquiry_id
+				)
+			);
+		}
+
 		$reply_data = json_decode( $reply_data[0]->reply_data, true );
 
 		check_ajax_referer('updates', '_ajax_nonce');
 
-		$reply_mail = isset( $_POST['reply_mail'] ) ? sanitize_text_field( $_POST['reply_mail'] ) : '';
-		$reply_message = isset( $_POST['reply_message'] ) ? wp_kses_post( $_POST['reply_message'] ) : '';
-		$post_id = isset( $_POST['post_id'] ) ? sanitize_text_field( $_POST['post_id'] ) : '';
+		$reply_mail = isset( $_POST['reply_mail'] ) ? sanitize_text_field( wp_unslash($_POST['reply_mail'] )) : '';
+		$reply_message = isset( $_POST['reply_message'] ) ? wp_kses_post( wp_unslash($_POST['reply_message'] )) : '';
+		$post_id = isset( $_POST['post_id'] ) ? sanitize_text_field( wp_unslash($_POST['post_id'] )) : '';
 		$post_type = !empty( $post_id ) ? get_post_type( $post_id ) : '';
-		$enquiry_id = isset( $_POST['enquiry_id'] ) ? sanitize_text_field( $_POST['enquiry_id'] ) : '';
+		$enquiry_id = isset( $_POST['enquiry_id'] ) ? sanitize_text_field( wp_unslash($_POST['enquiry_id'] )) : '';
 
 		$connection_type = !empty( Helper::tfopt("tf-email-piping")["connection_type"]) ? Helper::tfopt("tf-email-piping")["connection_type"] : 'imap';
 		$connection_mail = $enquiry_mail_setting = '';
@@ -971,7 +962,7 @@ abstract class Enquiry {
 			$to = $reply_mail;
 			$from = "From: " . get_option( 'blogname' ) . " <" . get_option( 'admin_email' ) . ">\r\n";
 			$subject = esc_html__("Re: Response to Your Enquiry About ", 'tourfic') . esc_html( get_the_title( $post_id ) ) . " - " . esc_html("#".$enquiry_id);
-			$header_uid = rand( 10000000, 99999999 );
+			$header_uid = wp_rand( 10000000, 99999999 );
 			$headers = array('Content-Type: text/html; charset=UTF-8');
 			$headers[] = $from;
 			$headers[] = 'Reply-To: ' . $reply_to_email;
@@ -1004,6 +995,7 @@ abstract class Enquiry {
 				'submit_time' => $submit_time
 			);
 			
+			 // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 			$wpdb->query(
 				$wpdb->prepare(
 					"UPDATE {$wpdb->prefix}tf_enquiry_data SET enquiry_status = %s, reply_data = %s WHERE id = %d",
@@ -1029,9 +1021,9 @@ abstract class Enquiry {
 	}
 
 	function tf_enquiry_filter_mail_callback() {
-		$filter = isset( $_POST['filter'] ) ? sanitize_text_field( $_POST['filter'] )  : '';
-		$post_type = isset( $_POST['post_type'] ) ? sanitize_text_field( $_POST['post_type'] ) : '';
-		$post_id = isset( $_POST['post_id'] ) ? sanitize_text_field( $_POST['post_id'] ) : '';
+		$filter = isset( $_POST['filter'] ) ? sanitize_text_field( wp_unslash($_POST['filter']) )  : ''; // phpcs:ignore WordPress.Security.NonceVerification.Missing
+		$post_type = isset( $_POST['post_type'] ) ? sanitize_text_field( wp_unslash($_POST['post_type']) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Missing
+		$post_id = isset( $_POST['post_id'] ) ? sanitize_text_field( wp_unslash($_POST['post_id']) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Missing
 
 		$enquiry_data = $this->enquiry_table_data( $post_type, $post_id, $filter );
 		$total_data = !empty(count( $enquiry_data )) ? count( $enquiry_data ) : 0;
@@ -1053,16 +1045,24 @@ abstract class Enquiry {
 		$post_type = get_post_type( $post_id ) == "tf_tours" ? esc_html__("Tour", 'tourfic') : ( get_post_type( $post_id ) == "tf_hotel" ? esc_html__( "Hotel", 'tourfic') : esc_html__( "Apartment", 'tourfic') );
 		$subject = "";
 
-		if( $type == "new" ) {
-			$subject .= sprintf( esc_html__( "New Enquiry #%1s: Someone Asked Question about your %2s - %3s  ", 'tourfic' ), $last_id, $post_type, $post_name );
-		} elseif( $type == "reply" ) {
-			$subject .= sprintf( esc_html__( "New Response #%1s: A New Response is Added to Enquiry Details", 'tourfic' ), $last_id );
-		}
+		if ( $type === "new" ) {
+			/* translators: 1: enquiry ID, 2: post type, 3: post name */
+			$subject .= sprintf( esc_html__( 'New Enquiry #%1$s: Someone Asked Question about your %2$s - %3$s', 'tourfic' ),
+				$last_id,
+				$post_type,
+				$post_name
+			);
+		} elseif ( $type === "reply" ) {
+			/* translators: 1: enquiry ID */
+			$subject .= sprintf( esc_html__( 'New Response #%1$s: A New Response is Added to Enquiry Details', 'tourfic' ),
+				$last_id
+			);
+		}		
 
 		$from = "From: " . get_option( 'blogname' ) . " <" . get_option( 'admin_email' ) . ">\r\n";
 		$headers[] = 'Content-Type: text/html; charset=UTF-8';
 		$headers[] = $from;
-		$headers[] = 'Reply-To: no-reply@' . parse_url( site_url() )["host"];
+		$headers[] = 'Reply-To: no-reply@' . wp_parse_url( site_url() )["host"];
 		$dashboard_link = get_option("tf_dashboard_page_id") ? get_permalink(get_option("tf_dashboard_page_id")) : site_url('my-account/');
 		$email_content = '';
 
@@ -1072,9 +1072,9 @@ abstract class Enquiry {
 			<div style="width:100%">
 				<p> <?php echo esc_html__("Hello", 'tourfic') ?> <b><?php echo esc_html( $author_name ) ?></b></p>
 				<?php if( $type = 'new'): ?>
-					<p> <?php echo esc_html__("A new enquiry has been added to your dashboard", 'tourfic') ?> <?php echo !empty($name) ? esc_html__('by ', 'tourfic') . $name : '' ?></p>
+					<p> <?php echo esc_html__("A new enquiry has been added to your dashboard", 'tourfic') ?> <?php echo !empty($name) ? esc_html__('by ', 'tourfic') . esc_html($name) : '' ?></p>
 				<?php elseif( $type == "reply"): ?>
-					<p> <?php echo esc_html__("A new response has been added to", 'tourfic'); ?> #<?php echo esc_html($last_id) ?> <?php echo !empty($name) ? esc_html__('by ', 'tourfic') . $name : '' ?></p>
+					<p> <?php echo esc_html__("A new response has been added to", 'tourfic'); ?> #<?php echo esc_html($last_id) ?> <?php echo !empty($name) ? esc_html__('by ', 'tourfic') . esc_html($name) : '' ?></p>
 				<?php endif; ?>
 				<?php if( !empty( $body )): ?>
 					<h4>Enquiry Body</h4>
@@ -1128,10 +1128,9 @@ abstract class Enquiry {
 
 	function tf_enquiry_response_schedule_callback() {
 
-		if( function_exists( 'is_tf_pro' ) && is_tf_pro() ) {
-		} else {
+		
 			self::tf_enquiry_update_response_unschedule();
-		}
+		
 
 
 		if( empty( get_option("tfep_enquiry_update_response") )) {
@@ -1143,6 +1142,7 @@ abstract class Enquiry {
 		$response_data = get_option("tfep_enquiry_update_response");
 
 		$enquiry_id = $response_data["enquiry_id"];
+		 // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$enquiry_details = $wpdb->get_results( 
 			$wpdb->prepare("SELECT * FROM {$wpdb->prefix}tf_enquiry_data where id= %s", $enquiry_id), 
 			ARRAY_A 

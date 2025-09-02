@@ -40,7 +40,7 @@ class Hotel_Feature_Filter extends \WP_Widget {
     public function widget( $args, $instance ) {
 
         //check if is Hotel
-        $posttype = isset( $_GET['type'] ) ? $_GET['type'] : get_post_type();
+        $posttype = isset( $_GET['type'] ) ? sanitize_text_field( wp_unslash($_GET['type']) ) : get_post_type(); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 
         if ( is_admin() || $posttype == 'tf_hotel' ) {
             extract( $args );
@@ -62,8 +62,15 @@ class Hotel_Feature_Filter extends \WP_Widget {
 
             $get_terms = get_terms( $taxonomy );
 
-            $destination_name = !empty( $_GET['destination'] ) ? $_GET['destination'] : '';
-            $search_features_query = !empty($_GET['features']) ? $_GET['features'] : array();
+            $destination_name = !empty( $_GET['destination'] ) ? sanitize_text_field( wp_unslash($_GET['destination']) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+            $search_features_query = array();
+            if ( isset( $_GET['features'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+                if ( is_array( $_GET['features'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+                    $search_features_query = array_map( 'sanitize_text_field', wp_unslash( $_GET['features'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+                } else {
+                    $search_features_query = array( sanitize_text_field( wp_unslash( $_GET['features'] ) ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+                }
+            }
             echo "<div class='tf-filter'><ul>";
             foreach ( $get_terms as $key => $term ) {
                 $id = $term->term_id;
@@ -127,17 +134,6 @@ class Hotel_Feature_Filter extends \WP_Widget {
             <label for="<?php echo esc_attr($this->get_field_id( 'hide_empty' )); ?>"><?php esc_html_e( 'Hide Empty Categories:', 'tourfic' )?></label>
             <input id="<?php echo esc_attr($this->get_field_id( 'hide_empty' )); ?>" name="<?php echo esc_attr($this->get_field_name( 'hide_empty' )); ?>" type="checkbox" <?php checked( 'on', $hide_empty );?>>
         </p>
-        <style>
-            .tf-widget-field label {
-                font-weight: 600;
-            }
-        </style>
-        <script>
-            jQuery('#<?php echo esc_attr($this->get_field_id( 'terms' )); ?>').select2({
-                width: '100%'
-            });
-            jQuery(document).trigger('tf_select2');
-        </script>
     <?php
     }
 

@@ -13,7 +13,6 @@ class Helper {
 	use \Tourfic\Traits\Action_Helper;
 
 	public function __construct() {
-		add_action( 'admin_footer', array( $this, 'tf_admin_footer' ) );
 		add_action( 'wp_footer', array($this, 'tf_ask_question_modal') );
 		add_filter( 'rest_prepare_taxonomy', array( $this, 'tf_remove_metabox_gutenburg' ), 10, 3 );
 		add_filter( 'rest_user_query', array( $this, 'tf_gutenberg_author_dropdown_roles' ), 10, 2 );
@@ -48,10 +47,6 @@ class Helper {
         add_filter( 'excerpt_more', array( $this, 'tf_tours_excerpt_more' ) );
 
 		is_admin() ? add_filter( 'plugin_action_links_' . 'tourfic/tourfic.php', array( $this, 'tf_plugin_action_links' ) ) : '';
-		is_plugin_active( 'tourfic-pro/tourfic-pro.php' ) && function_exists( 'is_tf_pro' ) && ! is_tf_pro() ? add_filter( 'plugin_action_links_' . 'tourfic-pro/tourfic-pro.php', array(
-			$this,
-			'tf_pro_plugin_licence_action_links'
-		) ) : '';
 		add_action( 'admin_menu', array( $this, 'tf_documentation_page_integration' ), 999 );
 		add_action( 'add_meta_boxes', array( $this, 'tf_hotel_tour_docs' ) );
 		add_action( 'admin_menu', array( $this, 'tf_documentation_page_integration' ), 999 );
@@ -504,11 +499,13 @@ class Helper {
 		}
 	}
 
-	function get_current_url() {
-		$protocol = is_ssl() ? 'https://' : 'http://';
-
-		return ( $protocol ) . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'];
-	}
+    function get_current_url() {
+        $protocol = is_ssl() ? 'https://' : 'http://';
+        $host     = isset( $_SERVER['HTTP_HOST'] ) ? sanitize_text_field( wp_unslash( $_SERVER['HTTP_HOST'] ) ) : '';
+        $uri      = isset( $_SERVER['REQUEST_URI'] ) ? esc_url_raw( wp_unslash( $_SERVER['REQUEST_URI'] ) ) : '';
+    
+        return $protocol . $host . $uri;
+    }    
 
 	/**
 	 * Hotel gallery video content initialize by this hook
@@ -615,7 +612,7 @@ class Helper {
 		$query_type          = $query['post_type'];
 		$query_select        = $query['select'];
 		$query_where         = $query['query'];
-		$tf_tour_book_orders = $wpdb->get_results( $wpdb->prepare( "SELECT $query_select FROM {$wpdb->prefix}tf_order_data WHERE post_type = %s $query_where", $query_type ), ARRAY_A );
+		$tf_tour_book_orders = $wpdb->get_results( $wpdb->prepare( "SELECT $query_select FROM {$wpdb->prefix}tf_order_data WHERE post_type = %s $query_where", $query_type ), ARRAY_A );  // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 
 		return $tf_tour_book_orders;
 	}
@@ -648,13 +645,8 @@ class Helper {
 	 */
 	static function tf_search_result_sidebar_form( $placement = 'single' ) {
 
-		// Unwanted Slashes Remove
-		if ( isset( $_GET ) ) {
-			$_GET = array_map( 'stripslashes_deep', $_GET );
-		}
-
 		// Get post type
-		$post_type                     = esc_attr( $_GET['type'] ) ?? '';
+		$post_type                     = !empty($_GET['type']) ? sanitize_text_field( wp_unslash($_GET['type']) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		$place_title                   = '';
 		$date_format_for_users         = ! empty( self::tfopt( "tf-date-format-for-users" ) ) ? self::tfopt( "tf-date-format-for-users" ) : "Y/m/d";
 		$hotel_location_field_required = ! empty( self::tfopt( "required_location_hotel_search" ) ) ? self::tfopt( "required_location_hotel_search" ) : 0;
@@ -670,22 +662,22 @@ class Helper {
 			$place_placeholder = ( $post_type == 'tf_hotel' || $post_type == 'tf_apartment' ) ? esc_html__( 'Enter Location', 'tourfic' ) : esc_html__( 'Enter Destination', 'tourfic' );
 
 			$place_key   = 'place';
-			$place_value = ! empty( $_GET[ $place_key ] ) ? esc_attr( $_GET[ $place_key ] ) : '';
-			$place_title = ! empty( $_GET['place-name'] ) ? esc_attr( $_GET['place-name'] ) : '';
+			$place_value = ! empty( $_GET[ $place_key ] ) ? sanitize_text_field( wp_unslash( $_GET[ $place_key ] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+			$place_title = ! empty( $_GET['place-name'] ) ? sanitize_text_field( wp_unslash( $_GET['place-name'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 
 			$taxonomy = $post_type == 'tf_hotel' ? 'hotel_location' : ( $post_type == 'tf_tour' ? 'tour_destination' : 'apartment_location' );
 			// $place_name = ! empty( $place_value ) ? get_term_by( 'slug', $place_value, $taxonomy )->name : '';
 			$place_name = ! empty( $place_value ) ? esc_attr( $place_value ) : '';
 
-			$room = ! empty( $_GET['room'] ) ? esc_attr( $_GET['room'] ) : 0;
+			$room = ! empty( $_GET['room'] ) ? sanitize_text_field( wp_unslash( $_GET['room'] ) ) : 0; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		}
 
-		$adult      = ! empty( $_GET['adults'] ) ? esc_attr( $_GET['adults'] ) : 0;
-		$children   = ! empty( $_GET['children'] ) ? esc_attr( $_GET['children'] ) : 0;
-		$infant     = ! empty( $_GET['infant'] ) ? esc_attr( $_GET['infant'] ) : 0;
-		$date       = ! empty( $_GET['check-in-out-date'] ) ? esc_attr( $_GET['check-in-out-date'] ) : '';
-		$startprice = ! empty( $_GET['from'] ) ? esc_attr( $_GET['from'] ) : '';
-		$endprice   = ! empty( $_GET['to'] ) ? esc_attr( $_GET['to'] ) : '';
+		$adult      = ! empty( $_GET['adults'] ) ? sanitize_text_field( wp_unslash( $_GET['adults'] ) ) : 0; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$children   = ! empty( $_GET['children'] ) ? sanitize_text_field( wp_unslash( $_GET['children'] ) ) : 0; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$infant     = ! empty( $_GET['infant'] ) ? sanitize_text_field( wp_unslash( $_GET['infant'] ) ) : 0; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$date       = ! empty( $_GET['check-in-out-date'] ) ? sanitize_text_field( wp_unslash( $_GET['check-in-out-date'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$startprice = ! empty( $_GET['from'] ) ? sanitize_text_field( wp_unslash( $_GET['from'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$endprice   = ! empty( $_GET['to'] ) ? sanitize_text_field( wp_unslash( $_GET['to'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 
 		$tf_tour_arc_selected_template      = ! empty( self::tf_data_types( self::tfopt( 'tf-template' ) )['tour-archive'] ) ? self::tf_data_types( self::tfopt( 'tf-template' ) )['tour-archive'] : 'design-1';
 		$tf_hotel_arc_selected_template     = ! empty( self::tf_data_types( self::tfopt( 'tf-template' ) )['hotel-archive'] ) ? self::tf_data_types( self::tfopt( 'tf-template' ) )['hotel-archive'] : 'design-1';
@@ -728,7 +720,7 @@ class Helper {
                         <div class="tf-field tf-flex">
                             <div class="acr-label tf-flex">
                                 <i class="fa-regular fa-user"></i>
-								<?php $post_type == "tf_hotel" ?  esc_html_e( $adults_name . 's', 'tourfic' ) : esc_html_e( 'Adults', 'tourfic' ); ?>
+								<?php echo $post_type == "tf_hotel" ? esc_html( $adults_name . 's' ) : esc_html__( 'Adults', 'tourfic' ); ?>
                             </div>
                             <div class="acr-select">
                                 <div class="acr-dec">-</div>
@@ -781,7 +773,7 @@ class Helper {
 
                     <div class="tf-booking-bttns tf-mt-24">
 						<?php
-						$ptype = esc_attr( $_GET['type'] ) ?? get_post_type();
+						$ptype = !empty( $_GET['type']) ? sanitize_text_field( wp_unslash( $_GET['type'] ) ) : get_post_type(); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 						?>
                         <input type="hidden" name="type" value="<?php echo esc_attr( $ptype ); ?>" class="tf-post-type"/>
                         <button class="tf_btn tf_btn_full tf-submit"
@@ -789,52 +781,6 @@ class Helper {
                     </div>
                 </form>
             </div>
-            <script>
-                (function ($) {
-                    $(document).ready(function () {
-
-                        const regexMap = {
-                            'Y/m/d': /(\d{4}\/\d{2}\/\d{2}).*(\d{4}\/\d{2}\/\d{2})/,
-                            'd/m/Y': /(\d{2}\/\d{2}\/\d{4}).*(\d{2}\/\d{2}\/\d{4})/,
-                            'm/d/Y': /(\d{2}\/\d{2}\/\d{4}).*(\d{2}\/\d{2}\/\d{4})/,
-                            'Y-m-d': /(\d{4}-\d{2}-\d{2}).*(\d{4}-\d{2}-\d{2})/,
-                            'd-m-Y': /(\d{2}-\d{2}-\d{4}).*(\d{2}-\d{2}-\d{4})/,
-                            'm-d-Y': /(\d{2}-\d{2}-\d{4}).*(\d{2}-\d{2}-\d{4})/,
-                            'Y.m.d': /(\d{4}\.\d{2}\.\d{2}).*(\d{4}\.\d{2}\.\d{2})/,
-                            'd.m.Y': /(\d{2}\.\d{2}\.\d{4}).*(\d{2}\.\d{2}\.\d{4})/,
-                            'm.d.Y': /(\d{2}\.\d{2}\.\d{4}).*(\d{2}\.\d{2}\.\d{4})/
-                        };
-                        const dateRegex = regexMap['<?php echo $date_format_for_users; ?>'];
-
-                        $(".tf-hotel-side-booking #check-in-out-date").flatpickr({
-                            enableTime: false,
-                            minDate: "today",
-                            altInput: true,
-                            altFormat: '<?php echo esc_html( $date_format_for_users ); ?>',
-                            mode: "range",
-                            dateFormat: "Y/m/d",
-                            onReady: function (selectedDates, dateStr, instance) {
-                                instance.element.value = dateStr.replace(/(\d{4}\/\d{2}\/\d{2}).*(\d{4}\/\d{2}\/\d{2})/g, function (match, date1, date2) {
-									return `${date1} - ${date2}`;
-								});
-                                instance.altInput.value = instance.altInput.value.replace( dateRegex, function (match, d1, d2) {
-                                    return `${d1} - ${d2}`;
-                                })
-                            },
-                            onChange: function (selectedDates, dateStr, instance) {
-                                instance.element.value = dateStr.replace(/(\d{4}\/\d{2}\/\d{2}).*(\d{4}\/\d{2}\/\d{2})/g, function (match, date1, date2) {
-									return `${date1} - ${date2}`;
-								});
-                                instance.altInput.value = instance.altInput.value.replace( dateRegex, function (match, d1, d2) {
-                                    return `${d1} - ${d2}`;
-                                })
-                            },
-                            defaultDate: <?php echo wp_json_encode( explode( '-', $date ) ) ?>,
-                        });
-
-                    });
-                })(jQuery);
-            </script>
 
 			<?php if ( is_active_sidebar( 'tf_search_result' ) ) { ?>
                 <div id="tf__booking_sidebar">
@@ -934,9 +880,9 @@ class Helper {
                 <div class="tf-booking-form-guest-and-room">
 					<?php if ( $post_type == 'tf_hotel' ) { ?>
                         <div class="tf-booking-form-guest-and-room-inner">
-                            <span class="tf-booking-form-title"><?php $post_type == "tf_hotel" ? esc_html_e( apply_filters("tf_hotel_guest_name_change", "guest") . "s & rooms", "tourfic" ) : esc_html_e( "Guests & rooms", "tourfic" ); ?></span>
+                            <span class="tf-booking-form-title"><?php echo $post_type == "tf_hotel" ? esc_html( apply_filters("tf_hotel_guest_name_change", "guest") . "s & rooms") : esc_html__( "Guests & rooms", "tourfic" ); ?></span>
                             <div class="tf-booking-guest-and-room-wrap tf-archive-guest-info">
-                                <span class="tf-guest"><?php echo esc_html( $adult + $children ) ?> </span> <?php esc_html_e( apply_filters("tf_hotel_guest_name_change", "guest"), "tourfic" ); ?> <span
+                                <span class="tf-guest"><?php echo esc_html( $adult + $children ) ?> </span> <?php echo esc_html( apply_filters("tf_hotel_guest_name_change", "guest")); ?> <span
                                         class="tf-room"><?php echo esc_html( $room ); ?></span> <?php esc_html_e( "Rooms", "tourfic" ); ?>
                             </div>
                             <div class="tf-arrow-icons">
@@ -948,13 +894,13 @@ class Helper {
 					<?php }
 					if ( $post_type == 'tf_tours' || $post_type == 'tf_apartment' ) { ?>
                         <div class="tf-booking-form-guest-and-room-inner">
-                            <span class="tf-booking-form-title"><?php $post_type == "tf_hotel" ? esc_html_e( $adults_name . 's', 'tourfic' ) : esc_html_e( "Guests", "tourfic" ); ?></span>
+                            <span class="tf-booking-form-title"><?php echo $post_type == "tf_hotel" ? esc_html( $adults_name . 's' ) : esc_html__( "Guests", "tourfic" ); ?></span>
                             <div class="tf-booking-guest-and-room-wrap">
 						<span class="tf-guest tf-booking-date">
 							0<?php echo esc_html( $adult + $children ) ?>
 						</span>
                                 <span class="tf-booking-month">
-							<span><?php $post_type == "tf_hotels" ? esc_html_e( $adults_name . 's', 'tourfic' ) : esc_html_e( "Guest", "tourfic" ); ?></span>
+							<span><?php echo $post_type == "tf_hotels" ? esc_html( $adults_name . 's' ) : esc_html__( "Guest", "tourfic" ); ?></span>
 							<svg xmlns="http://www.w3.org/2000/svg" width="16" height="17" viewBox="0 0 16 17" fill="none">
 							<path d="M8 11.1641L4 7.16406H12L8 11.1641Z" fill="#595349"/>
 							</svg>
@@ -966,7 +912,7 @@ class Helper {
                     <div class="tf_acrselection-wrap">
                         <div class="tf_acrselection-inner">
                             <div class="tf_acrselection">
-                                <div class="acr-label"><?php $post_type == "tf_hotel" ?  esc_html_e( $adults_name . 's', 'tourfic' ) : esc_html_e( 'Adults', 'tourfic' ); ?></div>
+                                <div class="acr-label"><?php echo $post_type == "tf_hotel" ?  esc_html( $adults_name . 's' ) : esc_html__( 'Adults', 'tourfic' ); ?></div>
                                 <div class="acr-select">
                                     <div class="acr-dec">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20" fill="none">
@@ -1068,148 +1014,15 @@ class Helper {
             </div>
             <div class="tf-booking-form-submit">
 				<?php
-				$ptype = esc_attr( $_GET['type'] ) ?? get_post_type();
+				$ptype = sanitize_text_field( wp_unslash( $_GET['type'] ) ) ?? get_post_type();// phpcs:ignore WordPress.Security.NonceVerification.Recommended
 				?>
                 <input type="hidden" name="type" value="<?php echo esc_attr( $ptype ); ?>" class="tf-post-type"/>
                 <button class="tf_btn tf_btn_large tf_btn_sharp tf-submit"><?php esc_html_e( 'Check Availability', 'tourfic' ); ?></button>
             </div>
-			<?php if ( $post_type == 'tf_tours' ) { ?>
-                <script>
-                    (function ($) {
-                        $(document).ready(function () {
-                            // flatpickr locale first day of Week
-							<?php self::tf_flatpickr_locale( "root" ); ?>
-
-                            $(".tf-archive-template__two .tf-booking-date-wrap").on("click", function () {
-                                $("#check-in-out-date").trigger("click");
-                            });
-                            $("#check-in-out-date").flatpickr({
-                                enableTime: false,
-                                mode: "range",
-                                dateFormat: "Y/m/d",
-                                minDate: "today",
-
-                                // flatpickr locale
-								<?php self::tf_flatpickr_locale(); ?>
-
-                                onReady: function (selectedDates, dateStr, instance) {
-                                    instance.element.value = dateStr.replace(/(\d{4}\/\d{2}\/\d{2}).*(\d{4}\/\d{2}\/\d{2})/g, function (match, date1, date2) {
-                                        return `${date1} - ${date2}`;
-                                    });
-                                    dateSetToFields(selectedDates, instance);
-                                },
-                                onChange: function (selectedDates, dateStr, instance) {
-                                    instance.element.value = dateStr.replace(/(\d{4}\/\d{2}\/\d{2}).*(\d{4}\/\d{2}\/\d{2})/g, function (match, date1, date2) {
-                                        return `${date1} - ${date2}`;
-                                    });
-                                    dateSetToFields(selectedDates, instance);
-                                },
-								<?php
-								if(! empty( $date )){ ?>
-                                defaultDate: <?php echo wp_json_encode( explode( '-', $date ) ) ?>,
-								<?php } ?>
-                            });
-
-                            function dateSetToFields(selectedDates, instance) {
-                                if (selectedDates.length === 2) {
-                                    const monthNames = [
-                                        "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-                                        "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
-                                    ];
-                                    if (selectedDates[0]) {
-                                        const startDate = selectedDates[0];
-                                        $(".tf-archive-template__two .tf-booking-form-checkin .tf-tour-start-date span.tf-booking-date").html(startDate.getDate());
-                                        $(".tf-archive-template__two .tf-booking-form-checkin .tf-tour-start-date span.tf-booking-month span").html(monthNames[startDate.getMonth()]);
-                                    }
-                                    if (selectedDates[1]) {
-                                        const endDate = selectedDates[1];
-                                        $(".tf-archive-template__two .tf-booking-form-checkin .tf-tour-end-date span.tf-booking-date").html(endDate.getDate());
-                                        $(".tf-archive-template__two .tf-booking-form-checkin .tf-tour-end-date span.tf-booking-month span").html(monthNames[endDate.getMonth()]);
-                                    }
-                                }
-                            }
-
-                        });
-                    })(jQuery);
-                </script>
-			<?php } ?>
-
-			<?php if ( $post_type == 'tf_hotel' || $post_type == 'tf_apartment' ) { ?>
-
-                <script>
-                    (function ($) {
-                        $(document).ready(function () {
-
-                            const regexMap = {
-                                'Y/m/d': /(\d{4}\/\d{2}\/\d{2}).*(\d{4}\/\d{2}\/\d{2})/,
-                                'd/m/Y': /(\d{2}\/\d{2}\/\d{4}).*(\d{2}\/\d{2}\/\d{4})/,
-                                'm/d/Y': /(\d{2}\/\d{2}\/\d{4}).*(\d{2}\/\d{2}\/\d{4})/,
-                                'Y-m-d': /(\d{4}-\d{2}-\d{2}).*(\d{4}-\d{2}-\d{2})/,
-                                'd-m-Y': /(\d{2}-\d{2}-\d{4}).*(\d{2}-\d{2}-\d{4})/,
-                                'm-d-Y': /(\d{2}-\d{2}-\d{4}).*(\d{2}-\d{2}-\d{4})/,
-                                'Y.m.d': /(\d{4}\.\d{2}\.\d{2}).*(\d{4}\.\d{2}\.\d{2})/,
-                                'd.m.Y': /(\d{2}\.\d{2}\.\d{4}).*(\d{2}\.\d{2}\.\d{4})/,
-                                'm.d.Y': /(\d{2}\.\d{2}\.\d{4}).*(\d{2}\.\d{2}\.\d{4})/
-                            };
-                            const dateRegex = regexMap['<?php echo $date_format_for_users; ?>'];
-
-                            // flatpickr locale
-							<?php self::tf_flatpickr_locale( "root" ); ?>
-
-                            $(".tf-archive-template__two .tf-booking-date-wrap").on("click", function () {
-                                $("#check-in-out-date").trigger("click");
-                            });
-                            $("#check-in-out-date").flatpickr({
-                                enableTime: false,
-                                mode: "range",
-                                dateFormat: "Y/m/d",
-                                minDate: "today",
-
-                                // flatpickr locale
-								<?php self::tf_flatpickr_locale(); ?>
-
-
-                                onReady: function (selectedDates, dateStr, instance) {
-                                    instance.element.value = dateStr.replace(/(\d{4}\/\d{2}\/\d{2}).*(\d{4}\/\d{2}\/\d{2})/g, function (match, date1, date2) {
-                                        return `${date1} - ${date2}`;
-                                    });
-                                    dateSetToFields(selectedDates, instance);
-                                },
-                                onChange: function (selectedDates, dateStr, instance) {
-                                    instance.element.value = dateStr.replace(/(\d{4}\/\d{2}\/\d{2}).*(\d{4}\/\d{2}\/\d{2})/g, function (match, date1, date2) {
-                                        return `${date1} - ${date2}`;
-                                    });
-                                    dateSetToFields(selectedDates, instance);
-                                },
-                                defaultDate: <?php echo wp_json_encode( explode( '-', $date ) ) ?>,
-                            });
-
-                            function dateSetToFields(selectedDates, instance) {
-                                if (selectedDates.length === 2) {
-                                    const monthNames = [
-                                        "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-                                        "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
-                                    ];
-                                    if (selectedDates[0]) {
-                                        const startDate = selectedDates[0];
-                                        $(".tf-archive-template__two .tf-booking-form-checkin span.tf-booking-date").html(startDate.getDate());
-                                        $(".tf-archive-template__two .tf-booking-form-checkin span.tf-booking-month span").html(monthNames[startDate.getMonth()]);
-                                    }
-                                    if (selectedDates[1]) {
-                                        const endDate = selectedDates[1];
-                                        $(".tf-archive-template__two .tf-booking-form-checkout span.tf-booking-date").html(endDate.getDate());
-                                        $(".tf-archive-template__two .tf-booking-form-checkout span.tf-booking-month span").html(monthNames[endDate.getMonth()]);
-                                    }
-                                }
-                            }
-
-                        });
-                    })(jQuery);
-                </script>
-			<?php } ?>
-		<?php } elseif ( ( $post_type == "tf_tours" && $tf_tour_arc_selected_template == "design-3" && function_exists( 'is_tf_pro' ) && is_tf_pro()) ||
-		                 ( $post_type == "tf_hotel" && $tf_hotel_arc_selected_template == "design-3" && function_exists( 'is_tf_pro' ) && is_tf_pro()) ||
-		                 ( $post_type == "tf_apartment" && $tf_apartment_arc_selected_template == "design-2" && function_exists( 'is_tf_pro' ) && is_tf_pro()) ) { ?>
+		
+		<?php } elseif ( ( $post_type == "tf_tours" && $tf_tour_arc_selected_template == "design-3" ) ||
+		                 ( $post_type == "tf_hotel" && $tf_hotel_arc_selected_template == "design-3" ) ||
+		                 ( $post_type == "tf_apartment" && $tf_apartment_arc_selected_template == "design-2" ) ) { ?>
             <div class="tf-search-fields <?php echo $post_type == 'tf_tours' ? esc_attr( 'tf-tour-archive-block' ) : ''; ?>">
                 <div class="tf-search-field">
                     <div class="tf-search-field-icon">
@@ -1293,9 +1106,9 @@ class Helper {
                                 </svg>
                             </div>
                             <div class="tf-search-field-content">
-                                <span class="tf-search-field-label"><?php $post_type == "tf_hotel" ? esc_html_e( $adults_name . "s & rooms", "tourfic" ) : esc_html_e( "Guests & rooms", "tourfic" ); ?></span>
+                                <span class="tf-search-field-label"><?php echo $post_type == "tf_hotel" ? esc_html( $adults_name . "s & rooms" ) : esc_html__( "Guests & rooms", "tourfic" ); ?></span>
                                 <div class="tf-archive-guest-info">
-                                    <span class="tf-guest"><?php echo esc_html( (int) $adult + (int) $children ) ?> </span> <?php $post_type == "tf_hotel" ? esc_html_e( apply_filters("tf_hotel_guest_name_change", "guest") . 's', 'tourfic' ) : esc_html_e( "guest", "tourfic" ); ?>
+                                    <span class="tf-guest"><?php echo esc_html( (int) $adult + (int) $children ) ?> </span> <?php echo $post_type == "tf_hotel" ? esc_html( apply_filters("tf_hotel_guest_name_change", "guest") . 's' ) : esc_html__( "guest", "tourfic" ); ?>
                                     <span class="tf-room"><?php echo esc_html( $room ); ?></span> <?php esc_html_e( "Rooms", "tourfic" ); ?>
                                 </div>
                             </div>
@@ -1326,7 +1139,7 @@ class Helper {
                     <div class="tf_acrselection-wrap">
                         <div class="tf_acrselection-inner">
                             <div class="tf_acrselection">
-                                <div class="acr-label"><?php $post_type == "tf_hotel" ?  esc_html_e( $adults_name . 's', 'tourfic' ) : esc_html_e( 'Adults', 'tourfic' ); ?></div>
+                                <div class="acr-label"><?php echo $post_type == "tf_hotel" ?  esc_html( $adults_name . 's') : esc_html__( 'Adults', 'tourfic' ); ?></div>
                                 <div class="acr-select">
                                     <div class="acr-dec">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20" fill="none">
@@ -1427,68 +1240,10 @@ class Helper {
                 </div>
             </div>
             <div class="tf-booking-form-submit">
-	            <?php $ptype = esc_attr( $_GET['type'] ) ?? get_post_type(); ?>
+	            <?php $ptype = sanitize_text_field( wp_unslash( $_GET['type'] ) ) ?? get_post_type(); // phpcs:ignore WordPress.Security.NonceVerification.Recommended ?>
                 <input type="hidden" name="type" value="<?php echo esc_attr($ptype); ?>" class="tf-post-type"/>
                 <button class="tf_btn tf-submit"><?php esc_html_e( 'Search Now', 'tourfic' ); ?></button>
             </div>
-
-			<?php if ( $post_type == 'tf_hotel' || $post_type == 'tf_tours' || $post_type == 'tf_apartment' ) : ?>
-                <script>
-                    (function ($) {
-                        $(document).ready(function () {
-                            // flatpickr locale first day of Week
-							<?php self::tf_flatpickr_locale( "root" ); ?>
-
-                            $(".tf-archive-template__three #tf-check-out").on('click', function () {
-                                $(".tf-search-input.form-control").click();
-                            });
-
-                            $("#check-in-out-date").flatpickr({
-                                enableTime: false,
-                                mode: "range",
-                                dateFormat: "Y/m/d",
-                                minDate: "today",
-                                altInput: true,
-                                altFormat: '<?php echo esc_html( $date_format_for_users ); ?>',
-                                showMonths: $(window).width() >= 1240 ? 2 : 1,
-
-                                // flatpickr locale
-								<?php self::tf_flatpickr_locale(); ?>
-
-                                onReady: function (selectedDates, dateStr, instance) {
-                                    instance.element.value = dateStr.replace(/[a-z]+/g, '-');
-                                    instance.altInput.value = instance.altInput.value.replace(/[a-z]+/g, '-');
-                                    dateSetToFields(selectedDates, instance);
-                                },
-                                onChange: function (selectedDates, dateStr, instance) {
-                                    instance.element.value = dateStr.replace(/[a-z]+/g, '-');
-                                    instance.altInput.value = instance.altInput.value.replace(/[a-z]+/g, '-');
-                                    dateSetToFields(selectedDates, instance);
-                                },
-								<?php if(! empty( $date )){ ?>
-                                defaultDate: <?php echo wp_json_encode( explode( '-', $date ) ) ?>,
-								<?php } ?>
-                            });
-
-                            function dateSetToFields(selectedDates, instance) {
-                                const format = '<?php echo esc_html( $date_format_for_users ); ?>';
-                                if (selectedDates.length === 2) {
-                                    if (selectedDates[0]) {
-                                        let checkInDate = instance.formatDate(selectedDates[0], format);
-                                        $(".tf-archive-template__three #tf-check-in").val(checkInDate);
-                                    }
-
-                                    if (selectedDates[1]) {
-                                        let checkOutDate = instance.formatDate(selectedDates[1], format);
-                                        $(".tf-archive-template__three #tf-check-out").val(checkOutDate);
-                                    }
-                                }
-                            }
-
-                        });
-                    })(jQuery);
-                </script>
-			<?php endif; ?>
 		<?php } else { ?>
             <!-- Start Booking widget -->
             <form class="tf_booking-widget widget tf-hotel-side-booking" method="get" autocomplete="off"
@@ -1521,10 +1276,10 @@ class Helper {
                         <div class="tf_form-inner">
                             <i class="fas fa-user-friends"></i>
                             <select name="adults" id="adults" class="">
-                                <option <?php echo 1 == $adult ? 'selected' : null ?> value="1">1 <?php $post_type == "tf_hotel" ? esc_html__( $adults_name, "tourfic" ) : esc_html_e( 'Adult', 'tourfic' ); ?></option>
+                                <option <?php echo 1 == $adult ? 'selected' : null ?> value="1">1 <?php echo $post_type == "tf_hotel" ? esc_html( $adults_name ) : esc_html__( 'Adult', 'tourfic' ); ?></option>
 								<?php foreach ( range( 2, 8 ) as $value ) {
 									$selected = $value == $adult ? 'selected' : null;
-									echo '<option ' . esc_attr( $selected ) . ' value="' . esc_attr( $value ) . '">' . esc_html( $value ) . ' ' . esc_html__( $adults_name . 's', 'tourfic' ) . '</option>';
+									echo '<option ' . esc_attr( $selected ) . ' value="' . esc_attr( $value ) . '">' . esc_html( $value ) . ' ' . esc_html( $adults_name . 's') . '</option>';
 								} ?>
                             </select>
                         </div>
@@ -1623,11 +1378,11 @@ class Helper {
                         <input type="hidden" id="endprice" value="<?php echo esc_attr( $endprice ); ?>">
 					<?php } ?>
 					<?php
-					if ( ! empty( $_GET['tf-author'] ) ) { ?>
-                        <input type="hidden" id="tf_author" value="<?php echo esc_html( $_GET['tf-author'] ); ?>">
+					if ( ! empty( $_GET['tf-author'] ) ) {  // phpcs:ignore WordPress.Security.NonceVerification.Recommended?>
+                        <input type="hidden" id="tf_author" value="<?php echo esc_html(sanitize_text_field( wp_unslash( $_GET['tf-author'] ) ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended ?>">
 					<?php } ?>
 					<?php
-					$ptype = esc_attr( $_GET['type'] ) ?? get_post_type();
+					$ptype = sanitize_text_field( wp_unslash( $_GET['type'] ) ) ?? get_post_type(); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 					?>
                     <input type="hidden" name="type" value="<?php echo esc_attr( $ptype ); ?>" class="tf-post-type"/>
                     <button class="tf_btn tf_btn_full tf-submit"
@@ -1635,59 +1390,6 @@ class Helper {
                 </div>
 
             </form>
-            <script>
-                (function ($) {
-                    $(document).ready(function () {
-
-                        // flatpickr locale first day of Week
-						<?php self::tf_flatpickr_locale( "root" ); ?>
-
-                        const regexMap = {
-                            'Y/m/d': /(\d{4}\/\d{2}\/\d{2}).*(\d{4}\/\d{2}\/\d{2})/,
-                            'd/m/Y': /(\d{2}\/\d{2}\/\d{4}).*(\d{2}\/\d{2}\/\d{4})/,
-                            'm/d/Y': /(\d{2}\/\d{2}\/\d{4}).*(\d{2}\/\d{2}\/\d{4})/,
-                            'Y-m-d': /(\d{4}-\d{2}-\d{2}).*(\d{4}-\d{2}-\d{2})/,
-                            'd-m-Y': /(\d{2}-\d{2}-\d{4}).*(\d{2}-\d{2}-\d{4})/,
-                            'm-d-Y': /(\d{2}-\d{2}-\d{4}).*(\d{2}-\d{2}-\d{4})/,
-                            'Y.m.d': /(\d{4}\.\d{2}\.\d{2}).*(\d{4}\.\d{2}\.\d{2})/,
-                            'd.m.Y': /(\d{2}\.\d{2}\.\d{4}).*(\d{2}\.\d{2}\.\d{4})/,
-                            'm.d.Y': /(\d{2}\.\d{2}\.\d{4}).*(\d{2}\.\d{2}\.\d{4})/
-                        };
-                        const dateRegex = regexMap['<?php echo $date_format_for_users; ?>'];
-
-                        $(".tf-hotel-side-booking #check-in-out-date").flatpickr({
-                            enableTime: false,
-                            minDate: "today",
-                            altInput: true,
-                            altFormat: '<?php echo esc_html( $date_format_for_users ); ?>',
-                            mode: "range",
-                            dateFormat: "Y/m/d",
-
-                            // flatpickr locale
-							<?php self::tf_flatpickr_locale(); ?>
-
-                            onReady: function (selectedDates, dateStr, instance) {
-                                instance.element.value = dateStr.replace(/(\d{4}\/\d{2}\/\d{2}).*(\d{4}\/\d{2}\/\d{2})/g, function (match, date1, date2) {
-                                    return `${date1} - ${date2}`;
-                                });
-                                instance.altInput.value = instance.altInput.value.replace( dateRegex, function (match, d1, d2) {
-                                    return `${d1} - ${d2}`;
-                                });
-                            },
-                            onChange: function (selectedDates, dateStr, instance) {
-                                instance.element.value = dateStr.replace(/(\d{4}\/\d{2}\/\d{2}).*(\d{4}\/\d{2}\/\d{2})/g, function (match, date1, date2) {
-                                    return `${date1} - ${date2}`;
-                                });
-                                instance.altInput.value = instance.altInput.value.replace( dateRegex, function (match, d1, d2) {
-                                    return `${d1} - ${d2}`;
-                                });
-                            },
-                            defaultDate: <?php echo wp_json_encode( explode( '-', $date ) ) ?>,
-                        });
-
-                    });
-                })(jQuery);
-            </script>
 
 			<?php if ( is_active_sidebar( 'tf_search_result' ) ) { ?>
                 <div id="tf__booking_sidebar">
@@ -1747,11 +1449,11 @@ class Helper {
         // Convert string times to timestamps
         $start_time = strtotime($start_time_str);
         $end_time   = strtotime($end_time_str);
-        $default_time = date('g:i A', strtotime($default_time_str));
+        $default_time = gmdate('g:i A', strtotime($default_time_str));
 
         // Use selected time from GET or fall back to default
-        $selected_pickup_time = !empty($_GET['pickup-time']) ? esc_html($_GET['pickup-time']) : $default_time;
-        $selected_dropoff_time = !empty($_GET['dropoff-time']) ? esc_html($_GET['dropoff-time']) : $default_time;
+        $selected_pickup_time = !empty($_GET['pickup-time']) ? sanitize_text_field( wp_unslash($_GET['pickup-time']) ) : $default_time; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+        $selected_dropoff_time = !empty($_GET['dropoff-time']) ? sanitize_text_field( wp_unslash($_GET['dropoff-time']) ) : $default_time; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 
 		if ( ( is_post_type_archive( 'tf_hotel' ) && $tf_hotel_arc_selected_template == "design-1" ) ||
              ( is_post_type_archive( 'tf_tours' ) && $tf_tour_arc_selected_template == "design-1" ) ||
@@ -1780,7 +1482,7 @@ class Helper {
                         <div class="tf-field tf-flex">
                             <div class="acr-label tf-flex">
                                 <i class="fa-regular fa-user"></i>
-								<?php $post_type == "tf_hotel" ?  esc_html_e( $adults_name . 's', 'tourfic' ) : esc_html_e( 'Adults', 'tourfic' ); ?>
+								<?php echo $post_type == "tf_hotel" ?  esc_html( $adults_name . 's' ) : esc_html__( 'Adults', 'tourfic' ); ?>
                             </div>
                             <div class="acr-select">
                                 <div class="acr-dec">-</div>
@@ -1838,51 +1540,6 @@ class Helper {
                     </div>
                 </form>
             </div>
-            <script>
-                (function ($) {
-                    $(document).ready(function () {
-						<?php self::tf_flatpickr_locale( 'root' ); ?>
-
-                        $(document).on("focus", ".tf-hotel-side-booking #check-in-out-date", function (e) {
-                            const regexMap = {
-                                'Y/m/d': /(\d{4}\/\d{2}\/\d{2}).*(\d{4}\/\d{2}\/\d{2})/,
-                                'd/m/Y': /(\d{2}\/\d{2}\/\d{4}).*(\d{2}\/\d{2}\/\d{4})/,
-                                'm/d/Y': /(\d{2}\/\d{2}\/\d{4}).*(\d{2}\/\d{2}\/\d{4})/,
-                                'Y-m-d': /(\d{4}-\d{2}-\d{2}).*(\d{4}-\d{2}-\d{2})/,
-                                'd-m-Y': /(\d{2}-\d{2}-\d{4}).*(\d{2}-\d{2}-\d{4})/,
-                                'm-d-Y': /(\d{2}-\d{2}-\d{4}).*(\d{2}-\d{2}-\d{4})/,
-                                'Y.m.d': /(\d{4}\.\d{2}\.\d{2}).*(\d{4}\.\d{2}\.\d{2})/,
-                                'd.m.Y': /(\d{2}\.\d{2}\.\d{4}).*(\d{2}\.\d{2}\.\d{4})/,
-                                'm.d.Y': /(\d{2}\.\d{2}\.\d{4}).*(\d{2}\.\d{2}\.\d{4})/
-                            };
-                            const dateRegex = regexMap['<?php echo $date_format_for_users; ?>'];
-                            let calander = flatpickr(this, {
-                                enableTime: false,
-                                minDate: "today",
-                                mode: "range",
-                                dateFormat: "Y/m/d",
-                                altInput: true,
-                                altFormat: '<?php echo esc_html( $date_format_for_users ); ?>',
-
-                                // flatpickr locale
-								<?php self::tf_flatpickr_locale(); ?>
-
-                                onChange: function (selectedDates, dateStr, instance) {
-                                    instance.element.value = dateStr.replace(/(\d{4}\/\d{2}\/\d{2}).*(\d{4}\/\d{2}\/\d{2})/g, function (match, date1, date2) {
-                                        return `${date1} - ${date2}`;
-                                    });
-                                    instance.altInput.value = instance.altInput.value.replace( dateRegex, function (match, d1, d2) {
-                                        return `${d1} - ${d2}`;
-                                    });
-                                },
-                            });
-
-                            // open flatpickr on focus
-                            calander.open();
-                        })
-                    });
-                })(jQuery);
-            </script>
 			<?php
 		} elseif ( ( is_post_type_archive( 'tf_hotel' ) && $tf_hotel_arc_selected_template == "design-2" ) ||
                    ( is_post_type_archive( 'tf_tours' ) && $tf_tour_arc_selected_template == "design-2" ) ||
@@ -1975,10 +1632,27 @@ class Helper {
                         <div class="tf-booking-form-guest-and-room">
                             <?php if ( $post_type == 'tf_hotel' ) { ?>
                                 <div class="tf-booking-form-guest-and-room-inner">
-                                    <span class="tf-booking-form-title"><?php $post_type == "tf_hotel" ? esc_html_e( apply_filters("tf_hotel_guest_name_change", "guest") . "s & rooms", "tourfic" ) : esc_html_e( "Guests & rooms", "tourfic" ); ?></span>
+                                    <span class="tf-booking-form-title">
+                                        <?php 
+                                        if ( $post_type == "tf_hotel" ) {
+                                            /* translators: %s: Guest label, e.g. "guest" */
+                                            echo sprintf( esc_html__( '%ss & rooms', 'tourfic' ), esc_html( apply_filters( 'tf_hotel_guest_name_change', 'guest' ) ) );
+                                        } else {
+                                            echo esc_html__( 'Guests & rooms', 'tourfic' );
+                                        }
+                                        ?>
+                                    </span>
                                     <div class="tf-booking-guest-and-room-wrap tf-archive-guest-info">
-                                        <span class="tf-guest"><?php esc_html_e( "01", "tourfic" ); ?></span> <?php $post_type == "tf_hotel" ? esc_html_e( apply_filters("tf_hotel_guest_name_change", "guest") . 's', 'tourfic' ) : esc_html_e( "guest", "tourfic" ); ?> <span
-                                                class="tf-room"><?php esc_html_e( "01", "tourfic" ); ?></span> <?php esc_html_e( "rooms", "tourfic" ); ?>
+                                        <span class="tf-guest"><?php esc_html_e( "01", "tourfic" ); ?></span> 
+                                        <?php 
+                                        if ( $post_type == "tf_hotel" ) {
+                                            /* translators: %s: Guest label, e.g. "guest" */
+                                            echo sprintf( esc_html__( '%ss', 'tourfic' ), esc_html( apply_filters( 'tf_hotel_guest_name_change', 'guest' ) ) );
+                                        } else {
+                                            echo esc_html__( 'guest', 'tourfic' );
+                                        }
+                                        ?>
+                                        <span class="tf-room"><?php esc_html_e( "01", "tourfic" ); ?></span> <?php esc_html_e( "rooms", "tourfic" ); ?>
                                     </div>
                                     <div class="tf-arrow-icons">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="17" viewBox="0 0 16 17" fill="none">
@@ -1988,13 +1662,13 @@ class Helper {
                                 </div>
                             <?php } else { ?>
                                 <div class="tf-booking-form-guest-and-room-inner">
-                                    <span class="tf-booking-form-title"><?php $post_type == "tf_hotel" ? esc_html_e( $adults_name . 's', 'tourfic' ) : esc_html_e( "Guests", "tourfic" ); ?></span>
+                                    <span class="tf-booking-form-title"><?php echo $post_type == "tf_hotel" ? esc_html( $adults_name . 's') : esc_html__( "Guests", "tourfic" ); ?></span>
                                     <div class="tf-booking-guest-and-room-wrap">
                                 <span class="tf-guest tf-booking-date">
                                     <?php esc_html_e( "01", "tourfic" ); ?>
                                 </span>
                                         <span class="tf-booking-month">
-                                    <span><?php $post_type == "tf_hotel" ? esc_html_e( $adults_name . 's', 'tourfic' ) : esc_html_e( "guest", "tourfic" ); ?></span>
+                                    <span><?php echo $post_type == "tf_hotel" ? esc_html( $adults_name . 's') : esc_html__( "guest", "tourfic" ); ?></span>
                                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="17" viewBox="0 0 16 17" fill="none">
                                     <path d="M8 11.1641L4 7.16406H12L8 11.1641Z" fill="#595349"/>
                                     </svg>
@@ -2006,7 +1680,7 @@ class Helper {
                             <div class="tf_acrselection-wrap">
                                 <div class="tf_acrselection-inner">
                                     <div class="tf_acrselection">
-                                        <div class="acr-label"><?php $post_type == "tf_hotel" ?  esc_html_e( $adults_name . 's', 'tourfic' ) : esc_html_e( 'Adults', 'tourfic' ); ?></div>
+                                        <div class="acr-label"><?php echo $post_type == "tf_hotel" ?  esc_html( $adults_name . 's' ) : esc_html__( 'Adults', 'tourfic' ); ?></div>
                                         <div class="acr-select">
                                             <div class="acr-dec">
                                                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20" fill="none">
@@ -2110,143 +1784,6 @@ class Helper {
                         <input type="hidden" name="type" value="<?php echo esc_attr( $post_type ); ?>" class="tf-post-type"/>
                         <button class="tf_btn tf_btn_large tf_btn_sharp tf-submit"><?php echo esc_html__( 'Check Availability', 'tourfic' ); ?></button>
                     </div>
-
-                    <?php if ( $post_type == 'tf_tours' ) { ?>
-                        <script>
-                            (function ($) {
-                                $(document).ready(function () {
-                                    // flatpickr locale first day of Week
-                                    <?php self::tf_flatpickr_locale( "root" ); ?>
-
-                                    $(".tf-archive-booking-form__style-2 .tf-booking-date-wrap").on("click", function () {
-
-                                        $("#check-in-out-date").trigger("click");
-                                    });
-                                    $("#check-in-out-date").flatpickr({
-                                        enableTime: false,
-                                        mode: "range",
-                                        dateFormat: "Y/m/d",
-                                        minDate: "today",
-
-                                        // flatpickr locale
-                                        <?php self::tf_flatpickr_locale(); ?>
-
-                                        onReady: function (selectedDates, dateStr, instance) {
-                                            instance.element.value = dateStr.replace(/(\d{4}\/\d{2}\/\d{2}).*(\d{4}\/\d{2}\/\d{2})/g, function (match, date1, date2) {
-                                                return `${date1} - ${date2}`;
-                                            });
-                                            dateSetToFields(selectedDates, instance);
-                                        },
-                                        onChange: function (selectedDates, dateStr, instance) {
-                                            instance.element.value = dateStr.replace(/(\d{4}\/\d{2}\/\d{2}).*(\d{4}\/\d{2}\/\d{2})/g, function (match, date1, date2) {
-                                                return `${date1} - ${date2}`;
-                                            });
-                                            dateSetToFields(selectedDates, instance);
-                                        },
-                                        <?php
-                                        if(! empty( $check_in_out )){ ?>
-                                        defaultDate: <?php echo wp_json_encode( explode( '-', $check_in_out ) ) ?>,
-                                        <?php } ?>
-                                    });
-
-                                    function dateSetToFields(selectedDates, instance) {
-                                        if (selectedDates.length === 2) {
-                                            const monthNames = [
-                                                "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-                                                "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
-                                            ];
-                                            if (selectedDates[0]) {
-                                                const startDate = selectedDates[0];
-                                                $(".tf-archive-booking-form__style-2 .tf-booking-form-checkin .tf-tour-start-date span.tf-booking-date").html(startDate.getDate());
-                                                $(".tf-archive-booking-form__style-2 .tf-booking-form-checkin .tf-tour-start-date span.tf-booking-month span").html(monthNames[startDate.getMonth()]);
-                                            }
-                                            if (selectedDates[1]) {
-                                                const endDate = selectedDates[1];
-                                                $(".tf-archive-booking-form__style-2 .tf-booking-form-checkin .tf-tour-end-date span.tf-booking-date").html(endDate.getDate());
-                                                $(".tf-archive-booking-form__style-2 .tf-booking-form-checkin .tf-tour-end-date span.tf-booking-month span").html(monthNames[endDate.getMonth()]);
-                                            }
-                                        }
-                                    }
-
-                                });
-                            })(jQuery);
-                        </script>
-                    <?php } ?>
-
-                    <?php if ( $post_type == 'tf_hotel' || $post_type == 'tf_apartment' ) { ?>
-                        <script>
-                            (function ($) {
-                                $(document).ready(function () {
-                                    const regexMap = {
-                                        'Y/m/d': /(\d{4}\/\d{2}\/\d{2}).*(\d{4}\/\d{2}\/\d{2})/,
-                                        'd/m/Y': /(\d{2}\/\d{2}\/\d{4}).*(\d{2}\/\d{2}\/\d{4})/,
-                                        'm/d/Y': /(\d{2}\/\d{2}\/\d{4}).*(\d{2}\/\d{2}\/\d{4})/,
-                                        'Y-m-d': /(\d{4}-\d{2}-\d{2}).*(\d{4}-\d{2}-\d{2})/,
-                                        'd-m-Y': /(\d{2}-\d{2}-\d{4}).*(\d{2}-\d{2}-\d{4})/,
-                                        'm-d-Y': /(\d{2}-\d{2}-\d{4}).*(\d{2}-\d{2}-\d{4})/,
-                                        'Y.m.d': /(\d{4}\.\d{2}\.\d{2}).*(\d{4}\.\d{2}\.\d{2})/,
-                                        'd.m.Y': /(\d{2}\.\d{2}\.\d{4}).*(\d{2}\.\d{2}\.\d{4})/,
-                                        'm.d.Y': /(\d{2}\.\d{2}\.\d{4}).*(\d{2}\.\d{2}\.\d{4})/
-                                    };
-                                    const dateRegex = regexMap['<?php echo $date_format_for_users; ?>'];
-
-                                    // flatpickr locale first day of Week
-                                    <?php self::tf_flatpickr_locale( "root" ); ?>
-
-                                    $(".tf-archive-booking-form__style-2 .tf-booking-date-wrap").on("click", function () {
-
-                                        $("#check-in-out-date").trigger("click");
-                                    });
-                                    $("#check-in-out-date").flatpickr({
-                                        enableTime: false,
-                                        mode: "range",
-                                        dateFormat: "Y/m/d",
-                                        minDate: "today",
-
-                                        // flatpickr locale
-                                        <?php self::tf_flatpickr_locale(); ?>
-
-                                        onReady: function (selectedDates, dateStr, instance) {
-                                                instance.element.value = dateStr.replace(/(\d{4}\/\d{2}\/\d{2}).*(\d{4}\/\d{2}\/\d{2})/g, function (match, date1, date2) {
-                                                return `${date1} - ${date2}`;
-                                            });
-                                            dateSetToFields(selectedDates, instance);
-                                        },
-                                        onChange: function (selectedDates, dateStr, instance) {
-                                            instance.element.value = dateStr.replace(/(\d{4}\/\d{2}\/\d{2}).*(\d{4}\/\d{2}\/\d{2})/g, function (match, date1, date2) {
-                                                return `${date1} - ${date2}`;
-                                            });
-                                            dateSetToFields(selectedDates, instance);
-                                        },
-                                        <?php
-                                        if(! empty( $check_in_out )){ ?>
-                                        defaultDate: <?php echo wp_json_encode( explode( '-', $check_in_out ) ) ?>,
-                                        <?php } ?>
-                                    });
-
-                                    function dateSetToFields(selectedDates, instance) {
-                                        if (selectedDates.length === 2) {
-                                            const monthNames = [
-                                                "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-                                                "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
-                                            ];
-                                            if (selectedDates[0]) {
-                                                const startDate = selectedDates[0];
-                                                $(".tf-archive-booking-form__style-2 .tf-booking-form-checkin span.tf-booking-date").html(startDate.getDate());
-                                                $(".tf-archive-booking-form__style-2 .tf-booking-form-checkin span.tf-booking-month span").html(monthNames[startDate.getMonth()]);
-                                            }
-                                            if (selectedDates[1]) {
-                                                const endDate = selectedDates[1];
-                                                $(".tf-archive-booking-form__style-2 .tf-booking-form-checkout span.tf-booking-date").html(endDate.getDate());
-                                                $(".tf-archive-booking-form__style-2 .tf-booking-form-checkout span.tf-booking-month span").html(monthNames[endDate.getMonth()]);
-                                            }
-                                        }
-                                    }
-
-                                });
-                            })(jQuery);
-                        </script>
-                    <?php } ?>
                 </form>
             </div>
 		<?php
@@ -2254,7 +1791,7 @@ class Helper {
 		<div class="tf-archive-search-box">
 			<div class="tf-archive-search-box-wrapper">
 				<div class="tf-date-select-box tf-flex tf-flex-gap-8">
-					<div class="tf-date-single-select tf-flex tf-flex-gap-8 tf-flex-space-bttn tf-pick-drop-location <?php echo !isset( $_GET['same_location'] ) || 'on'==$_GET['same_location'] ? esc_attr('active') : ''; ?>">
+					<div class="tf-date-single-select tf-flex tf-flex-gap-8 tf-flex-space-bttn tf-pick-drop-location <?php echo !isset( $_GET['same_location'] ) || 'on'==$_GET['same_location'] ? esc_attr('active') : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended ?>">
 						<div class="tf-select-date">
 							<div class="tf-flex tf-flex-gap-4">
 								<div class="icon">
@@ -2271,8 +1808,8 @@ class Helper {
 								</div>
 								<div class="info-select">
 									<h5><?php esc_html_e("Pick-up", "tourfic"); ?></h5>
-									<input type="text" placeholder="Pick Up Location" id="tf_pickup_location" value="<?php echo !empty($_GET['pickup-name']) ? esc_html($_GET['pickup-name']) : '' ?>" />
-									<input type="hidden" id="tf_pickup_location_id" value="<?php echo !empty($_GET['pickup']) ? esc_html($_GET['pickup']) : '' ?>" />
+									<input type="text" placeholder="Pick Up Location" id="tf_pickup_location" value="<?php echo !empty($_GET['pickup-name']) ? esc_html(sanitize_text_field( wp_unslash($_GET['pickup-name']) ) ) : '' // phpcs:ignore WordPress.Security.NonceVerification.Recommended ?>" />
+									<input type="hidden" id="tf_pickup_location_id" value="<?php echo !empty($_GET['pickup']) ? esc_html(sanitize_text_field( wp_unslash($_GET['pickup']) )) : '' // phpcs:ignore WordPress.Security.NonceVerification.Recommended ?>" />
 								</div>
 							</div>
 						</div>
@@ -2292,8 +1829,8 @@ class Helper {
 								</div>
 								<div class="info-select">
 									<h5><?php esc_html_e("Drop-off", "tourfic"); ?></h5>
-									<input type="text" placeholder="Drop Off Location" id="tf_dropoff_location" value="<?php echo !empty($_GET['dropoff-name']) ? esc_html($_GET['dropoff-name']) : '' ?>" />
-									<input type="hidden" id="tf_dropoff_location_id" value="<?php echo !empty($_GET['dropoff']) ? esc_html($_GET['dropoff']) : '' ?>" />
+									<input type="text" placeholder="Drop Off Location" id="tf_dropoff_location" value="<?php echo !empty($_GET['dropoff-name']) ? esc_html(sanitize_text_field( wp_unslash($_GET['dropoff-name']) )) : '' // phpcs:ignore WordPress.Security.NonceVerification.Recommended ?>" />
+									<input type="hidden" id="tf_dropoff_location_id" value="<?php echo !empty($_GET['dropoff']) ? esc_html(sanitize_text_field( wp_unslash($_GET['dropoff']) )) : '' // phpcs:ignore WordPress.Security.NonceVerification.Recommended ?>" />
 								</div>
 							</div>
 						</div>
@@ -2309,7 +1846,7 @@ class Helper {
 								</div>
 								<div class="info-select">
 									<h5><?php esc_html_e("Pick-up date", "tourfic"); ?></h5>
-									<input type="text" placeholder="Pick Up Date" id="tf_pickup_date" class="tf_pickup_date" value="<?php echo !empty($_GET['pickup-date']) ? esc_html($_GET['pickup-date']) : date('Y/m/d', strtotime('+1 day')); ?>" />
+									<input type="text" placeholder="Pick Up Date" id="tf_pickup_date" class="tf_pickup_date" value="<?php echo !empty($_GET['pickup-date']) ? esc_html(sanitize_text_field( wp_unslash($_GET['pickup-date']) )) : esc_attr(gmdate('Y/m/d', strtotime('+1 day'))); // phpcs:ignore WordPress.Security.NonceVerification.Recommended ?>" />
 								</div>
 							</div>
 						</div>
@@ -2345,9 +1882,9 @@ class Helper {
                                         <ul class="time-options-list tf-pickup-time">
                                             <?php
                                                 for ($time = $start_time; $time <= $end_time; $time += $time_interval * 60) {
-                                                    $time_label = date("g:i A", $time);
+                                                    $time_label = gmdate("g:i A", $time);
                                                     $selected = ($selected_pickup_time === $time_label) ? 'selected' : '';
-                                                    echo '<li value="' . esc_attr($time_label) . '" ' . $selected . '>' . esc_html($time_label) . '</li>';
+                                                    echo '<li value="' . esc_attr($time_label) . '" ' . esc_attr($selected) . '>' . esc_html($time_label) . '</li>';
                                                 }
                                             ?>
                                         </ul>
@@ -2367,7 +1904,7 @@ class Helper {
 								</div>
 								<div class="info-select">
 									<h5><?php esc_html_e("Drop-off date", "tourfic"); ?></h5>
-									<input type="text" placeholder="Drop Off Date" id="tf_dropoff_date" class="tf_dropoff_date" value="<?php echo !empty($_GET['dropoff-date']) ? esc_html($_GET['dropoff-date']) : date('Y-m-d', strtotime('+2 day')); ?>" readonly='' />
+									<input type="text" placeholder="Drop Off Date" id="tf_dropoff_date" class="tf_dropoff_date" value="<?php echo !empty($_GET['dropoff-date']) ? esc_html(sanitize_text_field( wp_unslash($_GET['dropoff-date']) )) : esc_attr(gmdate('Y-m-d', strtotime('+2 day'))); // phpcs:ignore WordPress.Security.NonceVerification.Recommended ?>" readonly='' />
 								</div>
 							</div>
 						</div>
@@ -2403,9 +1940,9 @@ class Helper {
                                         <ul class="time-options-list tf-dropoff-time">
                                             <?php
                                                 for ($time = $start_time; $time <= $end_time; $time += $time_interval * 60) {
-                                                    $time_label = date("g:i A", $time);
+                                                    $time_label = gmdate("g:i A", $time);
                                                     $selected = ($selected_dropoff_time === $time_label) ? 'selected' : '';
-                                                    echo '<li value="' . esc_attr($time_label) . '" ' . $selected . '>' . esc_html($time_label) . '</li>';
+                                                    echo '<li value="' . esc_attr($time_label) . '" ' . esc_attr($selected) . '>' . esc_html($time_label) . '</li>';
                                                 }
                                             ?>
                                         </ul>
@@ -2428,7 +1965,7 @@ class Helper {
 							<li>
 								<label>
                                     <?php esc_html_e("Return in the same location", "tourfic"); ?>
-                                    <input type="checkbox" name="same_location" <?php echo !isset($_GET['same_location']) || $_GET['same_location'] === 'on' ? esc_attr('checked') : ''; ?>>
+                                    <input type="checkbox" name="same_location" <?php echo !isset($_GET['same_location']) || $_GET['same_location'] === 'on' ? esc_attr('checked') : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended ?>>
                                     <span class="tf-checkmark"></span>
                                 </label>
 
@@ -2436,7 +1973,7 @@ class Helper {
 							<li>
 								<label><?php esc_html_e("Age of driver ", "tourfic"); ?>
                                 <?php echo esc_attr($car_driver_min_age); ?>-<?php echo esc_attr($car_driver_max_age); ?>?
-									<input type="checkbox" name="driver_age" <?php echo !isset($_GET['driver_age']) || $_GET['driver_age']==='on' ? esc_attr('checked') : ''; ?>>
+									<input type="checkbox" name="driver_age" <?php echo !isset($_GET['driver_age']) || $_GET['driver_age']==='on' ? esc_attr('checked') : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended ?>>
 									<span class="tf-checkmark"></span>
 								</label>
 							</li>
@@ -2446,64 +1983,16 @@ class Helper {
 						<input type="hidden" class="tf-post-type" value="<?php echo esc_attr("tf_carrental"); ?>">
 						<button class="tf-filter-cars"><?php esc_html_e("Search", "tourfic"); ?> <i class="ri-search-line"></i></button>
 					</div>
-
-					<script>
-						(function ($) {
-							$(document).ready(function () {
-								 // flatpickr locale first day of Week
-                                <?php self::tf_flatpickr_locale( "root" ); ?>
-
-                                $(".tf-archive-template__one .tf_dropoff_date").on("click", function () {
-                                    $("#tf_pickup_date").trigger("click");
-                                });
-                                $(".tf-archive-template__one #tf_pickup_date").flatpickr({
-                                    enableTime: false,
-                                    mode: "range",
-                                    dateFormat: "Y/m/d",
-                                    minDate: "today",
-                                    showMonths: $(window).width() >= 1240 ? 2 : 1,
-                                    // flatpickr locale
-                                    <?php self::tf_flatpickr_locale(); ?>
-
-                                    onReady: function (selectedDates, dateStr, instance) {
-                                        dateSetToFields(selectedDates, instance);
-                                    },
-
-                                    onChange: function (selectedDates, dateStr, instance) {
-                                        dateSetToFields(selectedDates, instance);
-                                    },
-                                    <?php if(! empty( $check_in_out )){ ?>
-                                        defaultDate: <?php echo wp_json_encode( explode( '-', $check_in_out ) ) ?>,
-                                    <?php } ?>
-                                });
-
-                                function dateSetToFields(selectedDates, instance) {
-                                    if (selectedDates.length === 2) {
-                                        if (selectedDates[0]) {
-                                            const startDate = flatpickr.formatDate(selectedDates[0], "Y/m/d");
-                                            $(".tf-archive-template__one #tf_pickup_date").val(startDate);
-                                        }
-                                        if (selectedDates[1]) {
-                                            const endDate = flatpickr.formatDate(selectedDates[1], "Y/m/d");
-                                            $(".tf-archive-template__one .tf-select-date #tf_dropoff_date").val(endDate);
-                                        }
-                                    }
-                                }
-
-							});
-						})(jQuery);
-
-					</script>
 				</div>
 			</div>
 		</div>
         <?php } elseif (
-            ( is_post_type_archive( 'tf_hotel' ) && $tf_hotel_arc_selected_template == "design-3" && function_exists( 'is_tf_pro' ) && is_tf_pro()) ||
-            ( is_post_type_archive( 'tf_tours' ) && $tf_tour_arc_selected_template == "design-3" && function_exists( 'is_tf_pro' ) && is_tf_pro()) ||
-            ( is_post_type_archive( 'tf_apartment' ) && $tf_apartment_arc_selected_template == "design-2" && function_exists( 'is_tf_pro' ) && is_tf_pro()) ||
-            ( $post_type == 'tf_hotel' && $tf_hotel_arc_selected_template == "design-3" && function_exists( 'is_tf_pro' ) && is_tf_pro()) ||
-            ( $post_type == 'tf_tours' && $tf_tour_arc_selected_template == "design-3" && function_exists( 'is_tf_pro' ) && is_tf_pro()) ||
-            ( $post_type == 'tf_apartment' && $tf_apartment_arc_selected_template == "design-2" && function_exists( 'is_tf_pro' ) && is_tf_pro())
+            ( is_post_type_archive( 'tf_hotel' ) && $tf_hotel_arc_selected_template == "design-3" ) ||
+            ( is_post_type_archive( 'tf_tours' ) && $tf_tour_arc_selected_template == "design-3" ) ||
+            ( is_post_type_archive( 'tf_apartment' ) && $tf_apartment_arc_selected_template == "design-2" ) ||
+            ( $post_type == 'tf_hotel' && $tf_hotel_arc_selected_template == "design-3" ) ||
+            ( $post_type == 'tf_tours' && $tf_tour_arc_selected_template == "design-3" ) ||
+            ( $post_type == 'tf_apartment' && $tf_apartment_arc_selected_template == "design-2" )
         ){
             ?>
             <form class="tf-archive-booking-form__style-3 tf_archive_search_result tf-hotel-side-booking tf-booking-form" action="<?php echo esc_url( Helper::tf_booking_search_action() ); ?>" method="get" autocomplete="off">
@@ -2592,7 +2081,7 @@ class Helper {
                                 <div class="tf-search-field-content">
                                     <span class="tf-search-field-label"><?php esc_html_e( "Guests & rooms", "tourfic" ); ?></span>
                                     <div class="tf-archive-guest-info">
-                                        <span class="tf-guest"><?php esc_html_e( "01", "tourfic" ); ?></span> <?php esc_html_e( apply_filters("tf_hotel_guest_name_change", "guest"), "tourfic" ); ?>
+                                        <span class="tf-guest"><?php esc_html_e( "01", "tourfic" ); ?></span> <?php echo esc_html( apply_filters("tf_hotel_guest_name_change", "guest") ); ?>
                                         <span class="tf-room"><?php esc_html_e( "01", "tourfic" ); ?></span> <?php esc_html_e( "rooms", "tourfic" ); ?>
                                     </div>
                                 </div>
@@ -2609,7 +2098,7 @@ class Helper {
                                 <div class="tf-search-field-content">
                                     <span class="tf-search-field-label"><?php esc_html_e( "Persons", "tourfic" ); ?></span>
                                     <div class="tf-archive-guest-info">
-                                        <span class="tf-adult"><?php esc_html_e( "1", "tourfic" ); ?></span> <?php $post_type == "tf_hotels" ? esc_html_e( $adults_name, "tourfic" ) : esc_html_e( "adult", "tourfic" ) ; ?>
+                                        <span class="tf-adult"><?php esc_html_e( "1", "tourfic" ); ?></span> <?php echo $post_type == "tf_hotels" ? esc_html( $adults_name ) : esc_html__( "adult", "tourfic" ) ; ?>
                                         <?php if ( ($post_type == 'tf_tours' && empty( $disable_child_search )) ||
                                                 ( $post_type == 'tf_apartment' && empty( $disable_apartment_child_search ) )
                                         ) { ?>
@@ -2623,7 +2112,7 @@ class Helper {
                         <div class="tf_acrselection-wrap">
                             <div class="tf_acrselection-inner">
                                 <div class="tf_acrselection">
-                                    <div class="acr-label"><?php $post_type == "tf_hotel" ?  esc_html_e( $adults_name . 's', 'tourfic' ) : esc_html_e( 'Adults', 'tourfic' ); ?></div>
+                                    <div class="acr-label"><?php echo $post_type == "tf_hotel" ?  esc_html( $adults_name . 's' ) : esc_html__( 'Adults', 'tourfic' ); ?></div>
                                     <div class="acr-select">
                                         <div class="acr-dec">
                                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20" fill="none">
@@ -2727,63 +2216,6 @@ class Helper {
                     <input type="hidden" name="type" value="<?php echo esc_attr($post_type); ?>" class="tf-post-type"/>
                     <button class="tf_btn tf-submit"><?php esc_html_e( 'Search Now', 'tourfic' ); ?></button>
                 </div>
-
-                <?php if ( $post_type == 'tf_hotel' || $post_type == 'tf_tours' || $post_type == 'tf_apartment' ) : ?>
-                    <script>
-                        (function ($) {
-                            $(document).ready(function () {
-                                // flatpickr locale first day of Week
-                                <?php self::tf_flatpickr_locale( "root" ); ?>
-
-                                $(".tf-archive-booking-form__style-3 #tf-check-out").on('click', function () {
-                                    $(".tf-search-input.form-control").click();
-                                });
-
-                                $("#check-in-out-date").flatpickr({
-                                    enableTime: false,
-                                    mode: "range",
-                                    dateFormat: "Y/m/d",
-                                    minDate: "today",
-                                    altInput: true,
-                                    altFormat: '<?php echo esc_html( $date_format_for_users ); ?>',
-                                    showMonths: $(window).width() >= 1240 ? 2 : 1,
-
-                                    // flatpickr locale
-                                    <?php self::tf_flatpickr_locale(); ?>
-
-                                    onReady: function (selectedDates, dateStr, instance) {
-                                        instance.element.value = dateStr.replace(/[a-z]+/g, '-');
-                                        dateSetToFields(selectedDates, instance);
-                                    },
-                                    onChange: function (selectedDates, dateStr, instance) {
-                                        instance.element.value = dateStr.replace(/[a-z]+/g, '-');
-                                        instance.altInput.value = instance.altInput.value.replace(/[a-z]+/g, '-');
-                                        dateSetToFields(selectedDates, instance);
-                                    },
-                                    <?php if(! empty( $check_in_out )){ ?>
-                                    defaultDate: <?php echo wp_json_encode( explode( '-', $check_in_out ) ) ?>,
-                                    <?php } ?>
-                                });
-
-                                function dateSetToFields(selectedDates, instance) {
-                                    const format = '<?php echo esc_html( $date_format_for_users ); ?>';
-                                    if (selectedDates.length === 2) {
-                                        if (selectedDates[0]) {
-                                            let checkInDate = instance.formatDate(selectedDates[0], format);
-                                            $(".tf-archive-booking-form__style-3 #tf-check-in").val(checkInDate);
-                                        }
-
-                                        if (selectedDates[1]) {
-                                            let checkOutDate = instance.formatDate(selectedDates[1], format);
-                                            $(".tf-archive-booking-form__style-3 #tf-check-out").val(checkOutDate);
-                                        }
-                                    }
-                                }
-
-                            });
-                        })(jQuery);
-                    </script>
-                <?php endif; ?>
             </form>
 		<?php } else { ?>
             <form class="tf_archive_search_result tf_booking-widget widget tf-hotel-side-booking" method="get" autocomplete="off"
@@ -2816,9 +2248,9 @@ class Helper {
                             <i class="fas fa-user-friends"></i>
                             <select name="adults" id="adults" class="">
 								<?php
-								echo '<option value="1">1 ' .  esc_html__($adults_name , "tourfic" ) . '</option>';
+								echo '<option value="1">1 ' .  esc_html($adults_name) . '</option>';
 								foreach ( range( 2, 8 ) as $value ) {
-									echo '<option value="' . esc_attr( $value ) . '">' . esc_html( $value ) . ' ' . esc_html__( $adults_name . "s", "tourfic" ) . '</option>';
+									echo '<option value="' . esc_attr( $value ) . '">' . esc_html( $value ) . ' ' . esc_html( $adults_name . "s" ) . '</option>';
 								}
 								?>
                             </select>
@@ -2900,49 +2332,6 @@ class Helper {
                 </div>
 
             </form>
-
-            <script>
-                (function ($) {
-                    $(document).ready(function () {
-						<?php self::tf_flatpickr_locale( 'root' ); ?>
-
-                        $(document).on("focus", ".tf-hotel-side-booking #check-in-out-date", function (e) {
-                            const regexMap = {
-                                'Y/m/d': /(\d{4}\/\d{2}\/\d{2}).*(\d{4}\/\d{2}\/\d{2})/,
-                                'd/m/Y': /(\d{2}\/\d{2}\/\d{4}).*(\d{2}\/\d{2}\/\d{4})/,
-                                'm/d/Y': /(\d{2}\/\d{2}\/\d{4}).*(\d{2}\/\d{2}\/\d{4})/,
-                                'Y-m-d': /(\d{4}-\d{2}-\d{2}).*(\d{4}-\d{2}-\d{2})/,
-                                'd-m-Y': /(\d{2}-\d{2}-\d{4}).*(\d{2}-\d{2}-\d{4})/,
-                                'm-d-Y': /(\d{2}-\d{2}-\d{4}).*(\d{2}-\d{2}-\d{4})/,
-                                'Y.m.d': /(\d{4}\.\d{2}\.\d{2}).*(\d{4}\.\d{2}\.\d{2})/,
-                                'd.m.Y': /(\d{2}\.\d{2}\.\d{4}).*(\d{2}\.\d{2}\.\d{4})/,
-                                'm.d.Y': /(\d{2}\.\d{2}\.\d{4}).*(\d{2}\.\d{2}\.\d{4})/
-                            };
-                            const dateRegex = regexMap['<?php echo $date_format_for_users; ?>'];
-                            let calander = flatpickr(this, {
-                                enableTime: false,
-                                minDate: "today",
-                                mode: "range",
-                                dateFormat: "Y/m/d",
-                                altInput: true,
-                                altFormat: '<?php echo esc_html( $date_format_for_users ); ?>',
-
-                                // flatpickr locale
-								<?php self::tf_flatpickr_locale(); ?>
-
-                                onChange: function (selectedDates, dateStr, instance) {
-                                    instance.element.value = dateStr.replace(/(\d{4}\/\d{2}\/\d{2}).*(\d{4}\/\d{2}\/\d{2})/g, function (match, date1, date2) {
-                                        return `${date1} - ${date2}`;
-                                    })
-                                    instance.altInput.value = instance.altInput.value.replace( dateRegex, function (match, d1, d2) {
-                                        return `${d1} - ${d2}`;
-                                    })
-                                },
-                            });
-                        });
-                    });
-                })(jQuery);
-            </script>
 		<?php }
 	}
 
@@ -2952,7 +2341,7 @@ class Helper {
 
 	static function tf_set_order( $order_data ) {
 		global $wpdb;
-		$all_order_ids = $wpdb->get_col( "SELECT order_id FROM {$wpdb->prefix}tf_order_data" );
+		$all_order_ids = $wpdb->get_col( "SELECT order_id FROM {$wpdb->prefix}tf_order_data" ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		do {
 			$order_id = wp_rand( 10000000, 99999999 );
 		} while ( in_array( $order_id, $all_order_ids ) );
@@ -2976,6 +2365,7 @@ class Helper {
 
 		$order_data = wp_parse_args( $order_data, $defaults );
 
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$wpdb->query(
 			$wpdb->prepare(
 				"INSERT INTO {$wpdb->prefix}tf_order_data
@@ -3023,8 +2413,9 @@ class Helper {
         if ( empty( $wp_query ) ) {
             global $wp_query;
         }
-        $prev_text = empty( $prev_text ) ? __( '&laquo; Previous' ) : $prev_text;
-		$next_text = empty( $next_text ) ?__( 'Next &raquo;' ) : $next_text;
+        $prev_text = empty( $prev_text ) ? esc_html__( '&laquo; Previous', 'tourfic' ) : $prev_text;
+        $next_text = empty( $next_text ) ? esc_html__( 'Next &raquo;', 'tourfic' ) : $next_text;
+
         $max_num_pages = $wp_query->max_num_pages;
         $paged = ( get_query_var( 'paged' ) ) ? absint( get_query_var( 'paged' ) ) : 1;
         if ( $max_num_pages > 1 ) {
@@ -3045,7 +2436,7 @@ class Helper {
 
     static function tf_flatpickr_locale( $placement = 0 ) {
 
-		$flatpickr_locale     = ! empty( get_locale() ) ? get_locale() : 'en_US';http://tourfic.test/wp-admin/edit.php?post_type=tf_carrental
+		$flatpickr_locale     = ! empty( get_locale() ) ? get_locale() : 'en_US';
 		$allowed_locale       = array( 'ar', 'bn_BD', 'de_DE', 'es_ES', 'fr_FR', 'hi_IN', 'it_IT', 'nl_NL', 'ru_RU', 'zh_CN' );
 		$tf_first_day_of_week = ! empty( self::tfopt( "tf-week-day-flatpickr" ) ) ? self::tfopt( "tf-week-day-flatpickr" ) : 0;
 
@@ -3086,10 +2477,7 @@ class Helper {
 
 		if ( ! empty( $placement ) && ! empty( $flatpickr_locale ) && $placement == "root" ) {
 
-			echo esc_html( <<<EOD
-				window.flatpickr.l10ns.$flatpickr_locale.firstDayOfWeek = $tf_first_day_of_week;
-			EOD
-			);
+			echo esc_html( "window.flatpickr.l10ns.$flatpickr_locale.firstDayOfWeek = $tf_first_day_of_week");
 
 		} else {
 			echo 'locale: "' . esc_html( $flatpickr_locale ) . '",';
@@ -3134,7 +2522,7 @@ class Helper {
 	}
 
 	function redirect_non_admin_users() {
-		if ( function_exists( 'is_tf_pro' ) && is_tf_pro() ) {
+		
 
 			$user = wp_get_current_user();
 
@@ -3145,7 +2533,7 @@ class Helper {
 			} else {
 				return;
 			}
-		}
+		
 	}
 
     function tf_filetype_and_ext_check_support($data, $file, $filename, $mimes, $real_mime) {
@@ -3202,14 +2590,8 @@ class Helper {
         return $taxonomies;
     }
 
-	static function tf_var_dump( $var ) {
-		echo '<pre>';
-		var_dump( $var );
-		echo '</pre>';
-	}
-
     static function tf_utm_generator( $url, $utm_params = array() ) {
-        $host_url = parse_url( get_site_url(), PHP_URL_HOST );
+        $host_url = wp_parse_url( get_site_url(), PHP_URL_HOST );
         $utm_params = array_merge( array(
             'utm_source'   => 'tourfic_' . $host_url,
             'utm_medium'   => 'plugin',

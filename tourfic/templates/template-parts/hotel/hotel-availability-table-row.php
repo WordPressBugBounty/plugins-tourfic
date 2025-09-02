@@ -1,11 +1,13 @@
 <?php
+// Don't load directly
+defined( 'ABSPATH' ) || exit;
 
 use \Tourfic\Classes\Helper;
 use \Tourfic\Classes\Hotel\Pricing;
 use \Tourfic\Classes\Hotel\Hotel;
 
 $total_dis_dates = [];
-if ( function_exists( 'is_tf_pro' ) && is_tf_pro() && ! empty( $room['avail_date'] ) ) {
+if ( ! empty( $room['avail_date'] ) ) {
 	$avail_dates = json_decode( $room['avail_date'], true );
 	//iterate all the available disabled dates
 	if ( ! empty( $avail_dates ) ) {
@@ -139,7 +141,7 @@ if ( $tf_hotel_selected_template_check == "design-1" ) {
                 $option_price_type = ! empty( $room_option['option_pricing_type'] ) ? $room_option['option_pricing_type'] : 'per_room';
 				$has_option  = [];
 
-				if ( $avil_by_date && function_exists( 'is_tf_pro' ) && is_tf_pro() ) {
+				if ( $avil_by_date ) {
 					if(!$multi_by_date_ck){
 						if ( $tf_startdate && $tf_enddate ) {
 							// Check availability by date option
@@ -262,7 +264,7 @@ if ( $tf_hotel_selected_template_check == "design-1" ) {
                                 <span class="icon-text tf-d-b">x<?php echo esc_html( $adult_number ); ?></span>
                             </div>
                             <div class="tf-top">
-								<?php esc_html_e( 'Number of Adult' .  apply_filters( 'tf_hotel_adults_title_change', esc_html__( 'Adult', 'tourfic' ) ) . 's', 'tourfic' ); ?>
+								<?php echo esc_html( 'Number of Adult' .  apply_filters( 'tf_hotel_adults_title_change', esc_html__( 'Adult', 'tourfic' ) ) . 's' ); ?>
                                 <i class="tool-i"></i>
                             </div>
                         </div>
@@ -327,7 +329,7 @@ if ( $tf_hotel_selected_template_check == "design-1" ) {
                             </div>
 						<?php } ?>
 
-						<?php if ( function_exists( 'is_tf_pro' ) && is_tf_pro() && $has_deposit == true && ! empty( $deposit_amount ) ) { ?>
+						<?php if ( $has_deposit == true && ! empty( $deposit_amount ) ) { ?>
                             <span class="tf-price tf-deposit-amount-<?php echo esc_attr( $room_id.'_'.$room_option_key ) ?> tf-hotel-deposit-hide" style="display: none;"><?php echo wp_kses_post( wc_price( $deposit_amount ) ); ?></span>
                             <div class="price-per-night tf-deposit-amount-<?php echo esc_attr( $room_id.'_'.$room_option_key ) ?> tf-hotel-deposit-hide" style="display: none;"><?php esc_html_e( 'Need to be deposited', 'tourfic' ) ?></div>
 						<?php } ?>
@@ -346,7 +348,7 @@ if ( $tf_hotel_selected_template_check == "design-1" ) {
                         </div>
                         <div class="room-submit-wrap">
                             <div class="roomselectissue"></div>
-							<?php if ( function_exists( 'is_tf_pro' ) && is_tf_pro() && $has_deposit == true && ! empty( $deposit_amount ) && ( $room["deposit_type"] != "none" ) ) { ?>
+							<?php if ( $has_deposit == true && ! empty( $deposit_amount ) && ( $room["deposit_type"] != "none" ) ) { ?>
 
                                 <div class="room-deposit-wrap">
                                     <input type="checkbox" id="tf-make-deposit<?php echo esc_attr( $room_id.'_'.$room_option_key ) ?>" name="make_deposit" value="<?php echo esc_attr( $room_id.'_'.$room_option_key ) ?>">
@@ -371,7 +373,7 @@ if ( $tf_hotel_selected_template_check == "design-1" ) {
 							<?php
 							$tour_hotel_service_avail = ! empty( $meta['airport_service'] ) ? $meta['airport_service'] : '';
 							$tour_hotel_service_type  = ! empty( $meta['airport_service_type'] ) ? $meta['airport_service_type'] : '';
-							if ( function_exists( 'is_tf_pro' ) && is_tf_pro() && ! empty( $tour_hotel_service_avail ) && ! empty( $tour_hotel_service_type ) && ( $room_book_by != 2 || empty( $room_book_url ) ) ) {
+							if ( ! empty( $tour_hotel_service_avail ) && ! empty( $tour_hotel_service_type ) && ( $room_book_by != 2 || empty( $room_book_url ) ) ) {
 								?>
                                 <a class="tf_air_service tf_btn tf_btn_gray tf-hotel-booking-popup-btn" href="javascript:;" data-room="<?php echo esc_attr( $room_id ); ?>"><?php esc_html_e( 'I\'ll reserve', 'tourfic' ); ?></a>
 							<?php } else { ?>
@@ -404,7 +406,7 @@ if ( $tf_hotel_selected_template_check == "design-1" ) {
                             <span class="icon-text tf-d-b">x<?php echo esc_html( $adult_number ); ?></span>
                         </div>
                         <div class="tf-top">
-							<?php esc_html_e( 'Number of ' .  apply_filters( 'tf_hotel_adults_title_change', esc_html__( 'Adult', 'tourfic' ) ) . 's', 'tourfic' ); ?>
+							<?php echo esc_html( 'Number of ' .  apply_filters( 'tf_hotel_adults_title_change', esc_html__( 'Adult', 'tourfic' ) ) . 's' ); ?>
                             <i class="tool-i"></i>
                         </div>
                     </div>
@@ -468,7 +470,7 @@ if ( $tf_hotel_selected_template_check == "design-1" ) {
                         </div>
 					<?php } ?>
 
-					<?php if ( function_exists( 'is_tf_pro' ) && is_tf_pro() && $has_deposit == true && ! empty( $deposit_amount ) ) { ?>
+					<?php if ( $has_deposit == true && ! empty( $deposit_amount ) ) { ?>
                         <span class="tf-price tf-deposit-amount-<?php echo esc_attr( $room_id ) ?> tf-hotel-deposit-hide" style="display: none;"><?php echo wp_kses_post( wc_price( $deposit_amount ) ); ?></span>
                         <div class="price-per-night tf-deposit-amount-<?php echo esc_attr( $room_id ) ?> tf-hotel-deposit-hide" style="display: none;"><?php esc_html_e( 'Need to be deposited', 'tourfic' ) ?></div>
 					<?php } ?>
@@ -487,7 +489,7 @@ if ( $tf_hotel_selected_template_check == "design-1" ) {
                     </div>
                     <div class="room-submit-wrap">
                         <div class="roomselectissue"></div>
-						<?php if ( function_exists( 'is_tf_pro' ) && is_tf_pro() && $has_deposit == true && ! empty( $deposit_amount ) && ( $room["deposit_type"] != "none" ) ) { ?>
+						<?php if ( $has_deposit == true && ! empty( $deposit_amount ) && ( $room["deposit_type"] != "none" ) ) { ?>
 
                             <div class="room-deposit-wrap">
                                 <input type="checkbox" id="tf-make-deposit<?php echo esc_attr( $room_id ) ?>" name="make_deposit" value="<?php echo esc_attr( $room_id ) ?>">
@@ -511,7 +513,7 @@ if ( $tf_hotel_selected_template_check == "design-1" ) {
 						<?php
 						$tour_hotel_service_avail = ! empty( $meta['airport_service'] ) ? $meta['airport_service'] : '';
 						$tour_hotel_service_type  = ! empty( $meta['airport_service_type'] ) ? $meta['airport_service_type'] : '';
-						if ( function_exists( 'is_tf_pro' ) && is_tf_pro() ) {
+						if ( ! empty( $tour_hotel_service_avail ) ) {
                             if( ! empty( $tour_hotel_service_avail ) && ! empty( $tour_hotel_service_type ) && ( $room_book_by != 2 || empty( $room_book_url ) ) ) {
                                 ?>
                                 <a class="tf_air_service tf_btn tf_btn_gray tf-hotel-booking-popup-btn" href="javascript:;" data-room="<?php echo esc_attr( $room_id ); ?>"><?php esc_html_e( 'I\'ll reserve', 'tourfic' ); ?></a>
@@ -594,7 +596,7 @@ if ( $tf_hotel_selected_template_check == "design-1" ) {
 				$option_price_type = ! empty( $room_option['option_pricing_type'] ) ? $room_option['option_pricing_type'] : 'per_room';
 				$has_option  = [];
 
-				if ( $avil_by_date && function_exists( 'is_tf_pro' ) && is_tf_pro() ) {
+				if ( $avil_by_date ) {
 					if(!$multi_by_date_ck){
 						if ( $tf_startdate && $tf_enddate ) {
 							// Check availability by date option
@@ -715,7 +717,10 @@ if ( $tf_hotel_selected_template_check == "design-1" ) {
                                     <li><i class="ri-hotel-bed-line"></i> <?php echo esc_html( $bed ); ?><?php esc_html_e( ' Beds', 'tourfic' ); ?></li>
                                 <?php } ?>
                                 <?php if ( $adult_number ) { ?>
-                                    <li><i class="ri-user-2-line"></i> <?php echo esc_html( $adult_number ); ?><?php echo esc_html( $adult_number ); ?><?php echo " " . apply_filters( 'tf_hotel_adults_title_change', esc_html__( 'Adult', 'tourfic' ) ) . 's'; ?></li>
+                                    <li><i class="ri-user-2-line"></i> <?php echo esc_html( $adult_number ); ?><?php echo esc_html( $adult_number ); ?><?php 
+									echo ' ' . esc_html( apply_filters( 'tf_hotel_adults_title_change', esc_html__( 'Adult', 'tourfic' ) ) ) . 's';
+									?>
+									</li>
                                 <?php } ?>
                                 <?php if ( $child_number ) { ?>
                                     <li><i class="ri-user-smile-line"></i> <?php echo esc_html( $child_number ); ?><?php esc_html_e( ' Child', 'tourfic' ); ?></li>
@@ -835,13 +840,13 @@ if ( $tf_hotel_selected_template_check == "design-1" ) {
 
                             <div class="room-submit-wrap">
                                 <div class="tf-deposit-content">
-                                    <?php if ( function_exists( 'is_tf_pro' ) && is_tf_pro() && $has_deposit == true && ! empty( $deposit_amount ) ) { ?>
+                                    <?php if ( $has_deposit == true && ! empty( $deposit_amount ) ) { ?>
                                         <span class="tf-price tf-deposit-amount-<?php echo esc_attr( $room_id.'_'.$room_option_key ) ?> tf-hotel-deposit-hide" style="display: none;"><?php echo wp_kses_post( wc_price( $deposit_amount ) ); ?></span>
                                         <div class="price-per-night tf-deposit-amount-<?php echo esc_attr( $room_id.'_'.$room_option_key ) ?> tf-hotel-deposit-hide"
                                              style="display: none;"><?php esc_html_e( 'Need to be deposited', 'tourfic' ) ?></div>
                                     <?php } ?>
 
-                                    <?php if ( function_exists( 'is_tf_pro' ) && is_tf_pro() && $has_deposit == true && ! empty( $deposit_amount ) && ( $room["deposit_type"] != "none" ) ) { ?>
+                                    <?php if ( $has_deposit == true && ! empty( $deposit_amount ) && ( $room["deposit_type"] != "none" ) ) { ?>
 
                                         <div class="room-deposit-wrap">
                                             <input type="checkbox" id="tf-make-deposit<?php echo esc_attr( $room_id.'_'.$room_option_key ) ?>" name="make_deposit" value="<?php echo esc_attr( $room_id.'_'.$room_option_key ) ?>">
@@ -852,7 +857,7 @@ if ( $tf_hotel_selected_template_check == "design-1" ) {
                                 <?php
                                 $tour_hotel_service_avail = ! empty( $meta['airport_service'] ) ? $meta['airport_service'] : '';
                                 $tour_hotel_service_type  = ! empty( $meta['airport_service_type'] ) ? $meta['airport_service_type'] : '';
-                                if ( function_exists( 'is_tf_pro' ) && is_tf_pro() && ! empty( $tour_hotel_service_avail ) && ! empty( $tour_hotel_service_type ) && ( $room_book_by != 2 || empty( $room_book_url ) ) ) {
+                                if ( ! empty( $tour_hotel_service_avail ) && ! empty( $tour_hotel_service_type ) && ( $room_book_by != 2 || empty( $room_book_url ) ) ) {
                                     ?>
                                     <input type="hidden" name="hotel_room_depo" value="false">
                                     <div class="roomselectissue"></div>
@@ -881,7 +886,11 @@ if ( $tf_hotel_selected_template_check == "design-1" ) {
                             <li><i class="ri-hotel-bed-line"></i> <?php echo esc_html( $bed ); ?><?php esc_html_e( ' Beds', 'tourfic' ); ?></li>
 						<?php } ?>
 						<?php if ( $adult_number ) { ?>
-                            <li><i class="ri-user-2-line"></i> <?php echo esc_html( $adult_number ); ?><?php echo esc_html( $adult_number ); ?><?php echo " " . apply_filters( 'tf_hotel_adults_title_change', esc_html__( 'Adult', 'tourfic' ) ) . 's'; ?></li>
+                            <li><i class="ri-user-2-line"></i> <?php echo esc_html( $adult_number ); ?><?php echo esc_html( $adult_number ); ?>
+							<?php 
+							echo ' ' . esc_html( apply_filters( 'tf_hotel_adults_title_change', esc_html__( 'Adult', 'tourfic' ) ) ) . 's';
+							?>
+							</li>
 						<?php } ?>
 						<?php if ( $child_number ) { ?>
                             <li><i class="ri-user-smile-line"></i><?php echo esc_html( $child_number ); ?><?php esc_html_e( ' Child', 'tourfic' ); ?></li>
@@ -1044,13 +1053,13 @@ if ( $tf_hotel_selected_template_check == "design-1" ) {
 
                     <div class="room-submit-wrap">
                         <div class="tf-deposit-content">
-							<?php if ( function_exists( 'is_tf_pro' ) && is_tf_pro() && $has_deposit == true && ! empty( $deposit_amount ) ) { ?>
+							<?php if ( $has_deposit == true && ! empty( $deposit_amount ) ) { ?>
                                 <span class="tf-price tf-deposit-amount-<?php echo esc_attr( $room_id ) ?> tf-hotel-deposit-hide" style="display: none;"><?php echo wp_kses_post( wc_price( $deposit_amount ) ); ?></span>
                                 <div class="price-per-night tf-deposit-amount-<?php echo esc_attr( $room_id ) ?> tf-hotel-deposit-hide"
                                      style="display: none;"><?php esc_html_e( 'Need to be deposited', 'tourfic' ) ?></div>
 							<?php } ?>
 
-							<?php if ( function_exists( 'is_tf_pro' ) && is_tf_pro() && $has_deposit == true && ! empty( $deposit_amount ) && ( $room["deposit_type"] != "none" ) ) { ?>
+							<?php if ( $has_deposit == true && ! empty( $deposit_amount ) && ( $room["deposit_type"] != "none" ) ) { ?>
 
                                 <div class="room-deposit-wrap">
                                     <input type="checkbox" id="tf-make-deposit<?php echo esc_attr( $room_id ) ?>" name="make_deposit" value="<?php echo esc_attr( $room_id ) ?>">
@@ -1061,7 +1070,7 @@ if ( $tf_hotel_selected_template_check == "design-1" ) {
 						<?php
 						$tour_hotel_service_avail = ! empty( $meta['airport_service'] ) ? $meta['airport_service'] : '';
 						$tour_hotel_service_type  = ! empty( $meta['airport_service_type'] ) ? $meta['airport_service_type'] : '';
-						if ( function_exists( 'is_tf_pro' ) && is_tf_pro() ) {
+						if ( ! empty( $tour_hotel_service_avail ) ) {
                             if( ! empty( $tour_hotel_service_avail ) && ! empty( $tour_hotel_service_type ) && ( $room_book_by != 2 || empty( $room_book_url ) ) ) {
 							?>
                                 <input type="hidden" name="hotel_room_depo" value="false">
@@ -1236,7 +1245,11 @@ if ( $tf_hotel_selected_template_check == "design-1" ) {
                             <li><i class="ri-hotel-bed-line"></i> <?php echo esc_html( $bed ); ?><?php esc_html_e( ' Beds', 'tourfic' ); ?></li>
 						<?php } ?>
 						<?php if ( $adult_number ) { ?>
-                            <li><i class="ri-user-2-line"></i> <?php echo esc_html( $adult_number ); ?><?php echo esc_html( $adult_number ); ?><?php echo " " . apply_filters( 'tf_hotel_adults_title_change', esc_html__( 'Adult', 'tourfic' ) ) . 's'; ?></li>
+                            <li><i class="ri-user-2-line"></i> <?php echo esc_html( $adult_number ); ?><?php echo esc_html( $adult_number ); ?>
+							<?php 
+							echo ' ' . esc_html( apply_filters( 'tf_hotel_adults_title_change', esc_html__( 'Adult', 'tourfic' ) ) ) . 's';
+							?>
+							</li>
 						<?php } ?>
 						<?php if ( $child_number ) { ?>
                             <li><i class="ri-user-smile-line"></i><?php echo esc_html( $child_number ); ?><?php esc_html_e( ' Child', 'tourfic' ); ?></li>
@@ -1313,13 +1326,13 @@ if ( $tf_hotel_selected_template_check == "design-1" ) {
 
                     <div class="room-submit-wrap">
                         <div class="tf-deposit-content">
-							<?php if ( function_exists( 'is_tf_pro' ) && is_tf_pro() && $has_deposit == true && ! empty( $deposit_amount ) ) { ?>
+							<?php if ( $has_deposit == true && ! empty( $deposit_amount ) ) { ?>
                                 <span class="tf-price tf-deposit-amount-<?php echo esc_attr( $room_id ) ?> tf-hotel-deposit-hide" style="display: none;"><?php echo wp_kses_post( wc_price( $deposit_amount ) ); ?></span>
                                 <div class="price-per-night tf-deposit-amount-<?php echo esc_attr( $room_id ) ?> tf-hotel-deposit-hide"
                                      style="display: none;"><?php esc_html_e( 'Need to be deposited', 'tourfic' ) ?></div>
 							<?php } ?>
 
-							<?php if ( function_exists( 'is_tf_pro' ) && is_tf_pro() && $has_deposit == true && ! empty( $deposit_amount ) && ( $room["deposit_type"] != "none" ) ) { ?>
+							<?php if ( $has_deposit == true && ! empty( $deposit_amount ) && ( $room["deposit_type"] != "none" ) ) { ?>
 
                                 <div class="room-deposit-wrap">
                                     <input type="checkbox" id="tf-make-deposit<?php echo esc_attr( $room_id ) ?>" name="make_deposit" value="<?php echo esc_attr( $room_id ) ?>">
@@ -1330,7 +1343,7 @@ if ( $tf_hotel_selected_template_check == "design-1" ) {
 						<?php
 						$tour_hotel_service_avail = ! empty( $meta['airport_service'] ) ? $meta['airport_service'] : '';
 						$tour_hotel_service_type  = ! empty( $meta['airport_service_type'] ) ? $meta['airport_service_type'] : '';
-						if ( function_exists( 'is_tf_pro' ) && is_tf_pro() ) {
+						if ( ! empty( $tour_hotel_service_avail ) ) {
                             if(! empty( $tour_hotel_service_avail ) && ! empty( $tour_hotel_service_type ) && ( $room_book_by != 2 || empty( $room_book_url ) ) ) {
 							?>
                                 <input type="hidden" name="hotel_room_depo" value="false">
@@ -1414,7 +1427,7 @@ if ( $tf_hotel_selected_template_check == "design-1" ) {
 					$option_price_type = ! empty( $room_option['option_pricing_type'] ) ? $room_option['option_pricing_type'] : 'per_room';
 					$has_option  = [];
 
-					if ( $avil_by_date && function_exists( 'is_tf_pro' ) && is_tf_pro() ) {
+					if ( $avil_by_date ) {
 						if(!$multi_by_date_ck){
 							if ( $tf_startdate && $tf_enddate ) {
 								// Check availability by date option
@@ -1535,7 +1548,11 @@ if ( $tf_hotel_selected_template_check == "design-1" ) {
                                         <li><i class="ri-hotel-bed-line"></i> <?php echo esc_html( $bed ); ?><?php esc_html_e( ' Beds', 'tourfic' ); ?></li>
 									<?php } ?>
 									<?php if ( $adult_number ) { ?>
-                                        <li><i class="ri-user-2-line"></i> <?php echo esc_html( $adult_number ); ?><?php echo esc_html( $adult_number ); ?><?php echo " " . apply_filters( 'tf_hotel_adults_title_change', esc_html__( 'Adult', 'tourfic' ) ) . 's'; ?></li>
+                                        <li><i class="ri-user-2-line"></i> <?php echo esc_html( $adult_number ); ?><?php echo esc_html( $adult_number ); ?>
+										<?php 
+										echo ' ' . esc_html( apply_filters( 'tf_hotel_adults_title_change', esc_html__( 'Adult', 'tourfic' ) ) ) . 's';
+										?>
+										</li>
 									<?php } ?>
 									<?php if ( $child_number ) { ?>
                                         <li><i class="ri-user-smile-line"></i> <?php echo esc_html( $child_number ); ?><?php esc_html_e( ' Child', 'tourfic' ); ?></li>
@@ -1610,13 +1627,13 @@ if ( $tf_hotel_selected_template_check == "design-1" ) {
 
                                 <div class="room-submit-wrap">
                                     <div class="tf-deposit-content">
-				                        <?php if ( function_exists( 'is_tf_pro' ) && is_tf_pro() && $has_deposit == true && ! empty( $deposit_amount ) ) { ?>
+				                        <?php if ( $has_deposit == true && ! empty( $deposit_amount ) ) { ?>
                                             <span class="tf-price tf-deposit-amount-<?php echo esc_attr( $room_id.'_'.$room_option_key ) ?> tf-hotel-deposit-hide" style="display: none;"><?php echo wp_kses_post( wc_price( $deposit_amount ) ); ?></span>
                                             <div class="price-per-night tf-deposit-amount-<?php echo esc_attr( $room_id.'_'.$room_option_key ) ?> tf-hotel-deposit-hide"
                                                  style="display: none;"><?php esc_html_e( 'Need to be deposited', 'tourfic' ) ?></div>
 				                        <?php } ?>
 
-				                        <?php if ( function_exists( 'is_tf_pro' ) && is_tf_pro() && $has_deposit == true && ! empty( $deposit_amount ) && ( $room["deposit_type"] != "none" ) ) { ?>
+				                        <?php if ( $has_deposit == true && ! empty( $deposit_amount ) && ( $room["deposit_type"] != "none" ) ) { ?>
 
                                             <div class="room-deposit-wrap">
                                                 <input type="checkbox" id="tf-make-deposit<?php echo esc_attr( $room_id.'_'.$room_option_key ) ?>" name="make_deposit" value="<?php echo esc_attr( $room_id.'_'.$room_option_key ) ?>">
@@ -1627,7 +1644,7 @@ if ( $tf_hotel_selected_template_check == "design-1" ) {
 			                        <?php
 			                        $tour_hotel_service_avail = ! empty( $meta['airport_service'] ) ? $meta['airport_service'] : '';
 			                        $tour_hotel_service_type  = ! empty( $meta['airport_service_type'] ) ? $meta['airport_service_type'] : '';
-			                        if ( function_exists( 'is_tf_pro' ) && is_tf_pro() && ! empty( $tour_hotel_service_avail ) && ! empty( $tour_hotel_service_type ) && ( $room_book_by != 2 || empty( $room_book_url ) ) ) {
+			                        if ( ! empty( $tour_hotel_service_avail ) && ! empty( $tour_hotel_service_type ) && ( $room_book_by != 2 || empty( $room_book_url ) ) ) {
 				                        ?>
                                         <input type="hidden" name="hotel_room_depo" value="false">
                                         <div class="roomselectissue"></div>
@@ -1693,7 +1710,11 @@ if ( $tf_hotel_selected_template_check == "design-1" ) {
                                     <li><i class="ri-hotel-bed-line"></i> <?php echo esc_html( $bed ); ?><?php esc_html_e( ' Beds', 'tourfic' ); ?></li>
 								<?php } ?>
 								<?php if ( $adult_number ) { ?>
-                                    <li><i class="ri-user-2-line"></i> <?php echo esc_html( $adult_number ); ?><?php echo esc_html( $adult_number ); ?><?php echo " " . apply_filters( 'tf_hotel_adults_title_change', esc_html__( 'Adult', 'tourfic' ) ) . 's'; ?></li>
+                                    <li><i class="ri-user-2-line"></i> <?php echo esc_html( $adult_number ); ?><?php echo esc_html( $adult_number ); ?>
+									<?php 
+									echo ' ' . esc_html( apply_filters( 'tf_hotel_adults_title_change', esc_html__( 'Adult', 'tourfic' ) ) ) . 's';
+									?>
+									</li>
 								<?php } ?>
 								<?php if ( $child_number ) { ?>
                                     <li><i class="ri-user-smile-line"></i> <?php echo esc_html( $child_number ); ?><?php esc_html_e( ' Child', 'tourfic' ); ?></li>
@@ -1812,13 +1833,13 @@ if ( $tf_hotel_selected_template_check == "design-1" ) {
 
                             <div class="room-submit-wrap">
                                 <div class="tf-deposit-content">
-			                        <?php if ( function_exists( 'is_tf_pro' ) && is_tf_pro() && $has_deposit == true && ! empty( $deposit_amount ) ) { ?>
+			                        <?php if ( $has_deposit == true && ! empty( $deposit_amount ) ) { ?>
                                         <span class="tf-price tf-deposit-amount-<?php echo esc_attr( $room_id ) ?> tf-hotel-deposit-hide" style="display: none;"><?php echo wp_kses_post( wc_price( $deposit_amount ) ); ?></span>
                                         <div class="price-per-night tf-deposit-amount-<?php echo esc_attr( $room_id ) ?> tf-hotel-deposit-hide"
                                              style="display: none;"><?php esc_html_e( 'Need to be deposited', 'tourfic' ) ?></div>
 			                        <?php } ?>
 
-			                        <?php if ( function_exists( 'is_tf_pro' ) && is_tf_pro() && $has_deposit == true && ! empty( $deposit_amount ) && ( $room["deposit_type"] != "none" ) ) { ?>
+			                        <?php if ( $has_deposit == true && ! empty( $deposit_amount ) && ( $room["deposit_type"] != "none" ) ) { ?>
 
                                         <div class="room-deposit-wrap">
                                             <input type="checkbox" id="tf-make-deposit<?php echo esc_attr( $room_id ) ?>" name="make_deposit" value="<?php echo esc_attr( $room_id ) ?>">
@@ -1829,7 +1850,7 @@ if ( $tf_hotel_selected_template_check == "design-1" ) {
 		                        <?php
 		                        $tour_hotel_service_avail = ! empty( $meta['airport_service'] ) ? $meta['airport_service'] : '';
 		                        $tour_hotel_service_type  = ! empty( $meta['airport_service_type'] ) ? $meta['airport_service_type'] : '';
-		                        if ( function_exists( 'is_tf_pro' ) && is_tf_pro() && ! empty( $tour_hotel_service_avail ) && ! empty( $tour_hotel_service_type ) && ( $room_book_by != 2 || empty( $room_book_url ) ) ) {
+		                        if ( ! empty( $tour_hotel_service_avail ) && ! empty( $tour_hotel_service_type ) && ( $room_book_by != 2 || empty( $room_book_url ) ) ) {
 			                        ?>
                                     <input type="hidden" name="hotel_room_depo" value="false">
                                     <div class="roomselectissue"></div>
@@ -1981,7 +2002,7 @@ if ( $tf_hotel_selected_template_check == "design-1" ) {
                 $option_price_type = ! empty( $room_option['option_pricing_type'] ) ? $room_option['option_pricing_type'] : 'per_room';
 				$has_option  = [];
 
-				if ( $avil_by_date && function_exists( 'is_tf_pro' ) && is_tf_pro() ) {
+				if ( $avil_by_date ) {
 					if(!$multi_by_date_ck){
 						if ( $tf_startdate && $tf_enddate ) {
 							// Check availability by date option
@@ -2102,7 +2123,7 @@ if ( $tf_hotel_selected_template_check == "design-1" ) {
                                 <span class="icon-text tf-d-b">x<?php echo esc_html( $adult_number ); ?></span>
                             </div>
                             <div class="tf-top">
-								<?php esc_html_e( 'Number of '.  apply_filters( 'tf_hotel_adults_title_change', esc_html__( 'Adult', 'tourfic' ) ) .'s', 'tourfic' ); ?>
+								<?php echo esc_html( 'Number of '.  apply_filters( 'tf_hotel_adults_title_change', esc_html__( 'Adult', 'tourfic' ) ) .'s' ); ?>
                                 <i class="tool-i"></i>
                             </div>
                         </div>
@@ -2153,7 +2174,7 @@ if ( $tf_hotel_selected_template_check == "design-1" ) {
                             ?>
                         </div>
 
-						<?php if ( function_exists( 'is_tf_pro' ) && is_tf_pro() && $has_deposit == true && ! empty( $deposit_amount ) ) { ?>
+						<?php if ( $has_deposit == true && ! empty( $deposit_amount ) ) { ?>
                             <span class="tf-price tf-deposit-amount-<?php echo esc_attr( $room_id.'_'.$room_option_key ) ?> tf-hotel-deposit-hide" style="display: none;"><?php echo wp_kses_post( wc_price( $deposit_amount ) ); ?></span>
                             <div class="price-per-night tf-deposit-amount-<?php echo esc_attr( $room_id.'_'.$room_option_key ) ?> tf-hotel-deposit-hide" style="display: none;"><?php esc_html_e( 'Need to be deposited', 'tourfic' ) ?></div>
 						<?php } ?>
@@ -2174,7 +2195,7 @@ if ( $tf_hotel_selected_template_check == "design-1" ) {
                         </div>
                         <div class="room-submit-wrap">
                             <div class="roomselectissue"></div>
-							<?php if ( function_exists( 'is_tf_pro' ) && is_tf_pro() && $has_deposit == true && ! empty( $deposit_amount ) ) { ?>
+							<?php if ( $has_deposit == true && ! empty( $deposit_amount ) ) { ?>
 
                                 <div class="room-deposit-wrap">
                                     <input type="checkbox" id="tf-make-deposit<?php echo esc_attr( $room_id.'_'.$room_option_key ) ?>" name="make_deposit" value="<?php echo esc_attr( $room_id.'_'.$room_option_key ) ?>">
@@ -2200,7 +2221,7 @@ if ( $tf_hotel_selected_template_check == "design-1" ) {
 							$tour_hotel_service_avail = ! empty( $meta['airport_service'] ) ? $meta['airport_service'] : '';
 							$tour_hotel_service_type  = ! empty( $meta['airport_service_type'] ) ? $meta['airport_service_type'] : '';
 
-							if ( function_exists( 'is_tf_pro' ) && is_tf_pro() && ! empty( $tour_hotel_service_avail ) && ! empty( $tour_hotel_service_type ) && ( $room_book_by != 2 || empty( $room_book_url ) ) ) {
+							if ( ! empty( $tour_hotel_service_avail ) && ! empty( $tour_hotel_service_type ) && ( $room_book_by != 2 || empty( $room_book_url ) ) ) {
 								?>
                                 <a class="tf_air_service tf_btn tf-hotel-booking-popup-btn" href="javascript:;" data-room="<?php echo esc_attr( $room_id ); ?>"><?php echo esc_html( $tf_hotel_reserve_button_text ); ?></a>
 							<?php } else { ?>
@@ -2233,7 +2254,7 @@ if ( $tf_hotel_selected_template_check == "design-1" ) {
                             <span class="icon-text tf-d-b">x<?php echo esc_html( $adult_number ); ?></span>
                         </div>
                         <div class="tf-top">
-							<?php esc_html_e( 'Number of Adult'.  apply_filters( 'tf_hotel_adults_title_change', esc_html__( 'Adult', 'tourfic' ) ) . 's', 'tourfic' ); ?>
+							<?php echo esc_html( 'Number of Adult'.  apply_filters( 'tf_hotel_adults_title_change', esc_html__( 'Adult', 'tourfic' ) ) . 's' ); ?>
                             <i class="tool-i"></i>
                         </div>
                     </div>
@@ -2299,7 +2320,7 @@ if ( $tf_hotel_selected_template_check == "design-1" ) {
                         </div>
 					<?php } ?>
 
-					<?php if ( function_exists( 'is_tf_pro' ) && is_tf_pro() && $has_deposit == true && ! empty( $deposit_amount ) ) { ?>
+					<?php if ( $has_deposit == true && ! empty( $deposit_amount ) ) { ?>
                         <span class="tf-price tf-deposit-amount-<?php echo esc_attr( $room_id ) ?> tf-hotel-deposit-hide" style="display: none;"><?php echo wp_kses_post( wc_price( $deposit_amount ) ); ?></span>
                         <div class="price-per-night tf-deposit-amount-<?php echo esc_attr( $room_id ) ?> tf-hotel-deposit-hide" style="display: none;"><?php esc_html_e( 'Need to be deposited', 'tourfic' ) ?></div>
 					<?php } ?>
@@ -2320,7 +2341,7 @@ if ( $tf_hotel_selected_template_check == "design-1" ) {
                     </div>
                     <div class="room-submit-wrap">
                         <div class="roomselectissue"></div>
-						<?php if ( function_exists( 'is_tf_pro' ) && is_tf_pro() && $has_deposit == true && ! empty( $deposit_amount ) ) { ?>
+						<?php if ( $has_deposit == true && ! empty( $deposit_amount ) ) { ?>
 
                             <div class="room-deposit-wrap">
                                 <input type="checkbox" id="tf-make-deposit<?php echo esc_attr( $room_id ) ?>" name="make_deposit" value="<?php echo esc_attr( $room_id ) ?>">
@@ -2345,7 +2366,7 @@ if ( $tf_hotel_selected_template_check == "design-1" ) {
 						$tour_hotel_service_avail = ! empty( $meta['airport_service'] ) ? $meta['airport_service'] : '';
 						$tour_hotel_service_type  = ! empty( $meta['airport_service_type'] ) ? $meta['airport_service_type'] : '';
 
-						if ( function_exists( 'is_tf_pro' ) && is_tf_pro() ) {
+						if ( ! empty( $tour_hotel_service_avail ) ) {
                             if( ! empty( $tour_hotel_service_avail ) && ! empty( $tour_hotel_service_type ) && ( $room_book_by != 2 || empty( $room_book_url ) )) {
 							?>
                                 <a class="tf_air_service tf_btn tf-hotel-booking-popup-btn" href="javascript:;" data-room="<?php echo esc_attr( $room_id ); ?>"><?php echo esc_html( $tf_hotel_reserve_button_text ); ?></a>

@@ -1,4 +1,6 @@
 <?php
+// Don't load directly
+defined( 'ABSPATH' ) || exit;
 
 use \Tourfic\Classes\Helper;
 use \Tourfic\App\TF_Review;
@@ -7,7 +9,7 @@ use \Tourfic\Classes\Hotel\Hotel;
 
 $tf_booking_type = '1';
 $tf_booking_url  = $tf_booking_query_url = $tf_booking_attribute = $tf_hide_booking_form = $tf_hide_price = $tf_ext_booking_type = $tf_ext_booking_code = '';
-if ( function_exists( 'is_tf_pro' ) && is_tf_pro() ) {
+
 	$tf_booking_type      = ! empty( $meta['booking-by'] ) ? $meta['booking-by'] : 1;
 	$tf_booking_url       = ! empty( $meta['booking-url'] ) ? esc_url( $meta['booking-url'] ) : '';
 	$tf_booking_query_url = ! empty( $meta['booking-query'] ) ? $meta['booking-query'] : 'adult={adult}&child={child}&room={room}';
@@ -16,7 +18,7 @@ if ( function_exists( 'is_tf_pro' ) && is_tf_pro() ) {
 	$tf_hide_price        = ! empty( $meta['hide_price'] ) ? $meta['hide_price'] : '';
     $tf_ext_booking_type = ! empty( $meta['external-booking-type'] ) ? $meta['external-booking-type'] : '1';
     $tf_ext_booking_code = !empty( $meta['booking-code'] ) ? $meta['booking-code'] : '';
-}
+
 if ( 2 == $tf_booking_type && ! empty( $tf_booking_url ) ) {
 	$external_search_info = array(
 		'{adult}'    => ! empty( $adult ) ? $adult : 1,
@@ -258,14 +260,14 @@ $price_settings = ! empty( Helper::tfopt( 'hotel_archive_price_minimum_settings'
 					<?php } ?>
                     <!-- End gallery-->
                     <div class="map-for-mobile">
-						<?php if ( ! defined( 'TF_PRO' ) && ( $address ) ) { ?>
+						<?php if ( $address ) { ?>
                             <div class="show-on-map">
                                 <div class="tf-btn-wrap"><a href="https://www.google.com/maps/search/<?php echo esc_attr( $address ); ?>" target="_blank" class="tf_btn tf_btn_full"><span><i
                                                     class="fas fa-map-marker-alt"></i><?php esc_html_e( 'Show on map', 'tourfic' ); ?></span></a></div>
                             </div>
 						<?php } ?>
                     </div>
-					<?php if ( function_exists( 'is_tf_pro' ) && is_tf_pro() && ( ! empty( $address ) || ( ! empty( $address_latitude ) && ! empty( $address_longitude ) ) ) ) { ?>
+					<?php if ( ( ! empty( $address ) || ( ! empty( $address_latitude ) && ! empty( $address_longitude ) ) ) ) { ?>
                         <div class="popupmap-for-mobile">
 							<?php
 							if ( $tf_openstreet_map != "default" ) { ?>
@@ -290,17 +292,6 @@ $price_settings = ! empty( Helper::tfopt( 'hotel_archive_price_minimum_settings'
                                             <span class="tf_btn tf_btn_full"><?php esc_html_e( 'Show on Map', 'tourfic' ); ?></span>
                                         </div>
                                     </a>
-                                    <script>
-                                        const map = L.map('mobile-hotel-location').setView([<?php echo esc_html( $address_latitude ); ?>, <?php echo esc_html( $address_longitude ); ?>], <?php echo esc_html( $address_zoom ); ?>);
-
-                                        const tiles = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                                            maxZoom: 20,
-                                            attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-                                        }).addTo(map);
-
-                                        const marker = L.marker([<?php echo esc_html( $address_latitude ); ?>, <?php echo esc_html( $address_longitude ); ?>], {alt: '<?php echo esc_html( $address ); ?>'}).addTo(map)
-                                            .bindPopup('<?php echo esc_html( $address ); ?>');
-                                    </script>
                                 </div>
 							<?php } ?>
 							<?php if ( $tf_openstreet_map == "default" && ( empty( $address_latitude ) || empty( $address_longitude ) ) ) { ?>
@@ -365,13 +356,13 @@ $price_settings = ! empty( Helper::tfopt( 'hotel_archive_price_minimum_settings'
                     <!-- End features -->
                 </div>
                 <div class="hero-right">
-					<?php if ( ! defined( 'TF_PRO' ) && ( $address ) ) { ?>
+					<?php if ( $address ) { ?>
                         <div class="show-on-map">
                             <div class="tf-btn-wrap"><a href="https://www.google.com/maps/search/<?php echo esc_attr( $address ); ?>" target="_blank" class="tf_btn tf_btn_full"><span><i
                                                 class="fas fa-map-marker-alt"></i><?php esc_html_e( 'Show on map', 'tourfic' ); ?></span></a></div>
                         </div>
 					<?php } ?>
-					<?php if ( function_exists( 'is_tf_pro' ) && is_tf_pro() && ( ! empty( $address ) || ( ! empty( $address_latitude ) && ! empty( $address_longitude ) ) ) ) { ?>
+					<?php if ( ( ! empty( $address ) || ( ! empty( $address_latitude ) && ! empty( $address_longitude ) ) ) ) { ?>
 						<?php
 						if ( $tf_openstreet_map != "default" ) { ?>
                             <div class="tf-hotel-location-preview show-on-map">
@@ -395,17 +386,6 @@ $price_settings = ! empty( Helper::tfopt( 'hotel_archive_price_minimum_settings'
                                         <span class="tf_btn tf_btn_full"><?php esc_html_e( 'Show on Map', 'tourfic' ); ?></span>
                                     </div>
                                 </a>
-                                <script>
-                                    const dmap = L.map('hotel-location').setView([<?php echo esc_html( $address_latitude ); ?>, <?php echo esc_html( $address_longitude ); ?>], <?php echo esc_html( $address_zoom ); ?>);
-
-                                    const dtiles = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                                        maxZoom: 20,
-                                        attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-                                    }).addTo(dmap);
-
-                                    const dmarker = L.marker([<?php echo esc_html( $address_latitude ); ?>, <?php echo esc_html( $address_longitude ); ?>], {alt: '<?php echo esc_html( $address ); ?>'}).addTo(map)
-                                        .bindPopup('<?php echo esc_html( $address ); ?>');
-                                </script>
                             </div>
 						<?php } ?>
 
@@ -703,7 +683,7 @@ $price_settings = ! empty( Helper::tfopt( 'hotel_archive_price_minimum_settings'
                                                 <div class="tf-btn-wrap">
 													<?php if ( $tf_booking_type == 2 && ! empty( $tf_booking_url ) ): ?>
                                                         <a href="<?php echo esc_url( $tf_booking_url ); ?>" class="tf_btn tf_btn_full" target="_blank">
-															<?php esc_html_e( $tf_hotel_reserve_button_text, 'tourfic' ); ?>
+															<?php echo esc_html( $tf_hotel_reserve_button_text ); ?>
                                                         </a>
 													<?php else: ?>
                                                         <button class="tf_btn tf_btn_full hotel-room-availability" type="submit">
@@ -767,11 +747,11 @@ $price_settings = ! empty( Helper::tfopt( 'hotel_archive_price_minimum_settings'
                                             <div class="tf-btn-wrap">
 												<?php if ( $tf_booking_type == 2 && ! empty( $tf_booking_url ) && $tf_ext_booking_type == 1 ): ?>
                                                     <a href="<?php echo esc_url( $tf_booking_url ); ?>" class="tf_btn tf_btn_full" target="_blank">
-														<?php esc_html_e( $tf_hotel_reserve_button_text, 'tourfic' ); ?>
+														<?php echo esc_html( $tf_hotel_reserve_button_text ); ?>
                                                     </a>
 												<?php elseif( $tf_booking_type == 2 && $tf_ext_booking_type == 2 && !empty( $tf_ext_booking_code ) ): ?>
                                                     <a href="<?php echo esc_url( "#tf-external-booking-embaded-form" ); ?>" class="tf_btn tf_btn_full" target="_blank">
-														<?php esc_html_e( $tf_hotel_reserve_button_text, 'tourfic' ); ?>
+														<?php echo esc_html( $tf_hotel_reserve_button_text ); ?>
                                                     </a>
 												<?php else: ?>
                                                     <button class="tf_btn tf_btn_full hotel-room-availability" type="submit">

@@ -388,7 +388,7 @@ class Pricing {
 			}
 
 			if ( ! empty( $tour_type ) && ( $tour_type == "fixed" ) ) {
-				$start_date = ! empty( $_POST['check-in-out-date'] ) ? sanitize_text_field( $_POST['check-in-out-date'] ) : '';
+				$start_date = ! empty( $_POST['check-in-out-date'] ) ? sanitize_text_field( wp_unslash($_POST['check-in-out-date']) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Missing
 			}
 
 			if ( ! empty( $start_date ) && ! empty( $day_diff ) ) {
@@ -504,7 +504,7 @@ class Pricing {
 			endwhile;
 
 		endif;
-		wp_reset_query();
+		wp_reset_postdata();
 		if ( ! empty( $tftours_min_maxprices ) && count( $tftours_min_maxprices ) > 1 ) {
 			$tour_max_price_val = max( $tftours_min_maxprices );
 			$tour_min_price_val = min( $tftours_min_maxprices );

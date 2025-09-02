@@ -54,54 +54,54 @@ class Activator {
 	private function create_pages() {
 		$pages = array(
 			'search'             => array(
-				'name'    => _x( 'tf-search', 'Page slug', 'tourfic' ),
-				'title'   => _x( 'TF Search', 'Page title', 'tourfic' ),
+				'name'    => esc_html(_x( 'tf-search', 'Page slug', 'tourfic' )),
+				'title'   => esc_html(_x( 'TF Search', 'Page title', 'tourfic' )),
 				'content' => '',
 			),
 			'search_form'        => array(
-				'name'    => _x( 'tf-search-form', 'Page slug', 'tourfic' ),
-				'title'   => _x( 'TF Search Form', 'Page title', 'tourfic' ),
+				'name'    => esc_html(_x( 'tf-search-form', 'Page slug', 'tourfic' )),
+				'title'   => esc_html(_x( 'TF Search Form', 'Page title', 'tourfic' )),
 				'content' => "[tf_search_form style='default' type='all' fullwidth='true' title='' subtitle='' classes='' advanced='enabled']",
 			),
 			'wishlist'           => array(
-				'name'    => _x( 'tf-wishlist', 'Page slug', 'tourfic' ),
-				'title'   => _x( 'TF Wishlist', 'Page title', 'tourfic' ),
+				'name'    => esc_html(_x( 'tf-wishlist', 'Page slug', 'tourfic' )),
+				'title'   => esc_html(_x( 'TF Wishlist', 'Page title', 'tourfic' )),
 				'content' => '',
 			),
 			'login'              => array(
-				'name'    => _x( 'tf-login', 'Page slug', 'tourfic' ),
-				'title'   => _x( 'TF Login', 'Page title', 'tourfic' ),
+				'name'    => esc_html(_x( 'tf-login', 'Page slug', 'tourfic' )),
+				'title'   => esc_html(_x( 'TF Login', 'Page title', 'tourfic' )),
 				'content' => '',
 				'pro'     => true,
 			),
 			'register'           => array(
-				'name'    => _x( 'tf-register', 'Page slug', 'tourfic' ),
-				'title'   => _x( 'TF Register', 'Page title', 'tourfic' ),
+				'name'    => esc_html(_x( 'tf-register', 'Page slug', 'tourfic' )),
+				'title'   => esc_html(_x( 'TF Register', 'Page title', 'tourfic' )),
 				'content' => '',
 				'pro'     => true,
 			),
 			'email_verification' => array(
-				'name'    => _x( 'tf-email-verification', 'Page slug', 'tourfic' ),
-				'title'   => _x( 'TF Email Verification', 'Page title', 'tourfic' ),
+				'name'    => esc_html(_x( 'tf-email-verification', 'Page slug', 'tourfic' )),
+				'title'   => esc_html(_x( 'TF Email Verification', 'Page title', 'tourfic' )),
 				'content' => "Please don't edit this page or don't change title/slug. This page reserved for Tourfic Email Verification.",
 				'pro'     => true,
 			),
 			'dashboard'          => array(
-				'name'    => _x( 'tf-dashboard', 'Page slug', 'tourfic' ),
-				'title'   => _x( 'TF Dashboard', 'Page title', 'tourfic' ),
+				'name'    => esc_html(_x( 'tf-dashboard', 'Page slug', 'tourfic' )),
+				'title'   => esc_html(_x( 'TF Dashboard', 'Page title', 'tourfic' )),
 				'content' => '',
 				'pro'     => true,
 			),
 			'qr_code_scanner'    => array(
-				'name'    => _x( 'tf-qr-code-scanner', 'Page slug', 'tourfic' ),
-				'title'   => _x( 'TF QR Code Scanner', 'Page title', 'tourfic' ),
+				'name'    => esc_html(_x( 'tf-qr-code-scanner', 'Page slug', 'tourfic' )),
+				'title'   => esc_html(_x( 'TF QR Code Scanner', 'Page title', 'tourfic' )),
 				'content' => '',
 				'pro'     => true,
 			),
 		);
 
 		foreach ( $pages as $key => $page ) {
-			if ( ! empty( $page['pro'] ) && ! function_exists( 'is_tf_pro' ) ) {
+			if ( ! empty( $page['pro'] ) ) {
 				continue;
 			}
 			$this->create_page( esc_sql( $page['name'] ), 'tf_' . $key . '_page_id', $page['title'], $page['content'], ! empty( $page['parent'] ) ? $page['parent'] : '' );
@@ -131,7 +131,7 @@ class Activator {
 		$page_found = null;
 
 		if ( $slug ) {
-			$page_found = $wpdb->get_var( $wpdb->prepare( "SELECT ID FROM {$wpdb->posts} WHERE post_name = %s LIMIT 1;", $slug ) );
+			$page_found = $wpdb->get_var( $wpdb->prepare( "SELECT ID FROM {$wpdb->posts} WHERE post_name = %s LIMIT 1;", $slug ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		}
 
 		if ( $page_found ) {
@@ -203,7 +203,7 @@ class Activator {
 			}
 		}
 
-		if ( get_page_template_slug() == 'tf-login' && function_exists( 'is_tf_pro' ) && is_tf_pro() ) {
+		if ( get_page_template_slug() == 'tf-login' ) {
 			$theme_files     = TF_PRO_INC_PATH . 'templates/tf-login.php';
 			$exists_in_theme = locate_template( $theme_files, false );
 			if ( $exists_in_theme ) {
@@ -213,7 +213,7 @@ class Activator {
 			}
 		}
 
-		if ( get_page_template_slug() == 'tf-register' && function_exists( 'is_tf_pro' ) && is_tf_pro() ) {
+		if ( get_page_template_slug() == 'tf-register' ) {
 			$theme_files     = TF_PRO_INC_PATH . 'templates/tf-register.php';
 			$exists_in_theme = locate_template( $theme_files, false );
 			if ( $exists_in_theme ) {
@@ -223,7 +223,7 @@ class Activator {
 			}
 		}
 
-		if ( get_page_template_slug() == 'tf-email-verification' && function_exists( 'is_tf_pro' ) && is_tf_pro() ) {
+		if ( get_page_template_slug() == 'tf-email-verification' ) {
 			$theme_files     = TF_PRO_TEMP_PATH . '/email-verification.php';
 			$exists_in_theme = locate_template( $theme_files, false );
 			if ( $exists_in_theme ) {
@@ -233,7 +233,7 @@ class Activator {
 			}
 		}
 
-		if ( get_page_template_slug() == 'tf-dashboard' && function_exists( 'is_tf_pro' ) && is_tf_pro() ) {
+		if ( get_page_template_slug() == 'tf-dashboard' ) {
 			$theme_files     = TF_PRO_INC_PATH . 'frontend-dashboard/template-parts/page-templates/frontend-dashboard.php';
 			$exists_in_theme = locate_template( $theme_files, false );
 			if ( $exists_in_theme ) {
@@ -243,7 +243,7 @@ class Activator {
 			}
 		}
 
-		if ( get_page_template_slug() == 'tf-qr-code-scanner' && function_exists( 'is_tf_pro' ) && is_tf_pro() ) {
+		if ( get_page_template_slug() == 'tf-qr-code-scanner' ) {
 			$theme_files     = TF_PRO_INC_PATH . 'templates/qr-code-scanner.php';
 			$exists_in_theme = locate_template( $theme_files, false );
 			if ( $exists_in_theme ) {

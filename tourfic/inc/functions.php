@@ -101,7 +101,7 @@ if(!function_exists('tourfic_order_table_data')){
 		$query_type          = $query['post_type'];
 		$query_select        = $query['select'];
 		$query_where         = $query['query'];
-		$tf_tour_book_orders = $wpdb->get_results( $wpdb->prepare( "SELECT $query_select FROM {$wpdb->prefix}tf_order_data WHERE post_type = %s $query_where", $query_type ), ARRAY_A );
+		$tf_tour_book_orders = $wpdb->get_results( $wpdb->prepare( "SELECT $query_select FROM {$wpdb->prefix}tf_order_data WHERE post_type = %s $query_where", $query_type ), ARRAY_A );  // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 
 		return $tf_tour_book_orders;
 	}
@@ -117,18 +117,18 @@ if ( ! function_exists( 'tourfic_get_user_order_table_data' ) ) {
 
 		// Adjust the query to use customer_id instead of post_author
 		if ( ! is_array( $query_type ) ) {
-			$vendor_query = $wpdb->prepare(
-				"SELECT $query_select FROM {$wpdb->prefix}tf_order_data WHERE post_type = %s AND customer_id = %d ORDER BY order_id DESC $query_limit",
+			 // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			$orders_result = $wpdb->get_results($wpdb->prepare(
+				"SELECT $query_select FROM {$wpdb->prefix}tf_order_data WHERE post_type = %s AND customer_id = %d ORDER BY order_id DESC $query_limit",  // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 				$query_type, $query_customer
-			);
+			), ARRAY_A );
 		} else {
-			$vendor_query = $wpdb->prepare(
-				"SELECT $query_select FROM {$wpdb->prefix}tf_order_data WHERE post_type IN (" . implode( ',', array_fill( 0, count( $query_type ), '%s' ) ) . ") AND customer_id = %d ORDER BY order_id DESC $query_limit",
+			 // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			$orders_result = $wpdb->get_results($wpdb->prepare(
+				"SELECT $query_select FROM {$wpdb->prefix}tf_order_data WHERE post_type IN (" . implode( ',', array_fill( 0, count( $query_type ), '%s' ) ) . ") AND customer_id = %d ORDER BY order_id DESC $query_limit",  // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 				array_merge( $query_type, array( $query_customer ) ) // Add customer_id to the array
-			);
+			), ARRAY_A );
 		}
-
-		$orders_result = $wpdb->get_results( $vendor_query, ARRAY_A );
 
 		return $orders_result;
 	}
@@ -162,7 +162,7 @@ if(!function_exists('tf_affiliate_callback')){
 if(!function_exists('tf_set_order')){
 	function tf_set_order( $order_data ) {
 		global $wpdb;
-		$all_order_ids = $wpdb->get_col( "SELECT order_id FROM {$wpdb->prefix}tf_order_data" );
+		$all_order_ids = $wpdb->get_col( "SELECT order_id FROM {$wpdb->prefix}tf_order_data" ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		do {
 			$order_id = wp_rand( 10000000, 99999999 );
 		} while ( in_array( $order_id, $all_order_ids ) );
@@ -185,6 +185,7 @@ if(!function_exists('tf_set_order')){
 
 		$order_data = wp_parse_args( $order_data, $defaults );
 
+		 // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$wpdb->query(
 			$wpdb->prepare(
 				"INSERT INTO {$wpdb->prefix}tf_order_data

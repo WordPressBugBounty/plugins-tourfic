@@ -2,10 +2,8 @@
 
 namespace Tourfic\Classes\Apartment;
 
-// do not load directly
-if ( ! defined( 'ABSPATH' ) ) {
-	die;
-}
+# don't load directly
+defined( 'ABSPATH' ) || exit;
 
 use Tourfic\Classes\Helper;
 use Tourfic\Classes\Apartment\Pricing as Apt_Pricing;
@@ -42,7 +40,7 @@ class Apartment {
 		if ( ! isset( $_POST['_nonce'] ) || ! wp_verify_nonce( sanitize_text_field(wp_unslash($_POST['_nonce'])), 'tf_ajax_nonce' ) ) {
 			return;
 		}
-		$meta = get_post_meta( sanitize_text_field( $_POST['post_id'] ), 'tf_apartment_opt', true );
+		$meta = !empty($_POST['post_id']) ? get_post_meta( sanitize_text_field( wp_unslash($_POST['post_id']) ), 'tf_apartment_opt', true ) : [];
 		// Single Template Style
 		$tf_apartment_layout_conditions = ! empty( $meta['tf_single_apartment_layout_opt'] ) ? $meta['tf_single_apartment_layout_opt'] : 'global';
 		if("single"==$tf_apartment_layout_conditions){
@@ -59,7 +57,7 @@ class Apartment {
 			<?php
 
 			foreach ( Helper::tf_data_types( $meta['rooms'] ) as $key => $room ) :
-				if ( $key == sanitize_text_field( $_POST['id'] ) ):
+				if ( $key == sanitize_text_field( wp_unslash($_POST['id'] )) ):  // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotValidated
 					$tf_room_gallery = ! empty( $room['gallery'] ) ? $room['gallery'] : '';
 					?>
                     <div class="tf-hotel-details-qc-gallelry" style="width: 545px;">
@@ -95,65 +93,6 @@ class Apartment {
 									<?php }
 								} ?>
                             </div>
-
-                            <script>
-                                jQuery('.tf-details-qc-slider-single').slick({
-                                    slidesToShow: 1,
-                                    slidesToScroll: 1,
-                                    arrows: true,
-                                    fade: false,
-                                    adaptiveHeight: true,
-                                    infinite: true,
-                                    useTransform: true,
-                                    speed: 400,
-                                    cssEase: 'cubic-bezier(0.77, 0, 0.18, 1)',
-                                });
-
-                                jQuery('.tf-details-qc-slider-nav')
-                                    .on('init', function (event, slick) {
-                                        jQuery('.tf-details-qc-slider-nav .slick-slide.slick-current').addClass('is-active');
-                                    })
-                                    .slick({
-                                        slidesToShow: 7,
-                                        slidesToScroll: 7,
-                                        dots: false,
-                                        focusOnSelect: false,
-                                        infinite: false,
-                                        responsive: [{
-                                            breakpoint: 1024,
-                                            settings: {
-                                                slidesToShow: 5,
-                                                slidesToScroll: 5,
-                                            }
-                                        }, {
-                                            breakpoint: 640,
-                                            settings: {
-                                                slidesToShow: 4,
-                                                slidesToScroll: 4,
-                                            }
-                                        }, {
-                                            breakpoint: 420,
-                                            settings: {
-                                                slidesToShow: 3,
-                                                slidesToScroll: 3,
-                                            }
-                                        }]
-                                    });
-
-                                jQuery('.tf-details-qc-slider-single').on('afterChange', function (event, slick, currentSlide) {
-                                    jQuery('.tf-details-qc-slider-nav').slick('slickGoTo', currentSlide);
-                                    var currrentNavSlideElem = '.tf-details-qc-slider-nav .slick-slide[data-slick-index="' + currentSlide + '"]';
-                                    jQuery('.tf-details-qc-slider-nav .slick-slide.is-active').removeClass('is-active');
-                                    jQuery(currrentNavSlideElem).addClass('is-active');
-                                });
-
-                                jQuery('.tf-details-qc-slider-nav').on('click', '.slick-slide', function (event) {
-                                    event.preventDefault();
-                                    var goToSingleSlide = jQuery(this).data('slick-index');
-
-                                    jQuery('.tf-details-qc-slider-single').slick('slickGoTo', goToSingleSlide);
-                                });
-                            </script>
 						<?php else : ?>
                         <img src="<?php echo esc_url( $room['thumbnail'] ) ?>" alt="room-thumbnail">
 						<?php endif; ?>
@@ -239,7 +178,7 @@ class Apartment {
 		<?php } 
 		if('design-1'==$tf_apartment_selected_template){ 
 			foreach ( Helper::tf_data_types( $meta['rooms'] ) as $key => $room ) :
-				if ( $key == sanitize_text_field( $_POST['id'] ) ):
+				if ( $key == sanitize_text_field( wp_unslash($_POST['id'] )) ): // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotValidated
 				$tf_room_gallery = ! empty( $room['gallery'] ) ? $room['gallery'] : '';
 				$tf_room_gallery_ids = !empty($tf_room_gallery) ? explode( ',', $tf_room_gallery ) : '';
 				$footage       = ! empty( $room['footage'] ) ? $room['footage'] : '';
@@ -252,6 +191,8 @@ class Apartment {
 				<div class="tf-popup-body">
 					<div class="tf-popup-left">
 						<?php 
+						$post_id = isset( $_POST['post_id'] ) ? intval( wp_unslash( $_POST['post_id'] ) ) : 0;
+
 						if ( ! empty( $tf_room_gallery_ids ) ) {
 						foreach ( $tf_room_gallery_ids as $key => $gallery_item_id ) {
 						$image_url = wp_get_attachment_url( $gallery_item_id, 'full' );
@@ -259,7 +200,7 @@ class Apartment {
 						?>
 						<img src="<?php echo esc_url($image_url); ?>" alt="<?php esc_html_e("Room Image","tourfic"); ?>" class="tf-popup-image">
 						<?php } } }else{ 
-						$aprt_thumbnail_url = get_the_post_thumbnail_url( $_POST['post_id'] );
+						$aprt_thumbnail_url = get_the_post_thumbnail_url( $post_id );
 						if(!empty($aprt_thumbnail_url)){	
 						?>
 						<img src="<?php echo esc_url($aprt_thumbnail_url); ?>" alt="<?php esc_html_e("Room Image","tourfic"); ?>" class="tf-popup-image">
@@ -316,23 +257,44 @@ class Apartment {
 		if ( ! isset( $_POST['_nonce'] ) || ! wp_verify_nonce( sanitize_text_field(wp_unslash($_POST['_nonce'])), 'tf_ajax_nonce' ) ) {
 			return;
 		}
+		
 		$response = [
-			'status'  => 'success',
+			'status'  => 'error',
 			'message' => '',
 		];
 
-		if ( Helper::tfopt( 'date_apartment_search' ) && ( ! isset( $_POST['check-in-out-date'] ) || empty( $_POST['check-in-out-date'] ) ) ) {
+		// Validation
+		if ( Helper::tfopt( 'date_apartment_search' ) && empty( $_POST['check-in-out-date'] ) ) {
 			$response['message'] = esc_html__( 'Please select a date', 'tourfic' );
-			$response['status'] = 'error';
-		}
+		} else {
+			// Whitelist allowed fields
+			$allowed_fields = [
+				'place-name',
+				'place',
+				'adults',
+				'children',
+				'infant',
+				'check-in-out-date',
+				'type',
+				'types',
+				'features',
+				'from',
+				'to',
+				'_nonce',
+			];
 
-		if ( Helper::tfopt( 'date_apartment_search' ) ) {
-			if ( ! empty( $_POST['check-in-out-date'] ) ) {
-				$response['query_string'] = str_replace( '&action=tf_apartments_search', '', http_build_query( $_POST ) );
-				$response['status']       = 'success';
+			$fields = [];
+			foreach ( $allowed_fields as $key ) {
+				if ( isset( $_POST[ $key ] ) ) {
+					if ( is_array( $_POST[ $key ] ) ) {
+						$fields[ $key ] = array_map( 'sanitize_text_field', wp_unslash( $_POST[ $key ] ) );
+					} else {
+						$fields[ $key ] = sanitize_text_field( wp_unslash( $_POST[ $key ] ) );
+					}
+				}
 			}
-		}else{
-			$response['query_string'] = str_replace( '&action=tf_apartments_search', '', http_build_query( $_POST ) );
+
+			$response['query_string'] = http_build_query( $fields );
 			$response['status']       = 'success';
 		}
 
@@ -341,11 +303,9 @@ class Apartment {
 	}
 
 	public static function tf_apartment_search_form_horizontal( $classes, $title, $subtitle, $advanced, $design ) {
-		if ( isset( $_GET ) ) {
-			$_GET = array_map( 'stripslashes_deep', $_GET );
-		}
+		
 		// Check-in & out date
-		$check_in_out = ! empty( $_GET['check-in-out-date'] ) ? esc_html( $_GET['check-in-out-date'] ) : '';
+		$check_in_out = ! empty( $_GET['check-in-out-date'] ) ? sanitize_text_field( wp_unslash( $_GET['check-in-out-date'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 
 		// date format for apartments
 		$date_format_change_apartments = ! empty( Helper::tfopt( "tf-date-format-for-users" ) ) ? Helper::tfopt( "tf-date-format-for-users" ) : "Y/m/d";
@@ -538,57 +498,6 @@ class Apartment {
 			</div>
 
 		</form>
-		<script>
-			(function ($) {
-				$(document).ready(function () {
-
-					// flatpickr locale first day of Week
-					<?php Helper::tf_flatpickr_locale("root"); ?>
-
-					$(".tf_apartment_check_in_out_date").on("click", function(){
-						$(".tf-apartment-check-in-out-date").trigger("click");
-					});
-					$(".tf-apartment-check-in-out-date").flatpickr({
-						enableTime: false,
-						mode: "range",
-						dateFormat: "Y/m/d",
-						minDate: "today",
-
-						// flatpickr locale
-						<?php Helper::tf_flatpickr_locale(); ?>
-						
-						onReady: function (selectedDates, dateStr, instance) {
-							instance.element.value = dateStr.replace(/[a-z]+/g, '-');
-							dateSetToFields(selectedDates, instance);
-						},
-						onChange: function (selectedDates, dateStr, instance) {
-							instance.element.value = dateStr.replace(/[a-z]+/g, '-');
-							dateSetToFields(selectedDates, instance);
-						},
-					});
-
-					function dateSetToFields(selectedDates, instance) {
-						if (selectedDates.length === 2) {
-							const monthNames = [
-								"Jan", "Feb", "Mar", "Apr", "May", "Jun",
-								"Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
-							];
-							if(selectedDates[0]){
-								const startDate = selectedDates[0];
-								$(".tf_apartment_check_in_out_date .tf_checkin_dates span.date").html(startDate.getDate());
-								$(".tf_apartment_check_in_out_date .tf_checkin_dates span.month span").html(monthNames[startDate.getMonth()]);
-							}
-							if(selectedDates[1]){
-								const endDate = selectedDates[1];
-								$(".tf_apartment_check_in_out_date .tf_checkout_dates span.date").html(endDate.getDate());
-								$(".tf_apartment_check_in_out_date .tf_checkout_dates span.month span").html(monthNames[endDate.getMonth()]);
-							}
-						}
-					}
-
-				});
-			})(jQuery);
-		</script>
 		<?php }elseif( !empty($design) && 3==$design ){ ?>
 			<form class="tf-archive-search-box-wrapper <?php echo esc_attr( $classes ); ?>" id="tf_apartment_booking" method="get" autocomplete="off" action="<?php echo esc_url( Helper::tf_booking_search_action() ); ?>">
 				<div class="tf-date-selection-form">
@@ -713,34 +622,11 @@ class Apartment {
 				<div class="tf-driver-location-box">
 					<div class="tf-submit-button">
 						<input type="hidden" name="type" value="tf_apartment" class="tf-post-type"/>
-						<button type="submit" class="tf_btn tf-flex-align-center"><?php esc_html_e( apply_filters("tf_apartment_search_form_submit_button_text", 'Search' ), 'tourfic' ); ?> <i class="ri-search-line"></i></button>
+						<button type="submit" class="tf_btn tf-flex-align-center"><?php echo esc_html( apply_filters("tf_apartment_search_form_submit_button_text", 'Search' )); ?> <i class="ri-search-line"></i></button>
 					</div>
 				</div>
 				</div>
             </form>
-
-            <script>
-                (function ($) {
-                    $(document).ready(function () {
-                        $("#tf_apartment_booking #check-in-out-date").flatpickr({
-							enableTime: false,
-							mode: "range",
-							dateFormat: "Y/m/d",
-							altInput: true,
-							altFormat: '<?php echo esc_html( $date_format_change_apartments ); ?>',
-							minDate: "today",
-							onReady: function (selectedDates, dateStr, instance) {
-								instance.element.value = dateStr.replace(/[a-z]+/g, '-');
-								instance.altInput.value = instance.altInput.value.replace(/[a-z]+/g, '-');
-							},
-							onChange: function (selectedDates, dateStr, instance) {
-								instance.element.value = dateStr.replace(/[a-z]+/g, '-');
-								instance.altInput.value = instance.altInput.value.replace(/[a-z]+/g, '-');
-							}
-						});
-                    });
-                })(jQuery);
-            </script>
         <?php } elseif (!empty($design) && 4 == $design) { ?>
             <form class="tf-archive-search-box-wrapper tf-search__form tf-shortcode-design-4 <?php echo esc_attr($classes); ?>" id="tf_apartment_booking" method="get" autocomplete="off" action="<?php echo esc_url(Helper::tf_booking_search_action()); ?>">
                 <fieldset class="tf-search__form__fieldset">
@@ -932,7 +818,7 @@ class Apartment {
                         <!-- Submit Button -->
                         <input type="hidden" name="type" value="tf_apartment" class="tf-post-type" />
                         <button type="submit" class="tf-search__form__submit tf_btn">
-                            <?php esc_html_e(apply_filters("tf_apartment_search_form_submit_button_text", 'Search'), 'tourfic'); ?>
+                            <?php echo esc_html(apply_filters("tf_apartment_search_form_submit_button_text", 'Search')); ?>
                             <svg class="tf-search__form__submit__icon" width="17" height="16" viewBox="0 0 17 16" fill="none" xmlns="http://www.w3.org/2000/svg">
                                 <path d="M15.75 14.7188L11.5625 10.5312C12.4688 9.4375 12.9688 8.03125 12.9688 6.5C12.9688 2.9375 10.0312 0 6.46875 0C2.875 0 0 2.9375 0 6.5C0 10.0938 2.90625 13 6.46875 13C7.96875 13 9.375 12.5 10.5 11.5938L14.6875 15.7812C14.8438 15.9375 15.0312 16 15.25 16C15.4375 16 15.625 15.9375 15.75 15.7812C16.0625 15.5 16.0625 15.0312 15.75 14.7188ZM1.5 6.5C1.5 3.75 3.71875 1.5 6.5 1.5C9.25 1.5 11.5 3.75 11.5 6.5C11.5 9.28125 9.25 11.5 6.5 11.5C3.71875 11.5 1.5 9.28125 1.5 6.5Z" fill="white" />
                             </svg>
@@ -940,58 +826,6 @@ class Apartment {
                     </div>
                 </fieldset>
             </form>
-            <script>
-                (function($) {
-                    $(document).ready(function() {
-                        // flatpickr locale first day of Week
-                        <?php Helper::tf_flatpickr_locale("root"); ?>
-
-                        $(".tf_apt_check_in_out_date").on("click", function() {
-                            $(".tf-apt-check-in-out-date").trigger("click");
-                        });
-                        $(".tf-apt-check-in-out-date").flatpickr({
-                            enableTime: false,
-                            mode: "range",
-                            dateFormat: "Y/m/d",
-                            minDate: "today",
-
-                            // flatpickr locale
-                            <?php Helper::tf_flatpickr_locale(); ?>
-
-                            onReady: function(selectedDates, dateStr, instance) {
-                                instance.element.value = dateStr.replace(/[a-z]+/g, '-');
-                                dateSetToFields(selectedDates, instance);
-                            },
-                            onChange: function(selectedDates, dateStr, instance) {
-                                instance.element.value = dateStr.replace(/[a-z]+/g, '-');
-                                dateSetToFields(selectedDates, instance);
-                            }
-                        });
-
-                        function dateSetToFields(selectedDates, instance) {
-                            if (selectedDates.length === 2) {
-                                const monthNames = [
-                                    "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-                                    "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
-                                ];
-                                if (selectedDates[0]) {
-                                    const startDate = selectedDates[0];
-                                    $(".tf_checkin_dates span.date").html(startDate.getDate());
-                                    $(".tf_checkin_dates span.month").html(monthNames[startDate.getMonth()]);
-                                    $(".tf_checkin_dates span.year").html(startDate.getFullYear());
-                                }
-                                if (selectedDates[1]) {
-                                    const endDate = selectedDates[1];
-                                    $(".tf_checkout_dates span.date").html(endDate.getDate());
-                                    $(".tf_checkout_dates span.month").html(monthNames[endDate.getMonth()]);
-                                    $(".tf_checkout_dates span.year").html(endDate.getFullYear());
-                                }
-                            }
-                        }
-                    });
-                })(jQuery);
-            </script>
-
         <?php } else { ?>
         <form class="tf_booking-widget <?php echo esc_attr( $classes ); ?>" id="tf_apartment_booking" method="get" autocomplete="off" action="<?php echo esc_url( Helper::tf_booking_search_action() ); ?>">
             <div class="tf_homepage-booking">
@@ -1143,52 +977,6 @@ class Apartment {
             </div>
 
         </form>
-
-        <script>
-            (function ($) {
-                $(document).ready(function () {
-
-					const regexMap = {
-						'Y/m/d': /(\d{4}\/\d{2}\/\d{2}).*(\d{4}\/\d{2}\/\d{2})/,
-						'd/m/Y': /(\d{2}\/\d{2}\/\d{4}).*(\d{2}\/\d{2}\/\d{4})/,
-						'm/d/Y': /(\d{2}\/\d{2}\/\d{4}).*(\d{2}\/\d{2}\/\d{4})/,
-						'Y-m-d': /(\d{4}-\d{2}-\d{2}).*(\d{4}-\d{2}-\d{2})/,
-						'd-m-Y': /(\d{2}-\d{2}-\d{4}).*(\d{2}-\d{2}-\d{4})/,
-						'm-d-Y': /(\d{2}-\d{2}-\d{4}).*(\d{2}-\d{2}-\d{4})/,
-						'Y.m.d': /(\d{4}\.\d{2}\.\d{2}).*(\d{4}\.\d{2}\.\d{2})/,
-						'd.m.Y': /(\d{2}\.\d{2}\.\d{4}).*(\d{2}\.\d{2}\.\d{4})/,
-						'm.d.Y': /(\d{2}\.\d{2}\.\d{4}).*(\d{2}\.\d{2}\.\d{4})/
-					};
-					const dateRegex = regexMap['<?php echo $date_format_change_apartments; ?>'];
-
-                    $("#tf_apartment_booking #check-in-out-date").flatpickr({
-                        enableTime: false,
-                        mode: "range",
-                        dateFormat: "Y/m/d",
-                        altInput: true,
-                        altFormat: '<?php echo esc_html( $date_format_change_apartments ); ?>',
-                        minDate: "today",
-                        onReady: function (selectedDates, dateStr, instance) {
-                            instance.element.value = dateStr.replace(/(\d{4}\/\d{2}\/\d{2}).*(\d{4}\/\d{2}\/\d{2})/g, function (match, date1, date2) {
-								return `${date1} - ${date2}`;
-							});
-							instance.altInput.value = instance.altInput.value.replace(dateRegex, function (match, date1, date2) {
-								return `${date1} - ${date2}`;
-							});
-                        },
-                        onChange: function (selectedDates, dateStr, instance) {
-                            instance.element.value = dateStr.replace(/(\d{4}\/\d{2}\/\d{2}).*(\d{4}\/\d{2}\/\d{2})/g, function (match, date1, date2) {
-								return `${date1} - ${date2}`;
-							});
-                            instance.altInput.value = instance.altInput.value.replace( dateRegex, function (match, d1, d2) {
-								return `${d1} - ${d2}`;
-							});
-                        }
-                    });
-
-                });
-            })(jQuery);
-        </script>
 		<?php
 		}
 	}
@@ -1212,7 +1000,7 @@ class Apartment {
 
 		$tf_booking_type = '1';
 		$tf_booking_url  = $tf_booking_query_url = $tf_booking_attribute = $tf_hide_booking_form = $tf_hide_price = $tf_ext_booking_type = $tf_booking_code = '';
-		if ( function_exists( 'is_tf_pro' ) && is_tf_pro() ) {
+		
 			$tf_booking_type      = ! empty( $meta['booking-by'] ) ? $meta['booking-by'] : 1;
 			$tf_ext_booking_type = ! empty( $meta['external-booking-type'] ) ? $meta['external-booking-type'] : 1;
 			$tf_booking_code = ! empty( $meta['booking-code'] ) ? $meta['booking-code'] : '';
@@ -1221,30 +1009,28 @@ class Apartment {
 			$tf_booking_attribute = ! empty( $meta['booking-attribute'] ) ? $meta['booking-attribute'] : '';
 			$tf_hide_booking_form = ! empty( $meta['hide_booking_form'] ) ? $meta['hide_booking_form'] : '';
 			$tf_hide_price        = ! empty( $meta['hide_price'] ) ? $meta['hide_price'] : '';
-		}
+		
 
 		// date format for apartment
 		$date_format_change_appartments = ! empty( Helper::tfopt( "tf-date-format-for-users" ) ) ? Helper::tfopt( "tf-date-format-for-users" ) : "Y/m/d";
 
-		if ( function_exists( 'is_tf_pro' ) && is_tf_pro() ) {
-			$additional_fees = ! empty( $meta['additional_fees'] ) ? Helper::tf_data_types( $meta['additional_fees'] ) : array();
-		} else {
+		
 			$additional_fee_label = ! empty( $meta['additional_fee_label'] ) ? $meta['additional_fee_label'] : '';
 			$additional_fee       = ! empty( $meta['additional_fee'] ) ? $meta['additional_fee'] : 0;
 			$fee_type             = ! empty( $meta['fee_type'] ) ? $meta['fee_type'] : '';
-		}
+		
 
-		$adults       = ! empty( $_GET['adults'] ) ? sanitize_text_field( $_GET['adults'] ) : '';
-		$child        = ! empty( $_GET['children'] ) ? sanitize_text_field( $_GET['children'] ) : '';
-		$infant       = ! empty( $_GET['infant'] ) ? sanitize_text_field( $_GET['infant'] ) : '';
-		$check_in_out = ! empty( $_GET['check-in-out-date'] ) ? $_GET['check-in-out-date'] : '';
+		$adults       = ! empty( $_GET['adults'] ) ? sanitize_text_field( wp_unslash($_GET['adults']) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$child        = ! empty( $_GET['children'] ) ? sanitize_text_field( wp_unslash($_GET['children'] )) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$infant       = ! empty( $_GET['infant'] ) ? sanitize_text_field( wp_unslash($_GET['infant'] )) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$check_in_out = ! empty( $_GET['check-in-out-date'] ) ? sanitize_text_field( wp_unslash($_GET['check-in-out-date']) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
         $check_in_out_arr = explode(" - ", $check_in_out);
         $check_in = ! empty( $check_in_out_arr[0] ) ? $check_in_out_arr[0] : '';
         $check_out = ! empty( $check_in_out_arr[1] ) ? $check_in_out_arr[1] : '';
 
 		$apt_disable_dates = [];
 		$tf_apt_enable_dates = [];
-		if ( $enable_availability === '1' && ! empty( $apt_availability ) && function_exists( 'is_tf_pro' ) && is_tf_pro() ) {
+		if ( $enable_availability === '1' && ! empty( $apt_availability ) ) {
 			$apt_availability_arr = json_decode( $apt_availability, true );
 			//iterate all the available disabled dates
 			if ( ! empty( $apt_availability_arr ) && is_array( $apt_availability_arr ) ) {
@@ -1446,7 +1232,7 @@ class Apartment {
 			<?php endif; ?>
 
             <div class="tf_form-row">
-				<?php $ptype = isset( $_GET['type'] ) ? esc_attr($_GET['type']) : get_post_type(); ?>
+				<?php $ptype = isset( $_GET['type'] ) ? sanitize_text_field( wp_unslash($_GET['type']) ) : get_post_type(); // phpcs:ignore WordPress.Security.NonceVerification.Recommended ?>
                 <input type="hidden" name="type" value="<?php echo esc_attr( $ptype ); ?>" class="tf-post-type"/>
                 <input type="hidden" name="post_id" value="<?php echo esc_attr( get_the_ID() ); ?>"/>
 
@@ -1474,14 +1260,8 @@ class Apartment {
                     <span class="days-total-price tf-price-list-price"></span>
                 </li>
 
-				<?php if ( function_exists( 'is_tf_pro' ) && is_tf_pro() ): ?>
-					<?php foreach ( $additional_fees as $key => $additional_fee ) : ?>
-                        <li class="additional-fee-wrap" style="display: none">
-                            <span class="additional-fee-label tf-price-list-label"><?php echo esc_html( $additional_fee['additional_fee_label'] ); ?></span>
-                            <span class="additional-fee-<?php echo esc_attr( $key ) ?> tf-price-list-price"></span>
-                        </li>
-					<?php endforeach; ?>
-				<?php elseif ( ! empty( $additional_fee_label ) && ! empty( $additional_fee ) ): ?>
+				
+				<?php if ( ! empty( $additional_fee_label ) && ! empty( $additional_fee ) ): ?>
                     <li class="additional-fee-wrap" style="display: none">
                         <span class="additional-fee-label tf-price-list-label"><?php echo esc_html( $additional_fee_label ); ?></span>
                         <span class="additional-fee tf-price-list-price"></span>
@@ -1621,7 +1401,7 @@ class Apartment {
 			<?php endif; ?>
 
             <div class="tf_form-row">
-				<?php $ptype = isset( $_GET['type'] ) ? esc_attr($_GET['type']) : get_post_type(); ?>
+				<?php $ptype = isset( $_GET['type'] ) ? sanitize_text_field( wp_unslash($_GET['type']) ) : get_post_type();  // phpcs:ignore WordPress.Security.NonceVerification.Recommended?>
                 <input type="hidden" name="type" value="<?php echo esc_attr( $ptype); ?>" class="tf-post-type"/>
                 <input type="hidden" name="post_id" value="<?php echo esc_attr( get_the_ID() ); ?>"/>
 
@@ -1650,14 +1430,8 @@ class Apartment {
                     <span class="days-total-price tf-price-list-price"></span>
                 </li>
 
-				<?php if ( function_exists( 'is_tf_pro' ) && is_tf_pro() ): ?>
-					<?php foreach ( $additional_fees as $key => $additional_fee ) : ?>
-                        <li class="additional-fee-wrap" style="display: none">
-                            <span class="additional-fee-label tf-price-list-label"><?php echo esc_html( $additional_fee['additional_fee_label'] ); ?></span>
-                            <span class="additional-fee-<?php echo esc_attr( $key ) ?> tf-price-list-price"></span>
-                        </li>
-					<?php endforeach; ?>
-				<?php elseif ( ! empty( $additional_fee_label ) && ! empty( $additional_fee ) ): ?>
+				
+				<?php if ( ! empty( $additional_fee_label ) && ! empty( $additional_fee ) ): ?>
                     <li class="additional-fee-wrap" style="display: none">
                         <span class="additional-fee-label tf-price-list-label"><?php echo esc_html( $additional_fee_label ); ?></span>
                         <span class="additional-fee tf-price-list-price"></span>
@@ -1683,283 +1457,7 @@ class Apartment {
 		<?php do_action("tf_apartment_after_single_booking_form"); ?>
 
 		<?php } ?>
-        <script>
-            (function ($) {
-                $(document).ready(function () {
 
-					// First Day of Week
-					<?php Helper::tf_flatpickr_locale("root"); ?>
-
-                    let minStay = <?php echo esc_js( $min_stay ) ?>;
-
-                    const bookingCalculation = (selectedDates) => {
-						<?php if ( ( $pricing_type === 'per_night' && ! empty( $price_per_night ) ) || ( $pricing_type === 'per_person' && ! empty( $adult_price ) ) ): ?>
-                        //calculate total days
-                        if (selectedDates[0] && selectedDates[1]) {
-                            var diff = Math.abs(selectedDates[1] - selectedDates[0]);
-                            var days = Math.ceil(diff / (1000 * 60 * 60 * 24));
-                            if (days > 0) {
-                                var pricing_type = '<?php echo esc_js( $pricing_type ); ?>';
-                                var price_per_night = <?php echo esc_js( $price_per_night ); ?>;
-                                var adult_price = <?php echo esc_js( $adult_price ); ?>;
-                                var child_price = <?php echo esc_js( $child_price ); ?>;
-                                var infant_price = <?php echo esc_js( $infant_price ); ?>;
-                                var enable_availability = '<?php echo esc_js( $enable_availability ); ?>';
-                                var apt_availability = '<?php echo wp_kses_post($apt_availability); ?>';
-
-								if(apt_availability) {
-									apt_availability = JSON.parse(apt_availability);
-								}
-
-                                if (enable_availability !== '1') {
-                                    if (pricing_type === 'per_night') {
-                                        var total_price = price_per_night * days;
-                                        var total_days_price_html = '<?php echo wp_kses_post(wc_price( 0 ));	; ?>';
-                                        var wc_price_per_night = '<?php echo wp_kses_post(wc_price( $price_per_night ));	; ?>';
-                                        if (total_price > 0) {
-											$('.tf-apartment-price-list').show();
-                                            $('.total-days-price-wrap').show();
-                                            total_days_price_html = '<?php echo wp_kses_post(wc_price( 0 ));	; ?>'.replace('0.00', total_price.toFixed(2));
-                                        }
-                                        $('.total-days-price-wrap .total-days').html(wc_price_per_night + ' x ' + days + ' <?php esc_html_e( 'nights', 'tourfic' ); ?>');
-                                        $('.total-days-price-wrap .days-total-price').html(total_days_price_html);
-                                    } else {
-                                        let totalPersonPrice = (adult_price * $('#adults').val()) + (child_price * $('#children').val()) + (infant_price * $('#infant').val());
-                                        var total_price = totalPersonPrice * days;
-                                        var total_days_price_html = '<?php echo wp_kses_post(wc_price( 0 ));	; ?>';
-                                        var wc_price_per_person = '<?php echo wp_kses_post(wc_price( 0 ));	; ?>'.replace('0.00', totalPersonPrice.toFixed(2));
-                                        if (total_price > 0) {
-											$('.tf-apartment-price-list').show();
-                                            $('.total-days-price-wrap').show();
-                                            total_days_price_html = '<?php echo wp_kses_post(wc_price( 0 ));	; ?>'.replace('0.00', total_price.toFixed(2));
-                                        }
-                                        $('.total-days-price-wrap .total-days').html(wc_price_per_person + ' x ' + days + ' <?php esc_html_e( 'nights', 'tourfic' ); ?>');
-                                        $('.total-days-price-wrap .days-total-price').html(total_days_price_html);
-                                    }
-                                } else {
-                                    var total_price = 0;
-                                    var total_price_html = '<?php echo wp_kses_post(wc_price( 0 ));	; ?>';
-                                    var checkInDate = new Date(selectedDates[0]);
-                                    var checkOutDate = new Date(selectedDates[1]);
-
-                                    for (var date in apt_availability) {
-                                        let d = new Date(date);
-
-                                        if (d.getTime() >= checkInDate.getTime() && d.getTime() < checkOutDate.getTime()) {
-											var availabilityData = apt_availability[date];
-											var pricing_type = availabilityData.pricing_type;
-											var price = availabilityData.price ? parseFloat(availabilityData.price) : 0;
-											var adultPrice = availabilityData.adult_price ? parseFloat(availabilityData.adult_price) : 0;
-											var childPrice = availabilityData.child_price ? parseFloat(availabilityData.child_price) : 0;
-											var infantPrice = availabilityData.infant_price ? parseFloat(availabilityData.infant_price) : 0;
-
-											if (pricing_type === 'per_night' && price > 0) {
-												total_price += price;
-											} else if (pricing_type === 'per_person') {
-												var totalPersonPrice = (adultPrice * $('#adults').val()) + (childPrice * $('#children').val()) + (infantPrice * $('#infant').val());
-												total_price += totalPersonPrice;
-											}
-                                        }
-                                    }
-
-                                    if (total_price > 0) {
-                                        $('.tf-apartment-price-list').show();
-                                        $('.total-days-price-wrap').show();
-                                        total_price_html = '<?php echo wp_kses_post(wc_price( 0 ));	; ?>'.replace('0.00', total_price.toFixed(2));
-                                    }
-                                    $('.total-days-price-wrap .total-days').html(days + ' <?php esc_html_e( 'nights', 'tourfic' ); ?>');
-                                    $('.total-days-price-wrap .days-total-price').html(total_price_html);
-                                }
-								//discount
-                                var discount = <?php echo esc_html( $discount ); ?>;
-								var discountType = "<?php echo esc_html( $discount_type ); ?>";
-                                var discount_html = '<?php echo wp_kses_post(wc_price( 0 ));	; ?>';
-                                if (discount > 0 && discountType != "none") {
-                                    $('.apartment-discount-wrap').show();
-
-									<?php if ( $discount_type == 'percent' ): ?>
-                                    discount_html = '<?php echo wp_kses_post(wc_price( 0 ));	; ?>'.replace('0.00', (total_price * discount / 100).toFixed(2));
-                                    total_price = total_price - (total_price * discount / 100);
-									<?php else: ?>
-                                    discount_html = '<?php echo wp_kses_post(wc_price( 0 ));	; ?>'.replace('0.00', discount.toFixed(2));
-                                    total_price = total_price - discount;
-									<?php endif; ?>
-                                }
-                                $('.apartment-discount-wrap .apartment-discount').html('-' + discount_html);
-
-
-                                let totalPerson = parseInt($('.tf_acrselection #adults').val()) + parseInt($('.tf_acrselection #children').val()) + parseInt($('.tf_acrselection #infant').val());
-
-                                //additional fee
-								<?php if ( function_exists( 'is_tf_pro' ) && is_tf_pro() ): ?>
-								<?php foreach ($additional_fees as $key => $item) : ?>
-                                let additional_fee_<?php echo esc_html( $key ) ?> = <?php echo esc_html( $item['additional_fee'] ); ?>;
-                                let additional_fee_html_<?php echo esc_html( $key ) ?> = '<?php echo wp_kses_post(wc_price( 0 ));	; ?>';
-                                let totalAdditionalFee_<?php echo esc_html ( $key ) ?> = 0;
-
-								<?php if ( $item['fee_type'] == 'per_night' ): ?>
-                                totalAdditionalFee_<?php echo esc_html( $key ) ?> = additional_fee_<?php echo esc_html( $key ) ?> * days;
-								<?php elseif($item['fee_type'] == 'per_person'): ?>
-                                totalAdditionalFee_<?php echo esc_html( $key ) ?> = additional_fee_<?php echo esc_html( $key ) ?> * totalPerson;
-								<?php else: ?>
-                                totalAdditionalFee_<?php echo esc_html( $key ) ?> = additional_fee_<?php echo esc_html( $key ) ?>;
-								<?php endif; ?>
-
-                                if (totalAdditionalFee_<?php echo esc_html( $key ) ?> > 0 ) {
-                                    $('.additional-fee-wrap').show();
-                                    total_price = total_price + totalAdditionalFee_<?php echo esc_html( $key ) ?>;
-                                    additional_fee_html_<?php echo esc_html( $key ) ?> = '<?php echo wp_kses_post(wc_price( 0 ));	; ?>'.replace('0.00', totalAdditionalFee_<?php echo esc_html( $key ) ?>.toFixed(2));
-                                }
-                                $('.additional-fee-wrap .additional-fee-<?php echo esc_html( $key ) ?>').html(additional_fee_html_<?php echo esc_html( $key ) ?>);
-								<?php endforeach; ?>
-								<?php else: ?>
-								<?php if ( ! empty( $additional_fee ) ): ?>
-                                let additional_fee = <?php echo esc_html( $additional_fee ); ?>;
-                                let additional_fee_html = '<?php echo wp_kses_post(wc_price( 0 ));	; ?>';
-                                let totalAdditionalFee = 0;
-
-								<?php if ( $fee_type == 'per_night' ): ?>
-                                totalAdditionalFee = additional_fee * days;
-								<?php elseif($fee_type == 'per_person'): ?>
-                                totalAdditionalFee = additional_fee * totalPerson;
-								<?php else: ?>
-                                totalAdditionalFee = additional_fee;
-								<?php endif; ?>
-
-                                if (totalAdditionalFee > 0) {
-                                    $('.additional-fee-wrap').show();
-                                    total_price = total_price + totalAdditionalFee;
-                                    additional_fee_html = '<?php echo wp_kses_post(wc_price( 0 ));	; ?>'.replace('0.00', totalAdditionalFee.toFixed(2));
-                                }
-                                $('.additional-fee-wrap .additional-fee').html(additional_fee_html);
-								<?php endif; ?>
-								<?php endif; ?>
-                                //end additional fee
-
-                                //total price
-                                var total_price_html = '<?php echo wp_kses_post(wc_price( 0 ));	; ?>';
-                                if (total_price > 0) {
-                                    $('.total-price-wrap').show();
-                                    total_price_html = '<?php echo wp_kses_post(wc_price( 0 ));	; ?>'.replace('0.00', total_price.toFixed(2));
-                                }
-                                $('.total-price-wrap .total-price').html(total_price_html);
-                            } else {
-                                $('.tf-apartment-price-list').hide();
-                                $('.total-days-price-wrap').hide();
-                                $('.additional-fee-wrap').hide();
-                                $('.total-price-wrap').hide();
-                            }
-                        }
-						<?php endif; ?>
-
-                        //minimum stay
-                        if (selectedDates[0] && selectedDates[1] && minStay > 0) {
-                            var diff = Math.abs(selectedDates[1] - selectedDates[0]);
-                            var days = Math.ceil(diff / (1000 * 60 * 60 * 24));
-
-                            if (days < minStay) {
-                                $('.tf-submit').attr('disabled', 'disabled');
-                                $('.tf-submit').addClass('disabled');
-                                $('.tf-check-in-out-date .tf_label-row .tf-err-msg, .tf-apartment-design-one-form .tf_booking-dates .tf-err-msg').remove();
-								<?php /* translators: %s minimum stay */ ?>
-                                $('.tf-check-in-out-date .tf_label-row, .tf-apartment-design-one-form .tf_booking-dates').append('<span class="tf-err-msg"><?php echo sprintf( esc_html__( 'Minimum stay is %s nights', 'tourfic' ), esc_html( $min_stay ) ); ?></span>');
-                            } else {
-                                $('.tf-submit').removeAttr('disabled');
-                                $('.tf-submit').removeClass('disabled');
-                                $('.tf-check-in-out-date .tf_label-row .tf-err-msg, .tf-apartment-design-one-form .tf_booking-dates .tf-err-msg').remove();
-                            }
-                        }
-                    }
-
-                    $(".tf-apartment-design-one-form #check-in-date").on('click', function () {
-                        $(".tf-check-out-date .form-control").trigger( "click" );
-                    });
-
-					const regexMap = {
-						'Y/m/d': /(\d{4}\/\d{2}\/\d{2}).*(\d{4}\/\d{2}\/\d{2})/,
-						'd/m/Y': /(\d{2}\/\d{2}\/\d{4}).*(\d{2}\/\d{2}\/\d{4})/,
-						'm/d/Y': /(\d{2}\/\d{2}\/\d{4}).*(\d{2}\/\d{2}\/\d{4})/,
-						'Y-m-d': /(\d{4}-\d{2}-\d{2}).*(\d{4}-\d{2}-\d{2})/,
-						'd-m-Y': /(\d{2}-\d{2}-\d{4}).*(\d{2}-\d{2}-\d{4})/,
-						'm-d-Y': /(\d{2}-\d{2}-\d{4}).*(\d{2}-\d{2}-\d{4})/,
-						'Y.m.d': /(\d{4}\.\d{2}\.\d{2}).*(\d{4}\.\d{2}\.\d{2})/,
-						'd.m.Y': /(\d{2}\.\d{2}\.\d{4}).*(\d{2}\.\d{2}\.\d{4})/,
-						'm.d.Y': /(\d{2}\.\d{2}\.\d{4}).*(\d{2}\.\d{2}\.\d{4})/
-					};
-					const dateRegex = regexMap['<?php echo $date_format_change_appartments; ?>'];
-
-                    const checkinoutdateange = flatpickr("#tf-apartment-booking #check-in-out-date", {
-                        enableTime: false,
-                        mode: "range",
-                        minDate: "today",
-                        altInput: true,
-                        altFormat: '<?php echo esc_html( $date_format_change_appartments ); ?>',
-                        dateFormat: "Y/m/d",
-                        defaultDate: <?php echo wp_json_encode( explode( '-', $check_in_out ) ) ?>,
-                        onReady: function (selectedDates, dateStr, instance) {
-                            instance.element.value = dateStr.replace(/(\d{4}\/\d{2}\/\d{2}).*(\d{4}\/\d{2}\/\d{2})/g, function (match, date1, date2) {
-								return `${date1} - ${date2}`;
-							});
-                            instance.altInput.value = instance.altInput.value.replace( dateRegex, function (match, d1, d2) {
-								return `${d1} - ${d2}`;
-							});
-                            bookingCalculation(selectedDates);
-                            dateSetToFields(selectedDates, instance);
-                        },
-                        onChange: function (selectedDates, dateStr, instance) {
-                            instance.element.value = dateStr.replace(/(\d{4}\/\d{2}\/\d{2}).*(\d{4}\/\d{2}\/\d{2})/g, function (match, date1, date2) {
-								return `${date1} - ${date2}`;
-							});
-                            instance.altInput.value = instance.altInput.value.replace( dateRegex, function (match, d1, d2) {
-								return `${d1} - ${d2}`;
-							});
-                            bookingCalculation(selectedDates);
-                            dateSetToFields(selectedDates, instance);
-                        }, 
-						<?php if (!empty($checked_enable_dates) && is_array($checked_enable_dates)) : ?>
-							enable: [ <?php array_walk($checked_enable_dates, function($date) {echo '"'. esc_html( $date ) . '",';}); ?> ],
-						<?php endif; ?>
-                        disable: [
-							<?php foreach ( $booked_dates as $booked_date ) : ?>
-								{
-									from: "<?php echo esc_html( $booked_date['check_in'] ); ?>",
-									to: "<?php echo esc_html( $booked_date['check_out'] ); ?>"
-								},
-							<?php endforeach; ?>
-							<?php foreach ( $apt_disable_dates as $apt_disable_date ) : ?>
-								{
-									from: "<?php echo esc_html( $apt_disable_date ); ?>",
-									to: "<?php echo esc_html( $apt_disable_date ); ?>"
-								},
-							<?php endforeach; ?>
-                        ],
-						<?php Helper::tf_flatpickr_locale(); ?>
-                    });
-
-					// Need to change the date format
-                    function dateSetToFields(selectedDates, instance) {
-						
-						var dates = instance.altInput.value.split(' - ');
-
-                        if (dates.length === 2) {
-                            if (dates[0]) {
-                                $(".tf-apartment-design-one-form #check-in-date").val(dates[0]);
-                            }
-                            if (dates[1]) {
-                                $(".tf-apartment-design-one-form #check-out-date").val(dates[1]);
-                            }
-                        }
-                    }
-
-                    $(document).on('change', '.tf_acrselection #adults, .tf_acrselection #children, .tf_acrselection #infant', function () {
-                        if ($('#tf-apartment-booking #check-in-out-date').val() !== '') {
-                            bookingCalculation(checkinoutdateange.selectedDates);
-                        }
-                    });
-                });
-            })(jQuery);
-
-        </script>
 		<?php
 	}
 

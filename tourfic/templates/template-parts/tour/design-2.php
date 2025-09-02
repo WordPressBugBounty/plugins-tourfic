@@ -1,5 +1,6 @@
 <?php
-
+// Don't load directly
+defined( 'ABSPATH' ) || exit;
 use \Tourfic\Classes\Helper;
 use \Tourfic\App\TF_Review;
 use \Tourfic\Classes\Tour\Tour;
@@ -7,14 +8,14 @@ use \Tourfic\Classes\Tour\Tour_Price;
 
 $tf_booking_type = '1';
 $tf_booking_url  = $tf_booking_query_url = $tf_booking_attribute = $tf_hide_booking_form = $tf_hide_price = '';
-if ( function_exists( 'is_tf_pro' ) && is_tf_pro() ) {
+
 	$tf_booking_type      = ! empty( $meta['booking-by'] ) ? $meta['booking-by'] : 1;
 	$tf_booking_url       = ! empty( $meta['booking-url'] ) ? esc_url( $meta['booking-url'] ) : '';
 	$tf_booking_query_url = ! empty( $meta['booking-query'] ) ? $meta['booking-query'] : 'adult={adult}&child={child}&infant={infant}';
 	$tf_booking_attribute = ! empty( $meta['booking-attribute'] ) ? $meta['booking-attribute'] : '';
 	$tf_hide_booking_form = ! empty( $meta['hide_booking_form'] ) ? $meta['hide_booking_form'] : '';
 	$tf_hide_price        = ! empty( $meta['hide_price'] ) ? $meta['hide_price'] : '';
-}
+
 if ( 2 == $tf_booking_type && ! empty( $tf_booking_url ) ) {
 	$external_search_info = array(
 		'{adult}'        => ! empty( $adults ) ? $adults : 1,
@@ -224,7 +225,7 @@ if ( 2 == $tf_booking_type && ! empty( $tf_booking_url ) ) {
                             <h2 class="tf-section-title"><?php esc_html_e( "Book This Tour", "tourfic" ); ?></h2>
                             <div class="tf-btn-wrap">
                                 <a href="<?php echo esc_url( $tf_booking_url ) ?>" target="_blank" class="tf_btn tf_btn_full tf_btn_sharp tf-tour-external-booking-button"
-                                   style="margin-top: 10px;"><?php esc_html_e( $tf_tour_single_book_now_text, 'tourfic' ); ?></a>
+                                   style="margin-top: 10px;"><?php echo esc_html( $tf_tour_single_book_now_text ); ?></a>
                             </div>
                         </div>
 					<?php endif; ?>
@@ -442,6 +443,7 @@ if ( 2 == $tf_booking_type && ! empty( $tf_booking_url ) ) {
 			'posts_per_page' => 8,
 			'orderby'        => 'title',
 			'order'          => 'ASC',
+			// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_tax_query
 			'tax_query'      => array(
 				array(
 					'taxonomy' => 'tour_destination',
@@ -453,7 +455,7 @@ if ( 2 == $tf_booking_type && ! empty( $tf_booking_url ) ) {
 		//show related tour based on selected tours
 		$selected_ids = ! empty( Helper::tfopt( 'tf-related-tours' ) ) ? Helper::tfopt( 'tf-related-tours' ) : array();
 
-		if ( $related_tour_type == 'selected' && defined( 'TF_PRO' ) ) {
+		if ( $related_tour_type == 'selected' ) {
 			if ( in_array( $post_id, $selected_ids ) ) {
 				$index = array_search( $post_id, $selected_ids );
 

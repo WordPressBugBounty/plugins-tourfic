@@ -1,3 +1,6 @@
+<?php // Don't load directly
+defined( 'ABSPATH' ) || exit;
+?>
 <?php if ( $tour_duration || $info_tour_type || $group_size || $language ) { ?>
 <!--Information Section Start -->
 <div class="tf-overview-wrapper">
@@ -15,7 +18,7 @@
                 } else {
                     $duration_time_html = $duration_time;
                 }
-                echo " " . esc_html( $duration_time_html );
+                echo esc_html(" " . $duration_time_html );
                 ?>
                 <?php if ( $night ) { ?>
                     <span>

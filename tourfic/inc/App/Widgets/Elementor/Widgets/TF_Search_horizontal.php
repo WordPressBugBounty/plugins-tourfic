@@ -70,12 +70,6 @@ class TF_Search_horizontal extends \Elementor\Widget_Base {
 			'carrentals' => esc_html__( 'Car', 'tourfic' ),
 		);
 
-		if ( function_exists('is_tf_pro') && is_tf_pro() ) {
-			$types['booking']   = esc_html__( 'Booking.com', 'tourfic' );
-			$types['tp-flight'] = esc_html__( 'TravelPayouts Flight', 'tourfic' );
-			$types['tp-hotel']  = esc_html__( 'TravelPayouts Hotel', 'tourfic' );
-		}
-
 		return $types;
 	}
 
@@ -131,9 +125,9 @@ class TF_Search_horizontal extends \Elementor\Widget_Base {
             'tour_tab_title',
             [
                 'type'     => \Elementor\Controls_Manager::TEXT,
-                'label'    => __( 'Tour Tab Title', 'tourfic' ),
+                'label'    => esc_html__( 'Tour Tab Title', 'tourfic' ),
                 'multiple' => true,
-                'default'  => __( 'Tour', 'tourfic' ),
+                'default'  => esc_html__( 'Tour', 'tourfic' ),
                 'conditions' => [
                     'relation' => 'or',
                     'terms' => [
@@ -166,9 +160,9 @@ class TF_Search_horizontal extends \Elementor\Widget_Base {
             'hotel_tab_title',
             [
                 'type'     => \Elementor\Controls_Manager::TEXT,
-                'label'    => __( 'Hotel Tab Title', 'tourfic' ),
+                'label'    => esc_html__( 'Hotel Tab Title', 'tourfic' ),
                 'multiple' => true,
-                'default'  => __( 'Hotel', 'tourfic' ),
+                'default'  => esc_html__( 'Hotel', 'tourfic' ),
                 'conditions' => [
                     'relation' => 'or',
                     'terms' => [
@@ -201,9 +195,9 @@ class TF_Search_horizontal extends \Elementor\Widget_Base {
             'apt_tab_title',
             [
                 'type'     => \Elementor\Controls_Manager::TEXT,
-                'label'    => __( 'Apartment Tab Title', 'tourfic' ),
+                'label'    => esc_html__( 'Apartment Tab Title', 'tourfic' ),
                 'multiple' => true,
-                'default'  => __( 'Apartment', 'tourfic' ),
+                'default'  => esc_html__( 'Apartment', 'tourfic' ),
                 'conditions' => [
                     'relation' => 'or',
                     'terms' => [
@@ -236,9 +230,9 @@ class TF_Search_horizontal extends \Elementor\Widget_Base {
             'car_tab_title',
             [
                 'type'     => \Elementor\Controls_Manager::TEXT,
-                'label'    => __( 'Car Tab Title', 'tourfic' ),
+                'label'    => esc_html__( 'Car Tab Title', 'tourfic' ),
                 'multiple' => true,
-                'default'  => __( 'Car', 'tourfic' ),
+                'default'  => esc_html__( 'Car', 'tourfic' ),
                 'conditions' => [
                     'relation' => 'or',
                     'terms' => [

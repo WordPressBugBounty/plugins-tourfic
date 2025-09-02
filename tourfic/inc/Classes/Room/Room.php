@@ -80,12 +80,12 @@ class Room {
 
 		// Check if the current user has the required capability.
 		if (!current_user_can('manage_options')) {
-			wp_send_json_error(__('You do not have permission to access this resource.', 'tourfic'));
+			wp_send_json_error(esc_html__('You do not have permission to access this resource.', 'tourfic'));
 			return;
 		}
 
 		# Get post id
-		$room_id = isset( $_POST['post_id'] ) ? sanitize_text_field( $_POST['post_id'] ) : '';
+		$room_id = isset( $_POST['post_id'] ) ? sanitize_text_field( wp_unslash($_POST['post_id']) ) : '';
 		# Get hotel meta
 		$meta = get_post_meta( $room_id, 'tf_room_opt', true );
 

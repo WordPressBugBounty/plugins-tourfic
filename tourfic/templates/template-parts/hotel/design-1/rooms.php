@@ -1,4 +1,7 @@
 <?php
+// Don't load directly
+defined( 'ABSPATH' ) || exit;
+
 use \Tourfic\Classes\Hotel\Pricing;
 use \Tourfic\Classes\Helper;
 if ( $rooms ) :
@@ -15,7 +18,7 @@ if ( $rooms ) :
 	}
 
 	$tf_booking_url = $tf_booking_query_url = $tf_booking_attribute = $tf_hide_booking_form = $tf_hide_price = $tf_ext_booking_type = $tf_ext_booking_code = '';
-	if ( function_exists( 'is_tf_pro' ) && is_tf_pro() ) {
+	
 		$tf_booking_type      = ! empty( $meta['booking-by'] ) ? $meta['booking-by'] : 1;
 		$tf_booking_url       = ! empty( $meta['booking-url'] ) ? esc_url( $meta['booking-url'] ) : '';
 		$tf_booking_query_url = ! empty( $meta['booking-query'] ) ? $meta['booking-query'] : 'adult={adult}&child={child}&room={room}';
@@ -25,7 +28,7 @@ if ( $rooms ) :
 		$tf_ext_booking_type  = ! empty( $meta['external-booking-type'] ) ? $meta['external-booking-type'] : '1';
 		$tf_ext_booking_code  = ! empty( $meta['booking-code'] ) ? $meta['booking-code'] : '';
 		$adults_name = apply_filters( 'tf_hotel_adults_title_change', esc_html__( 'Adult', 'tourfic' ) );
-	}
+	
 	if ( 2 == $tf_booking_type && ! empty( $tf_booking_url ) ) {
 		$external_search_info = array(
 			'{adult}'    => ! empty( $adult ) ? $adult : 1,
@@ -227,7 +230,10 @@ if ( $rooms ) :
                                                 <span class="icon-text tf-d-b">x<?php echo esc_html($adult_number); ?></span>
                                             </div>
                                             <div class="tf-top">
-												<?php esc_html_e( 'Number of '. $adults_name .'s', 'tourfic' ); ?>
+												<?php 
+												/* translators: %s: Label for adults (e.g. Adult, Person) */
+												printf( esc_html__( 'Number of %ss', 'tourfic' ), esc_html( $adults_name ) ); 
+												?>
                                                 <i class="tool-i"></i>
                                             </div>
                                         </div>
@@ -258,7 +264,7 @@ if ( $rooms ) :
 									} ?>
 									<?php if ( $tf_booking_type == 2 && ! empty( $tf_booking_url ) ): ?>
                                         <a href="<?php echo esc_url( $tf_booking_url ); ?>" class="tf_btn tf_btn_gray" target="_blank">
-											<?php esc_html_e( $tf_hotel_reserve_button_text, 'tourfic' ); ?>
+											<?php echo esc_html( $tf_hotel_reserve_button_text ); ?>
                                         </a>
 									<?php else: ?>
                                         <button class="hotel-room-availability tf_btn tf_btn_gray" type="submit" style="margin: 0 auto;">
@@ -286,7 +292,10 @@ if ( $rooms ) :
                                             <span class="icon-text tf-d-b">x<?php echo esc_html($adult_number); ?></span>
                                         </div>
                                         <div class="tf-top">
-											<?php esc_html_e( 'Number of ' . $adults_name . 's', 'tourfic' ); ?>
+											<?php 
+											/* translators: %s: Label for adults (e.g. Adult, Person) */
+											printf( esc_html__( 'Number of %ss', 'tourfic' ), esc_html( $adults_name ) ); 
+											?>
                                             <i class="tool-i"></i>
                                         </div>
                                     </div>
@@ -319,11 +328,11 @@ if ( $rooms ) :
 								?>
 								<?php if ( $tf_booking_type == 2 && ! empty( $tf_booking_url ) && $tf_ext_booking_type == 1 ): ?>
                                     <a href="<?php echo esc_url( $tf_booking_url ); ?>" class="tf_btn tf_btn_gray" target="_blank">
-										<?php esc_html_e( $tf_hotel_reserve_button_text, 'tourfic' ); ?>
+										<?php echo esc_html( $tf_hotel_reserve_button_text ); ?>
                                     </a>
 								<?php elseif ( $tf_booking_type == 2 && $tf_ext_booking_type == 2 && ! empty( $tf_ext_booking_code ) ): ?>
                                     <a href="<?php echo esc_url( "#tf-external-booking-embaded-form" ); ?>" class="tf_btn tf_btn_gray" target="_blank">
-										<?php esc_html_e( $tf_hotel_reserve_button_text, 'tourfic' ); ?>
+										<?php echo esc_html( $tf_hotel_reserve_button_text ); ?>
                                     </a>
 								<?php else: ?>
                                     <button class="hotel-room-availability tf_btn tf_btn_gray" type="submit">
