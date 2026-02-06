@@ -41,12 +41,13 @@ class Search_Result extends \Tourfic\Core\Shortcodes {
 
 
 		// Price Range
-		$startprice = isset( $_GET['from'] ) ? absint( sanitize_key( $_GET['from'] ) ) : '';
-		$endprice   = isset( $_GET['to'] ) ? absint( sanitize_key( $_GET['to'] ) ) : '';
+		$startprice = isset( $_GET['from'] ) ? absint( sanitize_text_field( $_GET['from'] ) ) : '';
+		$endprice   = isset( $_GET['to'] ) ? absint( sanitize_text_field( $_GET['to'] ) ) : '';
 
 		// Cars Data Start
 		$pickup   = isset( $_GET['pickup'] ) ? sanitize_text_field( $_GET['pickup'] ) : '';
 		$dropoff = isset( $_GET['dropoff'] ) ? sanitize_text_field( $_GET['dropoff'] ) : '';
+
 		$tf_pickup_date  = isset( $_GET['pickup-date'] ) ? sanitize_text_field( $_GET['pickup-date'] ) : '';
 		$tf_dropoff_date  = isset( $_GET['dropoff-date'] ) ? sanitize_text_field( $_GET['dropoff-date'] ) : '';
 		$tf_pickup_time  = isset( $_GET['pickup-time'] ) ? sanitize_text_field( $_GET['pickup-time'] ) : '';
@@ -324,23 +325,6 @@ class Search_Result extends \Tourfic\Core\Shortcodes {
 								} else {
 
 									if ( empty( $check_in_out ) ) {
-										/**
-										 * Check if minimum and maximum people limit matches with the search query
-										 */
-										$total_person = intval( $adults ) + intval( $child );
-										$meta         = get_post_meta( get_the_ID(), 'tf_tours_opt', true );
-
-										//skip the tour if the search form total people exceeds the maximum number of people in tour
-										if ( ! empty( $meta['cont_max_people'] ) && $meta['cont_max_people'] < $total_person && $meta['cont_max_people'] != 0 ) {
-											$total_posts --;
-											continue;
-										}
-
-										//skip the tour if the search form total people less than the maximum number of people in tour
-										if ( ! empty( $meta['cont_min_people'] ) && $meta['cont_min_people'] > $total_person && $meta['cont_min_people'] != 0 ) {
-											$total_posts --;
-											continue;
-										}
 										Tour::tf_filter_tour_by_without_date( $period, $total_posts, $not_found, $data );
 									} else {
 										Tour::tf_filter_tour_by_date( $period, $total_posts, $not_found, $data );
@@ -570,23 +554,6 @@ class Search_Result extends \Tourfic\Core\Shortcodes {
 							} elseif( $post_type == 'tf_tours' ) {
 
 								if ( empty( $check_in_out ) ) {
-									/**
-									 * Check if minimum and maximum people limit matches with the search query
-									 */
-									$total_person = intval( $adults ) + intval( $child );
-									$meta         = get_post_meta( get_the_ID(), 'tf_tours_opt', true );
-
-									//skip the tour if the search form total people exceeds the maximum number of people in tour
-									if ( ! empty( $meta['cont_max_people'] ) && $meta['cont_max_people'] < $total_person && $meta['cont_max_people'] != 0 ) {
-										$total_posts --;
-										continue;
-									}
-
-									//skip the tour if the search form total people less than the maximum number of people in tour
-									if ( ! empty( $meta['cont_min_people'] ) && $meta['cont_min_people'] > $total_person && $meta['cont_min_people'] != 0 ) {
-										$total_posts --;
-										continue;
-									}
 									Tour::tf_filter_tour_by_without_date( $period, $total_posts, $not_found, $data );
 								} else {
 									Tour::tf_filter_tour_by_date( $period, $total_posts, $not_found, $data );
@@ -971,23 +938,6 @@ class Search_Result extends \Tourfic\Core\Shortcodes {
 						} elseif( $post_type == 'tf_tours' ) {
 
 							if ( empty( $check_in_out ) ) {
-								/**
-								 * Check if minimum and maximum people limit matches with the search query
-								 */
-								$total_person = intval( $adults ) + intval( $child );
-								$meta         = get_post_meta( get_the_ID(), 'tf_tours_opt', true );
-
-								//skip the tour if the search form total people exceeds the maximum number of people in tour
-								if ( ! empty( $meta['cont_max_people'] ) && $meta['cont_max_people'] < $total_person && $meta['cont_max_people'] != 0 ) {
-									$total_posts --;
-									continue;
-								}
-
-								//skip the tour if the search form total people less than the maximum number of people in tour
-								if ( ! empty( $meta['cont_min_people'] ) && $meta['cont_min_people'] > $total_person && $meta['cont_min_people'] != 0 ) {
-									$total_posts --;
-									continue;
-								}
 								Tour::tf_filter_tour_by_without_date( $period, $total_posts, $not_found, $data );
 							} else {
 								Tour::tf_filter_tour_by_date( $period, $total_posts, $not_found, $data );
@@ -1618,23 +1568,6 @@ class Search_Result extends \Tourfic\Core\Shortcodes {
 
 							} elseif ( $post_type == 'tf_tours' ) {
 								if ( empty( $check_in_out ) ) {
-									/**
-									 * Check if minimum and maximum people limit matches with the search query
-									 */
-									$total_person = intval( $adults ) + intval( $child );
-									$meta         = get_post_meta( get_the_ID(), 'tf_tours_opt', true );
-
-									//skip the tour if the search form total people exceeds the maximum number of people in tour
-									if ( ! empty( $meta['cont_max_people'] ) && $meta['cont_max_people'] < $total_person && $meta['cont_max_people'] != 0 ) {
-										$total_posts --;
-										continue;
-									}
-
-									//skip the tour if the search form total people less than the maximum number of people in tour
-									if ( ! empty( $meta['cont_min_people'] ) && $meta['cont_min_people'] > $total_person && $meta['cont_min_people'] != 0 ) {
-										$total_posts --;
-										continue;
-									}
 									Tour::tf_filter_tour_by_without_date( $period, $total_posts, $not_found, $data );
 								} else {
 									Tour::tf_filter_tour_by_date( $period, $total_posts, $not_found, $data );

@@ -70,6 +70,14 @@ trait Action_Helper {
 	 * Ask question modal 
 	 */
 	function tf_ask_question_modal() {
+
+		// Allowed post types
+		$allowed_post_types = array( 'tf_hotel', 'tf_tours', 'tf_apartment', 'tf_carrental' );
+
+		// Ensure we're on a singular page and correct post type
+		if ( ! is_singular( $allowed_post_types ) && ! is_post_type_archive( $allowed_post_types ) ) {
+			return;
+		}
 		?>
 		<div class="tf-modal tf-modal-extra-small" id="tf-ask-modal">
 			<div class="tf-modal-dialog">
@@ -539,7 +547,7 @@ trait Action_Helper {
 	/*
      * Asign Destination taxonomy template
      */
-	function taxonomy_template( $template ) {
+	function taxonomy_template_old( $template ) {
 
 		if ( is_tax( 'hotel_location' ) ) {
 
@@ -601,6 +609,68 @@ trait Action_Helper {
 
 		return $template;
 
+	}
+
+	public function taxonomy_template( $template ) {
+
+		if ( ! is_tax() ) {
+			return $template;
+		}
+
+		$term     = get_queried_object();
+		$taxonomy = $term->taxonomy;
+
+		$map = $this->get_taxonomy_post_type_map();
+
+		foreach ( $map as $post_type => $taxonomies ) {
+
+			if ( in_array( $taxonomy, $taxonomies, true ) ) {
+
+				// 1. Theme override path
+				$theme_file = "tourfic/{$post_type}/taxonomy.php";
+				$theme_tpl  = locate_template( $theme_file, false );
+
+				if ( $theme_tpl ) {
+					return $theme_tpl;
+				}
+
+				// 2. Plugin fallback
+				$plugin_tpl = TF_TEMPLATE_PATH . "{$post_type}/taxonomy.php";
+
+				if ( file_exists( $plugin_tpl ) ) {
+					return $plugin_tpl;
+				}
+			}
+		}
+
+		return $template;
+	}
+
+	private function get_taxonomy_post_type_map() {
+		return [
+			'hotel' => [
+				'hotel_location',
+				'hotel_feature',
+				'hotel_type',
+			],
+			'tour' => [
+				'tour_destination',
+				'tour_attraction',
+				'tour_activities',
+				'tour_features',
+				'tour_type',
+			],
+			'apartment' => [
+				'apartment_location',
+				'apartment_feature',
+				'apartment_type',
+			],
+			'car' => [
+				'carrental_location',
+				'carrental_brand',
+				'carrental_category',
+			],
+		];
 	}
 
 	/**
@@ -738,7 +808,7 @@ trait Action_Helper {
 			// Handle guest users
 			wp_set_current_user(0);
 		}
-	
+
 		/**
 		 * Get form data
 		 */
@@ -1428,6 +1498,7 @@ trait Action_Helper {
 							if ( function_exists( 'is_tf_pro' ) && is_tf_pro()) {
                                 $count ++;
                                 $map            = ! empty( $tour_meta['location'] ) ? Helper::tf_data_types( $tour_meta['location'] ) : '';
+								$allow_discount    = ! empty( $tour_meta['allow_discount'] ) ? $tour_meta['allow_discount'] : '';
                                 $discount_type  = ! empty( $tour_meta['discount_type'] ) ? $tour_meta['discount_type'] : '';
                                 $discount_price = ! empty( $tour_meta['discount_price'] ) ? $tour_meta['discount_price'] : '';
 
@@ -1465,7 +1536,7 @@ trait Action_Helper {
                                                 ?>
                                             </a>
 
-                                            <?php if ( $discount_type !== 'none' && ! empty( $discount_price ) ) : ?>
+                                            <?php if ( !empty($allow_discount) && $discount_type !== 'none' && ! empty( $discount_price ) ) : ?>
                                                 <div class="tf-map-item-discount">
                                                     <?php echo $discount_type == "percent" ? wp_kses_post($discount_price . '%') : wp_kses_post(wc_price( $discount_price )) ?>
 													<?php esc_html_e( " Off", "tourfic" ); ?>
@@ -1731,6 +1802,7 @@ trait Action_Helper {
 							if (function_exists( 'is_tf_pro' ) && is_tf_pro()) {
 								$count ++;
 								$map            = ! empty( $tour_meta['location'] ) ? Helper::tf_data_types( $tour_meta['location'] ) : '';
+								$allow_discount    = ! empty( $tour_meta['allow_discount'] ) ? $tour_meta['allow_discount'] : '';
 								$discount_type  = ! empty( $tour_meta['discount_type'] ) ? $tour_meta['discount_type'] : '';
 								$discount_price = ! empty( $tour_meta['discount_price'] ) ? $tour_meta['discount_price'] : '';
 
@@ -1768,7 +1840,7 @@ trait Action_Helper {
 												?>
                                             </a>
 
-											<?php if ( $discount_type !== 'none' && ! empty( $discount_price ) ) : ?>
+											<?php if ( !empty($allow_discount) && $discount_type !== 'none' && ! empty( $discount_price ) ) : ?>
                                                 <div class="tf-map-item-discount">
 													<?php echo $discount_type == "percent" ? wp_kses_post($discount_price . '%') : wp_kses_post(wc_price( $discount_price )) ?>
 													<?php esc_html_e( " Off", "tourfic" ); ?>
