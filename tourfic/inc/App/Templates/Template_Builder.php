@@ -11,55 +11,447 @@ class Template_Builder {
 	use \Tourfic\Traits\Singleton;
 
 	public function __construct() {
-		// add_action('admin_menu', array($this, 'admin_menu'));
+        // Register core hooks unconditionally so template builder works with multiple builders
+        add_action('init', array($this, 'tf_template_builder_post_type'));
+        add_filter('post_row_actions', array($this, 'tf_template_post_row_actions'), 20, 2);
+        add_filter('manage_tf_template_builder_posts_columns', array($this, 'tf_template_set_columns'));
+        add_action('manage_tf_template_builder_posts_custom_column', array($this, 'tf_template_render_column'), 10, 2);
+        add_action('wp_ajax_tf_toggle_template_status', array($this, 'tf_toggle_template_status'));
+        add_action('admin_footer', array($this, 'tf_template_builder_add_popup_html'), 9);
+        add_action('wp_ajax_tf_load_template_markup', array($this, 'tf_load_template_markup_callback'));
+        add_action('wp_ajax_tf_get_template_options', array($this, 'tf_get_template_options_callback'));
+        add_action('wp_ajax_tf_update_term_options', array($this, 'tf_update_term_options_callback'));
+        add_action('wp_ajax_tf_save_template_builder', array($this, 'tf_save_template_builder_callback'));
+        add_filter('template_include', array($this, 'tf_template_builder_custom_template'));
+        add_action('save_post_tf_template_builder', [$this, 'enforce_template_on_save'], 20, 3);
+        
+        // List table filters
+        add_action('restrict_manage_posts', array($this, 'tf_template_builder_filter_dropdowns'));
+        add_action('parse_query', array($this, 'tf_template_builder_filter_query'));
+        
+        // Elementor-specific hooks
         if ( did_action( 'elementor/loaded' ) ) {
-            add_action('init', array($this, 'tf_template_builder_post_type'));
-            add_filter('post_row_actions', array($this, 'tf_template_post_row_actions'), 20, 2);
-            add_filter('manage_tf_template_builder_posts_columns', array($this, 'tf_template_set_columns'));
-            add_action('manage_tf_template_builder_posts_custom_column', array($this, 'tf_template_render_column'), 10, 2);
-            add_action('admin_footer', array($this, 'tf_template_builder_add_popup_html'), 9);
-            add_action('wp_ajax_tf_load_template_markup', array($this, 'tf_load_template_markup_callback'));
-            add_action('wp_ajax_tf_get_template_options', array($this, 'tf_get_template_options_callback'));
-            add_action('wp_ajax_tf_update_term_options', array($this, 'tf_update_term_options_callback'));
-            add_action('wp_ajax_tf_save_template_builder', array($this, 'tf_save_template_builder_callback'));
-            add_filter('template_include', array($this, 'tf_template_builder_custom_template'));
-            add_action('save_post_tf_template_builder', [$this, 'enforce_elementor_template_on_save'], 20, 3);
-
             add_filter('elementor/document/urls/edit', [$this, 'modify_elementor_edit_url'], 10, 2);
-            add_action('elementor/editor/init', [$this, 'setup_editor_post_data']);
+            add_action('elementor/editor/init', [$this, 'setup_elementor_editor_post_data']);
+        }
+        
+        if ( function_exists( 'bricks_is_builder' ) || defined( 'BRICKS_VERSION' ) ) {
+            add_action( 'wp_enqueue_scripts', [ $this, 'prepare_bricks_frontend_assets' ], 1 ); //for inline css
+            add_filter( 'bricks/active_templates', [ $this, 'force_bricks_active_template_for_tourfic' ], 20, 3 );
+            // add_action( 'wp_enqueue_scripts', [ $this, 'setup_bricks_editor_post_data' ], 10 );
+            add_filter( 'bricks/element/render', [ $this, 'bricks_force_preview_context_for_element' ], 1, 2 );
+            add_filter( 'bricks/get_builder_edit_link', [ $this, 'add_template_params_to_bricks_edit_link' ], 10, 2 );
+            add_action( 'init', [ $this, 'ensure_bricks_template_builder_support' ], 30 );
         }
 	}
+
+    public function force_bricks_active_template_for_tourfic( $active_templates, $post_id, $content_type ) {
+        if ( is_admin() || wp_doing_ajax() ) {
+            return $active_templates;
+        }
+
+        $template_post = $this->get_current_frontend_template();
+
+        if ( ! $template_post || empty( $template_post->ID ) ) {
+            return $active_templates;
+        }
+
+        if ( 'bricks' !== $this->tf_get_builder_type( $template_post->ID ) ) {
+            return $active_templates;
+        }
+
+        $template_id = absint( $template_post->ID );
+
+        if ( ! $template_id ) {
+            return $active_templates;
+        }
+
+        $active_templates['content']      = $template_id;
+        $active_templates['content_type'] = 'content';
+
+        if ( ! empty( $post_id ) ) {
+            $active_templates['post_id'] = $post_id;
+        }
+
+        return $active_templates;
+    }
+
+    private function get_bricks_preview_post_from_request() {
+        if ( ! empty( $_GET['tf_preview_post_id'] ) ) {
+            $preview_post_id = absint( wp_unslash( $_GET['tf_preview_post_id'] ) );
+            if ( $preview_post_id ) {
+                return get_post( $preview_post_id );
+            }
+        }
+
+        if ( ! empty( $_GET['tf_archive_service'] ) ) {
+            $post_type = sanitize_key( $_GET['tf_archive_service'] );
+            
+            // Try to get a real post of this type for realistic preview
+            $args = [
+                'post_type'      => $post_type,
+                'posts_per_page' => 1,
+                'fields'         => 'ids',
+            ];
+            
+            $posts = get_posts( $args );
+            
+            if ( ! empty( $posts ) ) {
+                return get_post( $posts[0] );
+            }
+            
+            // Fallback to a mock post
+            $mock_post            = new \stdClass();
+            $mock_post->ID        = 0;
+            $mock_post->post_type = $post_type;
+            
+            return new \WP_Post( $mock_post );
+        }
+
+        return false;
+    }
+
+    private function should_force_bricks_preview_context( $element_instance ) {
+        if ( ! isset( $_GET['bricks'] ) || 'run' !== $_GET['bricks'] ) {
+            return false;
+        }
+
+        if ( empty( $_GET['tf_preview_post_id'] ) && empty( $_GET['tf_archive_service'] ) ) {
+            return false;
+        }
+
+        if ( ! is_object( $element_instance ) || empty( $element_instance->name ) ) {
+            return false;
+        }
+
+        if ( class_exists( '\Bricks\Query' ) && \Bricks\Query::is_looping() ) {
+            return false;
+        }
+
+        return true;
+    }
+
+    public function bricks_force_preview_context_for_element( $render_element, $element_instance ) {
+        if ( ! $render_element || ! $this->should_force_bricks_preview_context( $element_instance ) ) {
+            return $render_element;
+        }
+
+        $preview_post = $this->get_bricks_preview_post_from_request();
+
+        if ( ! $preview_post ) {
+            return $render_element;
+        }
+
+        global $post, $wp_query;
+
+        if ( empty( $GLOBALS['tf_bricks_element_context_stack'] ) || ! is_array( $GLOBALS['tf_bricks_element_context_stack'] ) ) {
+            $GLOBALS['tf_bricks_element_context_stack'] = [];
+        }
+
+        $context = [
+            'post' => $post,
+        ];
+
+        if ( $wp_query instanceof \WP_Query ) {
+            $context['wp_query'] = [
+                'post'              => $wp_query->post ?? null,
+                'posts'             => $wp_query->posts ?? null,
+                'post_count'        => $wp_query->post_count ?? null,
+                'found_posts'       => $wp_query->found_posts ?? null,
+                'max_num_pages'     => $wp_query->max_num_pages ?? null,
+                'queried_object'    => $wp_query->queried_object ?? null,
+                'queried_object_id' => $wp_query->queried_object_id ?? null,
+            ];
+        }
+
+        $GLOBALS['tf_bricks_element_context_stack'][] = $context;
+
+        $post = $preview_post;
+        setup_postdata( $post );
+
+        if ( $wp_query instanceof \WP_Query ) {
+            $wp_query->post              = $preview_post;
+            $wp_query->posts             = [ $preview_post ];
+            $wp_query->post_count        = 1;
+            $wp_query->found_posts       = 1;
+            $wp_query->max_num_pages     = 1;
+            $wp_query->queried_object    = $preview_post;
+            $wp_query->queried_object_id = $preview_post->ID;
+        }
+
+        return $render_element;
+    }
+
+    /**
+     * Ensure Bricks editor is enabled for our template builder CPT.
+     */
+    public function ensure_bricks_template_builder_support() {
+        // Bricks stores enabled post types in this option.
+        $settings = get_option( 'bricks_global_settings', [] );
+
+        if ( ! is_array( $settings ) ) {
+            $settings = [];
+        }
+
+        if ( empty( $settings['postTypes'] ) || ! is_array( $settings['postTypes'] ) ) {
+            $settings['postTypes'] = [];
+        }
+
+        if ( ! in_array( 'tf_template_builder', $settings['postTypes'], true ) ) {
+            $settings['postTypes'][] = 'tf_template_builder';
+            update_option( 'bricks_global_settings', $settings );
+        }
+    }
+
+    /**
+     * Set Bricks-native templatePreview settings so the editor
+     * populates dynamic data from the correct post/archive context.
+     */
+    private function set_bricks_template_preview_settings( $post_id, $service, $template_type, $taxonomy_type, $taxonomy_term ) {
+        if ( ! defined( 'BRICKS_DB_TEMPLATE_SETTINGS' ) ) {
+            return;
+        }
+
+        $settings = \Bricks\Helpers::get_template_settings( $post_id );
+
+        if ( ! is_array( $settings ) ) {
+            $settings = [];
+        }
+
+        if ( $template_type === 'single' ) {
+            // Find a sample post to use as preview
+            $query_args = [
+                'post_type'      => $service,
+                'posts_per_page' => 1,
+                'orderby'        => 'rand',
+            ];
+
+            if ( ! empty( $taxonomy_type ) && $taxonomy_type !== 'all' && taxonomy_exists( $taxonomy_type ) ) {
+                if ( ! empty( $taxonomy_term ) && $taxonomy_term !== 'all' ) {
+                    $query_args['tax_query'] = [[
+                        'taxonomy' => $taxonomy_type,
+                        'field'    => 'slug',
+                        'terms'    => $taxonomy_term,
+                    ]];
+                }
+            }
+
+            $sample_posts = get_posts( $query_args );
+
+            if ( ! empty( $sample_posts ) ) {
+                $settings['templatePreviewType']   = 'single';
+                $settings['templatePreviewPostId'] = $sample_posts[0]->ID;
+            }
+
+        } elseif ( $template_type === 'archive' ) {
+            $settings['templatePreviewType']     = 'archive-cpt';
+            $settings['templatePreviewPostType'] = $service;
+        }
+
+        \Bricks\Helpers::set_template_settings( $post_id, $settings );
+    }
+
+    private function get_bricks_edit_url( $post_id ) {
+        $post_id = absint( $post_id );
+
+        if ( ! $post_id ) {
+            return '';
+        }
+
+        $service       = get_post_meta( $post_id, 'tf_template_service', true );
+        $template_type = get_post_meta( $post_id, 'tf_template_type', true );
+        $taxonomy_type = get_post_meta( $post_id, 'tf_taxonomy_type', true );
+        $taxonomy_term = get_post_meta( $post_id, 'tf_taxonomy_term', true );
+
+        $args = [
+            'bricks' => 'run',
+        ];
+
+        // Archive preview
+        if ( $template_type === 'archive' && ! empty( $service ) ) {
+            $args['tf_archive_service'] = sanitize_key( $service );
+        }
+
+        // Single preview
+        if ( $template_type === 'single' && ! empty( $service ) ) {
+            $query_args = [
+                'post_type'      => $service,
+                'posts_per_page' => 1,
+                'orderby'        => 'rand',
+            ];
+
+            if ( ! empty( $taxonomy_type ) && 'all' !== $taxonomy_type && taxonomy_exists( $taxonomy_type ) ) {
+                if ( ! empty( $taxonomy_term ) && 'all' !== $taxonomy_term ) {
+                    $query_args['tax_query'] = [
+                        [
+                            'taxonomy' => $taxonomy_type,
+                            'field'    => 'slug',
+                            'terms'    => $taxonomy_term,
+                        ],
+                    ];
+                }
+            }
+
+            $sample_post = get_posts( $query_args );
+
+            if ( ! empty( $sample_post ) && ! empty( $sample_post[0]->ID ) ) {
+                $args['tf_preview_post_id'] = absint( $sample_post[0]->ID );
+            }
+        }
+
+        $permalink = get_permalink( $post_id );
+
+        if ( ! $permalink ) {
+            return '';
+        }
+
+        return esc_url_raw( add_query_arg( $args, $permalink ) );
+    }
+
+    /**
+     * Ensure Tourfic Bricks theme style exists with base typography.
+     */
+    private function ensure_tourfic_bricks_theme_style() {
+        $option_name = defined( 'BRICKS_DB_THEME_STYLES' ) ? BRICKS_DB_THEME_STYLES : 'bricks_theme_styles';
+        $styles      = get_option( $option_name, [] );
+
+        if ( ! is_array( $styles ) ) {
+            $styles = [];
+        }
+
+        $style_id = 'tourfic-style';
+        $style    = isset( $styles[ $style_id ] ) && is_array( $styles[ $style_id ] ) ? $styles[ $style_id ] : [];
+        $settings = isset( $style['settings'] ) && is_array( $style['settings'] ) ? $style['settings'] : [];
+        $typography = isset( $settings['typography'] ) && is_array( $settings['typography'] ) ? $settings['typography'] : [];
+
+        $conditions = isset( $settings['conditions'] ) && is_array( $settings['conditions'] ) ? $settings['conditions'] : [];
+        $rules      = isset( $conditions['conditions'] ) && is_array( $conditions['conditions'] ) ? $conditions['conditions'] : [];
+
+        // Bricks only applies theme styles that have at least one matching condition.
+        if ( empty( $rules ) ) {
+            $conditions['conditions'] = [
+                [
+                    'main' => 'any',
+                ],
+            ];
+        }
+
+        $style['label']             = 'tourfic-style';
+        $typography['typographyHtml'] = '100%';
+        $settings['typography']     = $typography;
+        $settings['conditions']     = $conditions;
+        $style['settings']          = $settings;
+        $styles[ $style_id ]        = $style;
+
+        update_option( $option_name, $styles );
+    }
+
+    /**
+     * Add template parameters to Bricks builder edit link
+     * Hooks into 'bricks/get_builder_edit_link' to add tf_archive_service and tf_preview_post_id
+     *
+     * @param string $url     The original builder edit URL
+     * @param int    $post_id The post ID
+     * @return string The modified URL with template parameters
+     */
+    public function add_template_params_to_bricks_edit_link( $url, $post_id ) {
+        // Only process template builder posts
+        if ( get_post_type( $post_id ) !== 'tf_template_builder' ) {
+            return $url;
+        }
+
+        $service       = get_post_meta( $post_id, 'tf_template_service', true );
+        $template_type = get_post_meta( $post_id, 'tf_template_type', true );
+        $taxonomy_type = get_post_meta( $post_id, 'tf_taxonomy_type', true );
+        $taxonomy_term = get_post_meta( $post_id, 'tf_taxonomy_term', true );
+
+        $args = [];
+
+        // Archive preview
+        if ( $template_type === 'archive' && ! empty( $service ) ) {
+            $args['tf_archive_service'] = sanitize_key( $service );
+        }
+
+        // Single preview
+        if ( $template_type === 'single' && ! empty( $service ) ) {
+            $query_args = [
+                'post_type'      => $service,
+                'posts_per_page' => 1,
+                'orderby'        => 'rand',
+            ];
+
+            if ( ! empty( $taxonomy_type ) && 'all' !== $taxonomy_type && taxonomy_exists( $taxonomy_type ) ) {
+                if ( ! empty( $taxonomy_term ) && 'all' !== $taxonomy_term ) {
+                    $query_args['tax_query'] = [
+                        [
+                            'taxonomy' => $taxonomy_type,
+                            'field'    => 'slug',
+                            'terms'    => $taxonomy_term,
+                        ],
+                    ];
+                }
+            }
+
+            $sample_post = get_posts( $query_args );
+
+            if ( ! empty( $sample_post ) && ! empty( $sample_post[0]->ID ) ) {
+                $args['tf_preview_post_id'] = absint( $sample_post[0]->ID );
+            }
+        }
+
+        // Add parameters to URL if any exist
+        if ( ! empty( $args ) ) {
+            $url = add_query_arg( $args, $url );
+        }
+
+        return $url;
+    }
 
 	static function tf_template_builder_elementor_check() {
         ?>
         <div class="wrap">
             <h1><?php echo esc_html__('Template Builder', 'tourfic'); ?></h1>
             <div class="notice notice-error" style="margin-top: 20px;">
-                <p><?php esc_html_e('Please install and activate Elementor to use the Template Builder.', 'tourfic'); ?></p>
+                <p><?php esc_html_e('Please install and activate Elementor or Bricks Builder to use the Template Builder.', 'tourfic'); ?></p>
 
                 <?php
-                $plugin_slug = 'elementor/elementor.php';
+                $elementor_slug = 'elementor/elementor.php';
+                $elementor_installed = file_exists( WP_PLUGIN_DIR . '/elementor/elementor.php' );
+                $elementor_active    = $elementor_installed && is_plugin_active( $elementor_slug );
 
-                // Elementor not installed
-                if ( ! file_exists( WP_PLUGIN_DIR . '/elementor/elementor.php' ) ) {
-                    $install_url = wp_nonce_url(
-                        self_admin_url( 'update.php?action=install-plugin&plugin=elementor' ),
-                        'install-plugin_elementor'
-                    );
-                    echo '<p><a href="' . esc_url( $install_url ) . '" class="button button-primary">';
-                    esc_html_e( 'Install Elementor', 'tourfic' );
-                    echo '</a></p>';
-                }
-                // Elementor installed but inactive
-                elseif ( current_user_can( 'activate_plugins' ) && ! is_plugin_active( $plugin_slug ) ) {
+                $bricks_installed = wp_get_theme( 'bricks' )->exists();
+                $bricks_active    = ( get_stylesheet() === 'bricks' || get_template() === 'bricks' );
+
+                if ( ! $elementor_active ) :
+                    if ( ! $elementor_installed ) :
+                        $install_url = wp_nonce_url(
+                            self_admin_url( 'update.php?action=install-plugin&plugin=elementor' ),
+                            'install-plugin_elementor'
+                        );
+                        echo '<p><a href="' . esc_url( $install_url ) . '" class="button button-primary">';
+                        esc_html_e( 'Install Elementor', 'tourfic' );
+                        echo '</a></p>';
+                    elseif ( current_user_can( 'activate_plugins' ) ) :
+                        $activate_url = wp_nonce_url(
+                            self_admin_url( 'plugins.php?action=activate&plugin=' . $elementor_slug ),
+                            'activate-plugin_' . $elementor_slug
+                        );
+                        echo '<p><a href="' . esc_url( $activate_url ) . '" class="button button-primary">';
+                        esc_html_e( 'Activate Elementor', 'tourfic' );
+                        echo '</a></p>';
+                    endif;
+                endif;
+
+                // Bricks is a premium theme — show activate link only if installed but not active
+                if ( ! $bricks_active && $bricks_installed && current_user_can( 'switch_themes' ) ) :
                     $activate_url = wp_nonce_url(
-                        self_admin_url( 'plugins.php?action=activate&plugin=' . $plugin_slug ),
-                        'activate-plugin_' . $plugin_slug
+                        admin_url( 'themes.php?action=activate&stylesheet=bricks' ),
+                        'switch-theme_bricks'
                     );
-                    echo '<p><a href="' . esc_url( $activate_url ) . '" class="button button-primary">';
-                    esc_html_e( 'Activate Elementor', 'tourfic' );
+                    echo '<p><a href="' . esc_url( $activate_url ) . '" class="button button-secondary">';
+                    esc_html_e( 'Activate Bricks Theme', 'tourfic' );
                     echo '</a></p>';
-                }
+                endif;
                 ?>
             </div>
         </div>
@@ -108,7 +500,7 @@ class Template_Builder {
 			'label'               => esc_html__('Template Builder', 'tourfic'),
 			'description'         => esc_html__('Tourfic Template Builder', 'tourfic'),
 			'labels'              => $labels,
-			'supports'            => ['title', 'editor', 'elementor', 'permalink'],
+			'supports'            => ['title', 'editor', 'elementor', 'permalink', 'revisions'],
 			'hierarchical'        => false,
 			'public'              => true,
 			'show_ui'             => true,
@@ -174,6 +566,7 @@ class Template_Builder {
             'tf_tours' => esc_html__('Tour', 'tourfic'),
             'tf_apartment' => esc_html__('Apartment', 'tourfic'),
             'tf_carrental' => esc_html__('Car Rental', 'tourfic'),
+            'tf_room' => esc_html__('Room', 'tourfic'),
         ];
 
 		switch($column) {
@@ -232,11 +625,48 @@ class Template_Builder {
                 break;
 
 			case 'status':
-                $status_class = $status ? 'active' : 'inactive';
-				echo wp_kses('<span class="tf-template-status ' . $status_class . '">' . ($status ? esc_html__('Active', 'tourfic') : esc_html__('Inactive', 'tourfic')) . '</span>', ['span' => ['class' => []]]);
-				break;
+                $is_active = !empty($status) ? 1 : 0;
+                $toggle_id = 'tf-switch-' . $post_id;
+
+                echo '<label class="tf-switch">
+                        <input type="checkbox" class="tf-template-toggle" data-id="' . esc_attr($post_id) . '" ' . checked($is_active, 1, false) . ' />
+                        <span class="slider round"></span>
+                        <div class="tf-template-builder-loader">
+                            <div class="tf-template-builder-loader-img">
+                                <img src="'. esc_url(TF_ASSETS_APP_URL) .'images/loader.gif" alt="">
+                            </div>
+                        </div>
+                    </label>';
+
+                break;
 		}
 	}
+
+    function tf_toggle_template_status() {
+        check_ajax_referer('updates', 'nonce');
+
+        $post_id = intval($_POST['post_id']);
+        $status  = intval($_POST['status']);
+
+        $tf_template_service = get_post_meta($post_id, 'tf_template_service', true);
+        $tf_template_type = get_post_meta($post_id, 'tf_template_type', true);
+        $tf_taxonomy_type = get_post_meta($post_id, 'tf_taxonomy_type', true);
+        $tf_taxonomy_term = get_post_meta($post_id, 'tf_taxonomy_term', true);
+        
+        $deactivated_ids = [];
+
+        // If this template is being activated, deactivate all others for the same service and type
+        if ($status == '1') {
+            $deactivated_ids = $this->deactivate_other_templates($post_id, $tf_template_service, $tf_template_type, $tf_taxonomy_type, $tf_taxonomy_term);
+        }
+
+        update_post_meta($post_id, 'tf_template_active', $status);
+
+        wp_send_json_success([
+            'status' => $status,
+            'deactivated_ids' => $deactivated_ids
+        ]);
+    }
 
     function tf_template_builder_add_popup_html() {
         global $pagenow, $post_type;
@@ -283,6 +713,7 @@ class Template_Builder {
                                             <div class="tf-fieldset">
                                                 <select name="tf_template_service" id="tf-template-service" class="tf-select">
                                                     <option value="tf_hotel"><?php echo esc_html__('Hotel', 'tourfic'); ?></option>
+                                                    <option value="tf_room"><?php echo esc_html__('Room', 'tourfic'); ?></option>
                                                     <option value="tf_tours"><?php echo esc_html__('Tour', 'tourfic'); ?></option>
                                                     <option value="tf_apartment"><?php echo esc_html__('Apartment', 'tourfic'); ?></option>
                                                     <option value="tf_carrental"><?php echo esc_html__('Car Rental', 'tourfic'); ?></option>
@@ -295,7 +726,7 @@ class Template_Builder {
                                             <div class="tf-fieldset">
                                                 <select name="tf_template_type" id="tf-template-type" class="tf-select">
                                                     <option value="archive"><?php echo esc_html__('Archive', 'tourfic'); ?></option>
-                                                    <!-- <option value="single"><?php //echo esc_html__('Single', 'tourfic'); ?></option> -->
+                                                    <option value="single"><?php echo esc_html__('Single', 'tourfic'); ?></option>
                                                 </select>
                                             </div>
                                         </div>
@@ -390,17 +821,81 @@ class Template_Builder {
                                 </div>
                                 
                                 <div class="tf-form-actions">
-                                    <button type="button" id="tf-edit-with-elementor" class="tf-admin-btn">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
-                                        <mask id="mask0_747_79" style="mask-type:luminance" maskUnits="userSpaceOnUse" x="0" y="0" width="29" height="29">
-                                            <path d="M28.5 0.5V28.5H0.5V0.5H28.5Z" fill="white" stroke="white"/>
-                                        </mask>
-                                        <g mask="url(#mask0_747_79)">
-                                            <path d="M12 0C5.37193 0 0 5.37193 0 12C0 18.6259 5.37193 24 12 24C18.6281 24 24 18.6281 24 12C23.9978 5.37193 18.6259 0 12 0ZM9.00054 16.9984H7.00164V6.99948H9.00054V16.9984ZM16.9984 16.9984H10.9994V14.9995H16.9984V16.9984ZM16.9984 12.9983H10.9994V10.9994H16.9984V12.9983ZM16.9984 8.99838H10.9994V6.99948H16.9984V8.99838Z" fill="#003C79"/>
-                                        </g>
-                                        </svg>
-                                        <?php echo esc_html__('Edit With Elementor', 'tourfic'); ?>
-                                    </button>
+                                    <?php
+                                    $elementor_active = did_action( 'elementor/loaded' );
+                                    $bricks_active    = ( function_exists( 'bricks_is_builder' ) || defined( 'BRICKS_VERSION' ) );
+
+                                    $elementor_installed = file_exists( WP_PLUGIN_DIR . '/elementor/elementor.php' );
+                                    $bricks_theme_installed = wp_get_theme( 'bricks' )->exists();
+                                    ?>
+                                    <div class="tf-builder-btn-wrap">
+                                        <div class="tf-builder-dropdown" id="tf-builder-dropdown">
+                                            <button type="button" id="tf-builder-dropdown-trigger" class="tf-admin-btn tf-builder-dropdown-trigger" aria-haspopup="listbox" aria-expanded="false">
+                                                <span class="tf-builder-dropdown-icon" id="tf-builder-dropdown-icon"></span>
+                                                <span class="tf-builder-dropdown-label" id="tf-builder-dropdown-label"></span>
+                                                <span class="tf-builder-dropdown-caret">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none">
+                                                        <path d="M4 6L8 10L12 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                                    </svg>
+                                                </span>
+                                            </button>
+
+                                            <div class="tf-builder-dropdown-menu" id="tf-builder-dropdown-menu" role="listbox">
+                                                <button type="button" class="tf-builder-dropdown-option" data-value="elementor" role="option"<?php echo $elementor_active ? '' : ' disabled'; ?>>
+                                                    <span class="tf-builder-option-icon" aria-hidden="true">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
+                                                            <path d="M12 0C5.37193 0 0 5.37193 0 12C0 18.6259 5.37193 24 12 24C18.6281 24 24 18.6281 24 12C23.9978 5.37193 18.6259 0 12 0ZM9.00054 16.9984H7.00164V6.99948H9.00054V16.9984ZM16.9984 16.9984H10.9994V14.9995H16.9984V16.9984ZM16.9984 12.9983H10.9994V10.9994H16.9984V12.9983ZM16.9984 8.99838H10.9994V6.99948H16.9984V8.99838Z" fill="#003C79"/>
+                                                        </svg>
+                                                    </span>
+                                                    <span class="tf-builder-option-label"><?php echo esc_html__( 'Edit with Elementor', 'tourfic' ); ?></span>
+                                                </button>
+
+                                                <button type="button" class="tf-builder-dropdown-option" data-value="bricks" role="option"<?php echo $bricks_active ? '' : ' disabled'; ?>>
+                                                    <span class="tf-builder-option-icon" aria-hidden="true">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 5120 5120">
+                                                        <rect width="5120" height="5120" rx="600" fill="#003C79"/>
+                                                        <g transform="translate(0,5120) scale(1,-1)">
+                                                            <path fill="white" d="M1600 4191 l-315 -36 -3 -1597 -2 -1598 315 0 315 0 0 131 c0 151 -12 145 104 48 129 -109 310 -191 483 -220 97 -16 312 -13 417 6 233 41 424 142 596 315 53 52 117 125 143 162 94 134 166 304 204 488 27 128 25 431 -4 561 -29 129 -56 208 -108 312 -60 118 -109 188 -202 287 -202 216 -449 334 -750 360 -247 21 -454 -21 -670 -135 l-103 -54 0 489 0 489 -22 15 c-29 20 -25 20 -398 -23z m1145 -1433 c129 -37 236 -117 310 -232 134 -210 136 -522 4 -726 -114 -177 -273 -261 -489 -261 -180 0 -295 46 -415 166 -122 122 -169 250 -169 455 0 140 14 211 66 319 57 119 194 236 330 280 100 33 248 32 363 -1z"/>
+                                                        </g>
+                                                        </svg>
+                                                    </span>
+                                                    <span class="tf-builder-option-label"><?php echo esc_html__( 'Edit with Bricks', 'tourfic' ); ?></span>
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        <select id="tf-edit-with-builder" class="tf-builder-select-native" aria-hidden="true" tabindex="-1" data-default-builder="<?php echo esc_attr( $elementor_active ? 'elementor' : ( $bricks_active ? 'bricks' : '' ) ); ?>">
+                                            <option value="elementor"<?php echo $elementor_active ? ' selected' : ''; ?><?php disabled( ! $elementor_active ); ?>><?php echo esc_html__( 'Edit with Elementor', 'tourfic' ); ?></option>
+                                            <option value="bricks"<?php echo ( ! $elementor_active && $bricks_active ) ? ' selected' : ''; ?><?php disabled( ! $bricks_active ); ?>><?php echo esc_html__( 'Edit with Bricks', 'tourfic' ); ?></option>
+                                        </select>
+                                        <?php if ( ! $elementor_active ) : ?>
+                                            <span class="tf-builder-notice">
+                                                <?php if ( ! $elementor_installed ) : ?>
+                                                    <?php esc_html_e( 'Elementor is required.', 'tourfic' ); ?>
+                                                    <a href="<?php echo esc_url( wp_nonce_url( self_admin_url( 'update.php?action=install-plugin&plugin=elementor' ), 'install-plugin_elementor' ) ); ?>">
+                                                        <?php esc_html_e( 'Install Elementor', 'tourfic' ); ?>
+                                                    </a>
+                                                <?php elseif ( current_user_can( 'activate_plugins' ) ) : ?>
+                                                    <?php esc_html_e( 'Elementor is inactive.', 'tourfic' ); ?>
+                                                    <a href="<?php echo esc_url( wp_nonce_url( self_admin_url( 'plugins.php?action=activate&plugin=elementor/elementor.php' ), 'activate-plugin_elementor/elementor.php' ) ); ?>">
+                                                        <?php esc_html_e( 'Activate', 'tourfic' ); ?>
+                                                    </a>
+                                                <?php endif; ?>
+                                            </span>
+                                        <?php endif; ?>
+                                        <?php if ( ! $bricks_active ) : ?>
+                                            <span class="tf-builder-notice">
+                                                <?php if ( $bricks_theme_installed && current_user_can( 'switch_themes' ) ) : ?>
+                                                    <?php esc_html_e( 'Bricks theme is inactive.', 'tourfic' ); ?>
+                                                    <a href="<?php echo esc_url( wp_nonce_url( admin_url( 'themes.php?action=activate&stylesheet=bricks' ), 'switch-theme_bricks' ) ); ?>">
+                                                        <?php esc_html_e( 'Activate', 'tourfic' ); ?>
+                                                    </a>
+                                                <?php else : ?>
+                                                    <?php esc_html_e( 'Bricks theme is required.', 'tourfic' ); ?>
+                                                <?php endif; ?>
+                                            </span>
+                                        <?php endif; ?>
+                                    </div>
                                     <button type="submit" id="tf-save-template" class="tf-admin-btn tf-btn-secondary">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
                                         <path d="M17 21V14C17 13.7348 16.8946 13.4804 16.7071 13.2929C16.5196 13.1054 16.2652 13 16 13H8C7.73478 13 7.48043 13.1054 7.29289 13.2929C7.10536 13.4804 7 13.7348 7 14V21M7 3V7C7 7.26522 7.10536 7.51957 7.29289 7.70711C7.48043 7.89464 7.73478 8 8 8H15M15.2 3C15.7275 3.00751 16.2307 3.22317 16.6 3.6L20.4 7.4C20.7768 7.76926 20.9925 8.27246 21 8.8V19C21 19.5304 20.7893 20.0391 20.4142 20.4142C20.0391 20.7893 19.5304 21 19 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V5C3 4.46957 3.21071 3.96086 3.58579 3.58579C3.96086 3.21071 4.46957 3 5 3H15.2Z" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
@@ -459,28 +954,53 @@ class Template_Builder {
                         'url' => TF_ASSETS_ADMIN_URL . "images/template/tb-hotel-design-legacy.png"
                     ]
                 ],
-                // 'single' => [
-                //     'blank' => [
-                //         'title' => esc_html__('Blank', 'tourfic'),
-                //         'url' => TF_ASSETS_ADMIN_URL . 'images/template/tb-design-blank.png',
-                //         'is_blank' => true
-                //     ],
-                //     'design-1' => [
-                //         'title' => esc_html__('Design 1', 'tourfic'),
-                //         'url' => TF_ASSETS_ADMIN_URL . "images/template/preview-single-design-1.png",
-                //         'preview_link' => 'https://tourfic.com/preview/hotels/tuvo-suites-hotel/'
-                //     ],
-                //     'design-2' => [
-                //         'title' => esc_html__('Design 2', 'tourfic'),
-                //         'url' => TF_ASSETS_ADMIN_URL . "images/template/preview-single-design-2.png",
-                //         'preview_link' => 'https://tourfic.com/preview/hotels/melbourne-mastlereagh/'
-                //     ],
-                //     'default' => [
-                //         'title' => esc_html__('Legacy', 'tourfic'),
-                //         'url' => TF_ASSETS_ADMIN_URL . "images/template/preview-single-default.png",
-                //         'preview_link' => 'https://tourfic.com/preview/hotels/rio-ontho-palace/'
-                //     ]
-                // ]
+                'single' => [
+                    'blank' => [
+                        'title' => esc_html__('Blank', 'tourfic'),
+                        'url' => TF_ASSETS_ADMIN_URL . 'images/template/tb-design-blank.png',
+                        'is_blank' => true
+                    ],
+                    'design-1' => [
+                        'title' => esc_html__('Design 1', 'tourfic'),
+                        'url' => TF_ASSETS_ADMIN_URL . "images/template/tb-hotel-single-1.png",
+                        'preview_link' => 'https://tourfic.com/preview/hotels/tuvo-suites-hotel/'
+                    ],
+                    'design-2' => [
+                        'title' => esc_html__('Design 2', 'tourfic'),
+                        'url' => TF_ASSETS_ADMIN_URL . "images/template/tb-hotel-single-2.png",
+                        'preview_link' => 'https://tourfic.com/preview/hotels/melbourne-mastlereagh/'
+                    ],
+                    'default' => [
+                        'title' => esc_html__('Legacy', 'tourfic'),
+                        'url' => TF_ASSETS_ADMIN_URL . "images/template/tb-hotel-single-legacy.png",
+                        'preview_link' => 'https://tourfic.com/preview/hotels/rio-ontho-palace/'
+                    ]
+                ]
+            ],
+            'tf_room' => [
+                'archive' => [
+                    'blank' => [
+                        'title' => esc_html__('Blank', 'tourfic'),
+                        'url' => TF_ASSETS_ADMIN_URL . 'images/template/tb-design-blank.png',
+                        'is_blank' => true
+                    ],
+                    'design-1' => [
+                        'title' => esc_html__('Design 1', 'tourfic'),
+                        'url' => TF_ASSETS_ADMIN_URL . "images/template/tb-room-design-1.png"
+                    ],
+                ],
+                'single' => [
+                    'blank' => [
+                        'title' => esc_html__('Blank', 'tourfic'),
+                        'url' => TF_ASSETS_ADMIN_URL . 'images/template/tb-design-blank.png',
+                        'is_blank' => true
+                    ],
+                    'design-1' => [
+                        'title' => esc_html__('Design 1', 'tourfic'),
+                        'url' => TF_ASSETS_ADMIN_URL . "images/template/tb-room-single-1.png",
+                        // 'preview_link' => 'https://tourfic.com/preview/hotels/tuvo-suites-hotel/'
+                    ],
+                ]
             ],
             'tf_tours' => [
                 'archive' => [
@@ -506,28 +1026,28 @@ class Template_Builder {
                         'url' => TF_ASSETS_ADMIN_URL . "images/template/tb-tour-design-legacy.png"
                     ]
                 ],
-                // 'single' => [
-                //     'blank' => [
-                //         'title' => esc_html__('Blank', 'tourfic'),
-                //         'url' => TF_ASSETS_ADMIN_URL . 'images/template/tb-design-blank.png',
-                //         'is_blank' => true
-                //     ],
-                //     'design-1' => [
-                //         'title' => esc_html__('Design 1', 'tourfic'),
-                //         'url' => TF_ASSETS_ADMIN_URL . "images/template/preview-single-design-1.png",
-                //         'preview_link' => 'https://tourfic.com/preview/tours/amplified-nz-tour/'
-                //     ],
-                //     'design-2' => [
-                //         'title' => esc_html__('Design 2', 'tourfic'),
-                //         'url' => TF_ASSETS_ADMIN_URL . "images/template/preview-single-design-2.png",
-                //         'preview_link' => 'https://tourfic.com/preview/tours/ancient-trails-of-japan/'
-                //     ],
-                //     'default' => [
-                //         'title' => esc_html__('Legacy', 'tourfic'),
-                //         'url' => TF_ASSETS_ADMIN_URL . "images/template/preview-single-default.png",
-                //         'preview_link' => 'https://tourfic.com/preview/tours/magical-russia/'
-                //     ]
-                // ]
+                'single' => [
+                    'blank' => [
+                        'title' => esc_html__('Blank', 'tourfic'),
+                        'url' => TF_ASSETS_ADMIN_URL . 'images/template/tb-design-blank.png',
+                        'is_blank' => true
+                    ],
+                    'design-1' => [
+                        'title' => esc_html__('Design 1', 'tourfic'),
+                        'url' => TF_ASSETS_ADMIN_URL . "images/template/tb-tour-single-1.png",
+                        'preview_link' => 'https://tourfic.com/preview/tours/amplified-nz-tour/'
+                    ],
+                    'design-2' => [
+                        'title' => esc_html__('Design 2', 'tourfic'),
+                        'url' => TF_ASSETS_ADMIN_URL . "images/template/tb-tour-single-2.png",
+                        'preview_link' => 'https://tourfic.com/preview/tours/ancient-trails-of-japan/'
+                    ],
+                    'default' => [
+                        'title' => esc_html__('Legacy', 'tourfic'),
+                        'url' => TF_ASSETS_ADMIN_URL . "images/template/tb-tour-single-legacy.png",
+                        'preview_link' => 'https://tourfic.com/preview/tours/magical-russia/'
+                    ]
+                ]
             ],
             'tf_apartment' => [
                 'archive' => [
@@ -549,23 +1069,23 @@ class Template_Builder {
                         'url' => TF_ASSETS_ADMIN_URL . "images/template/tb-apartment-design-legacy.png"
                     ]
                 ],
-                // 'single' => [
-                //     'blank' => [
-                //         'title' => esc_html__('Blank', 'tourfic'),
-                //         'url' => TF_ASSETS_ADMIN_URL . 'images/template/tb-design-blank.png',
-                //         'is_blank' => true
-                //     ],
-                //     'design-1' => [
-                //         'title' => esc_html__('Design 1', 'tourfic'),
-                //         'url' => TF_ASSETS_ADMIN_URL . "images/template/preview-single-apt-design-1.png",
-                //         'preview_link' => 'https://tourfic.com/preview/apartments/2-bedroom-apartment-in-gamle-oslo/'
-                //     ],
-                //     'default' => [
-                //         'title' => esc_html__('Legacy', 'tourfic'),
-                //         'url' => TF_ASSETS_ADMIN_URL . "images/template/preview-single-apt-default.png",
-                //         'preview_link' => 'https://tourfic.com/preview/apartments/barcelo-residences-dubai-marina/'
-                //     ]
-                // ]
+                'single' => [
+                    'blank' => [
+                        'title' => esc_html__('Blank', 'tourfic'),
+                        'url' => TF_ASSETS_ADMIN_URL . 'images/template/tb-design-blank.png',
+                        'is_blank' => true
+                    ],
+                    'design-1' => [
+                        'title' => esc_html__('Design 1', 'tourfic'),
+                        'url' => TF_ASSETS_ADMIN_URL . "images/template/tb-apartment-single-1.png",
+                        'preview_link' => 'https://tourfic.com/preview/apartments/2-bedroom-apartment-in-gamle-oslo/'
+                    ],
+                    'default' => [
+                        'title' => esc_html__('Legacy', 'tourfic'),
+                        'url' => TF_ASSETS_ADMIN_URL . "images/template/tb-apartment-single-legacy.png",
+                        'preview_link' => 'https://tourfic.com/preview/apartments/barcelo-residences-dubai-marina/'
+                    ]
+                ]
             ],
             'tf_carrental' => [
                 'archive' => [
@@ -579,18 +1099,18 @@ class Template_Builder {
                         'url' => TF_ASSETS_ADMIN_URL . "images/template/tb-car-design-1.png"
                     ]
                 ],
-                // 'single' => [
-                //     'blank' => [
-                //         'title' => esc_html__('Blank', 'tourfic'),
-                //         'url' => TF_ASSETS_ADMIN_URL . 'images/template/tb-design-blank.png',
-                //         'is_blank' => true
-                //     ],
-                //     'design-1' => [
-                //         'title' => esc_html__('Design 1', 'tourfic'),
-                //         'url' => TF_ASSETS_ADMIN_URL . "images/template/preview-single-car-design-1.png",
-                //         'preview_link' => 'https://tourfic.com/preview/cars/honda-city/'
-                //     ]
-                // ]
+                'single' => [
+                    'blank' => [
+                        'title' => esc_html__('Blank', 'tourfic'),
+                        'url' => TF_ASSETS_ADMIN_URL . 'images/template/tb-design-blank.png',
+                        'is_blank' => true
+                    ],
+                    'design-1' => [
+                        'title' => esc_html__('Design 1', 'tourfic'),
+                        'url' => TF_ASSETS_ADMIN_URL . "images/template/tb-car-single-1.png",
+                        'preview_link' => 'https://tourfic.com/preview/cars/honda-city/'
+                    ]
+                ]
             ]
         ];
         
@@ -623,7 +1143,7 @@ class Template_Builder {
             if (!empty($option['preview_link'])) {
                 $markup .= '<a class="tf-image-checkbox-footer" href="' . esc_url($option['preview_link']) . '" target="_blank" title="preview">';
                 $markup .= '<span class="tf-template-title">' . esc_html($option['title']) . '</span>';
-                $markup .= '<i class="dashicons dashicons-external"></i>';
+                $markup .= '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12.0003 3C17.3924 3 21.8784 6.87976 22.8189 12C21.8784 17.1202 17.3924 21 12.0003 21C6.60812 21 2.12215 17.1202 1.18164 12C2.12215 6.87976 6.60812 3 12.0003 3ZM12.0003 19C16.2359 19 19.8603 16.052 20.7777 12C19.8603 7.94803 16.2359 5 12.0003 5C7.7646 5 4.14022 7.94803 3.22278 12C4.14022 16.052 7.7646 19 12.0003 19ZM12.0003 16.5C9.51498 16.5 7.50026 14.4853 7.50026 12C7.50026 9.51472 9.51498 7.5 12.0003 7.5C14.4855 7.5 16.5003 9.51472 16.5003 12C16.5003 14.4853 14.4855 16.5 12.0003 16.5ZM12.0003 14.5C13.381 14.5 14.5003 13.3807 14.5003 12C14.5003 10.6193 13.381 9.5 12.0003 9.5C10.6196 9.5 9.50026 10.6193 9.50026 12C9.50026 13.3807 10.6196 14.5 12.0003 14.5Z"></path></svg>';
                 $markup .= '</a>';
             } else {
                 $markup .= '<span class="tf-image-checkbox-footer">';
@@ -695,6 +1215,7 @@ class Template_Builder {
         if (is_wp_error($terms)) {
             wp_send_json_error(['message' => $terms->get_error_message()]);
         }
+        $selected_term = '';
         if(!empty($post_id)){
             $selected_term = get_post_meta($post_id, 'tf_taxonomy_term', true);
         }
@@ -764,6 +1285,7 @@ class Template_Builder {
                 <div class="tf-fieldset">
                     <select name="tf_template_service" id="tf-template-service" class="tf-select">
                         <option value="tf_hotel" <?php selected($tf_template_service, 'tf_hotel'); ?>><?php echo esc_html__('Hotel', 'tourfic'); ?></option>
+                        <option value="tf_room" <?php selected($tf_template_service, 'tf_room'); ?>><?php echo esc_html__('Room', 'tourfic'); ?></option>
                         <option value="tf_tours" <?php selected($tf_template_service, 'tf_tours'); ?>><?php echo esc_html__('Tour', 'tourfic'); ?></option>
                         <option value="tf_apartment" <?php selected($tf_template_service, 'tf_apartment'); ?>><?php echo esc_html__('Apartment', 'tourfic'); ?></option>
                         <option value="tf_carrental" <?php selected($tf_template_service, 'tf_carrental'); ?>><?php echo esc_html__('Car Rental', 'tourfic'); ?></option>
@@ -832,10 +1354,16 @@ class Template_Builder {
         </div>
         <?php
         $fields_markup = ob_get_clean();
+        $builder_type  = $this->tf_get_builder_type( $post_id );
+
+        if ( ! in_array( $builder_type, [ 'elementor', 'bricks' ], true ) ) {
+            $builder_type = '';
+        }
         
         wp_send_json_success([
             'ID' => $post->ID,
             'fields_markup' => $fields_markup,
+            'builder_type' => $builder_type,
         ]);
     }
 
@@ -843,7 +1371,8 @@ class Template_Builder {
     function tf_save_template_builder_callback() {
         check_ajax_referer('updates', 'nonce');
         
-        $edit_with_elementor = isset($_POST['edit_with_elementor']) ? sanitize_text_field( wp_unslash( $_POST['edit_with_elementor'] ) ) : false;
+        $edit_with_elementor = isset($_POST['edit_with_elementor']) ? sanitize_text_field( wp_unslash( $_POST['edit_with_elementor'] ) ) : 'false';
+        $edit_with_bricks = isset($_POST['edit_with_bricks']) ? sanitize_text_field( wp_unslash( $_POST['edit_with_bricks'] ) ) : 'false';
         $post_id = intval(wp_unslash($_POST['post_id']));
         $post_data = array(
             'post_title' => sanitize_text_field($_POST['template_name']),
@@ -865,7 +1394,7 @@ class Template_Builder {
             $tf_taxonomy_term = !empty($_POST['tf_taxonomy_term']) ? sanitize_text_field($_POST['tf_taxonomy_term']) : '';
             $tf_template_active = isset($_POST['tf_template_active']) ? '1' : '0';
             $tf_template_design = !empty($_POST['tf_template_design']) ? sanitize_text_field($_POST['tf_template_design']) : '';
-            
+
             // If this template is being activated, deactivate all others for the same service and type
             if ($tf_template_active === '1') {
                 $this->deactivate_other_templates($post_id, $tf_template_service, $tf_template_type, $tf_taxonomy_type, $tf_taxonomy_term);
@@ -876,51 +1405,116 @@ class Template_Builder {
             update_post_meta($post_id, 'tf_taxonomy_term', $tf_taxonomy_term);
             update_post_meta($post_id, 'tf_template_active', $tf_template_active);
             update_post_meta($post_id, 'tf_template_design', $tf_template_design);
-
-            update_post_meta( $post_id, '_wp_page_template', 'elementor_header_footer' );
-            update_post_meta( $post_id, '_elementor_edit_mode', 'builder' );
-
-            // Template import
-            if ( !empty( $tf_template_design ) && $tf_template_design !== 'blank' ) {
-                $service = array(
-                    'tf_hotel' => 'hotel',
-                    'tf_tours' => 'tour',
-                    'tf_apartment' => 'apartment',
-                    'tf_carrental' => 'carrental'
-                );
-                
-                $template_path = TF_ASSETS_PATH . "demo/{$service[$tf_template_service]}/{$tf_template_type}/{$tf_template_design}.json";
-    
-                if ( is_file( $template_path ) ) {
-                    require_once ABSPATH . 'wp-admin/includes/class-wp-filesystem-base.php';
-                    require_once ABSPATH . 'wp-admin/includes/class-wp-filesystem-direct.php';
-    
-                    $wp_filesystem = new \WP_Filesystem_Direct(null);
-                    $fileContent = $wp_filesystem->get_contents($template_path);
-    
-                    if ( !is_null( $fileContent ) ) {
-    
-                        add_filter('elementor/files/allow_unfiltered_upload', '__return_true');
-    
-                        $result = \Elementor\Plugin::$instance->templates_manager->import_template( [
-                            'fileData' => base64_encode( $fileContent ),
-                            'fileName' => 'tourfic-content.json'
-                        ] );
-    
-                        $imported_template_id = $result[0]['template_id'];
-                        $template_data        = get_post_meta( $imported_template_id, '_elementor_data', true );
-                        update_post_meta( $post_id, '_elementor_data', $template_data );
-                        wp_delete_post( $imported_template_id );
-                    }
-                }
-            }
             
             $response = array(
                 'post_id' => $post_id,
                 'message' => esc_html__('Template saved successfully.', 'tourfic'),
             );
-            if($edit_with_elementor){
-                $response['edit_url'] = add_query_arg(array('post' => $post_id, 'action' => 'elementor'), admin_url('post.php'));
+            // If it's a single template and no preview post was selected, get the most recent one
+            if ($tf_template_type === 'single') {
+                $preview_post = $this->get_preview_post_for_service($tf_template_service);
+                if ($preview_post) {
+                    $tf_preview_post_id = $preview_post->ID;
+                }
+            }
+            if($edit_with_elementor === 'true'){
+                update_post_meta($post_id, 'tf_builder_type', 'elementor');
+                update_post_meta( $post_id, '_wp_page_template', 'elementor_header_footer' );
+                update_post_meta( $post_id, '_elementor_edit_mode', 'builder' );
+
+                // Remove Elementor meta if exists
+                delete_post_meta($post_id, '_bricks_template_type');
+                delete_post_meta($post_id, '_bricks_editor_mode');
+                delete_post_meta($post_id, '_bricks_page_content_2');
+                delete_post_meta($post_id, '_edit_lock');
+
+                // Template import
+                if ( !empty( $tf_template_design ) && $tf_template_design !== 'blank' ) {
+                    $service = array(
+                        'tf_hotel' => 'hotel',
+                        'tf_room' => 'room',
+                        'tf_tours' => 'tour',
+                        'tf_apartment' => 'apartment',
+                        'tf_carrental' => 'carrental'
+                    );
+                    
+                    $template_path = TF_ASSETS_PATH . "demo/elementor/{$service[$tf_template_service]}/{$tf_template_type}/{$tf_template_design}.json";
+        
+                    if ( is_file( $template_path ) ) {
+                        require_once ABSPATH . 'wp-admin/includes/class-wp-filesystem-base.php';
+                        require_once ABSPATH . 'wp-admin/includes/class-wp-filesystem-direct.php';
+        
+                        $wp_filesystem = new \WP_Filesystem_Direct(null);
+                        $fileContent = $wp_filesystem->get_contents($template_path);
+        
+                        if ( !is_null( $fileContent ) ) {
+        
+                            add_filter('elementor/files/allow_unfiltered_upload', '__return_true');
+        
+                            $result = \Elementor\Plugin::$instance->templates_manager->import_template( [
+                                'fileData' => base64_encode( $fileContent ),
+                                'fileName' => 'tourfic-content.json'
+                            ] );
+        
+                            $imported_template_id = $result[0]['template_id'];
+                            $template_data        = get_post_meta( $imported_template_id, '_elementor_data', true );
+                            update_post_meta( $post_id, '_elementor_data', $template_data );
+                            wp_delete_post( $imported_template_id );
+                        }
+                    }
+                }
+                
+                $response['edit_url'] = add_query_arg(array(
+                    'post' => $post_id, 
+                    'action' => 'elementor',
+                    'tf_preview_post_id' => $tf_preview_post_id
+                ), admin_url('post.php'));
+            } elseif ( $edit_with_bricks === 'true') {
+                update_post_meta($post_id, 'tf_builder_type', 'bricks');
+                update_post_meta($post_id, '_bricks_template_type', 'content');
+                update_post_meta($post_id, '_bricks_editor_mode', 'bricks');
+
+                $this->ensure_tourfic_bricks_theme_style();
+
+                // Remove Elementor meta if exists
+                delete_post_meta($post_id, '_elementor_edit_mode');
+                delete_post_meta($post_id, '_elementor_data');
+                delete_post_meta($post_id, '_wp_page_template');
+
+                // Template import for Bricks
+                if ( !empty( $tf_template_design ) && $tf_template_design !== 'blank' ) {
+                    $service = array(
+                        'tf_hotel' => 'hotel',
+                        'tf_room' => 'room',
+                        'tf_tours' => 'tour',
+                        'tf_apartment' => 'apartment',
+                        'tf_carrental' => 'carrental'
+                    );
+                    
+                    $template_path = TF_ASSETS_PATH . "demo/bricks/{$service[$tf_template_service]}/{$tf_template_type}/{$tf_template_design}.json";
+        
+                    if ( is_file( $template_path ) ) {
+                        require_once ABSPATH . 'wp-admin/includes/class-wp-filesystem-base.php';
+                        require_once ABSPATH . 'wp-admin/includes/class-wp-filesystem-direct.php';
+        
+                        $wp_filesystem = new \WP_Filesystem_Direct(null);
+                        $fileContent = $wp_filesystem->get_contents($template_path);
+        
+                        if ( !is_null( $fileContent ) ) {
+                            // Bricks export JSON wraps elements inside a "content" key.
+                            // _bricks_page_content_2 must store only the elements array.
+                            $template_data = json_decode( $fileContent, true );
+
+                            if ( is_array( $template_data ) && ! empty( $template_data['content'] ) && is_array( $template_data['content'] ) ) {
+                                update_post_meta( $post_id, '_bricks_page_content_2', $template_data['content'] );
+                            }
+                        }
+                    }
+                }
+
+                $this->set_bricks_template_preview_settings($post_id, $tf_template_service, $tf_template_type, $tf_taxonomy_type, $tf_taxonomy_term);
+                
+                $response['edit_url'] = $this->get_bricks_edit_url( $post_id );
             }
             wp_send_json_success($response);
         } else {
@@ -934,43 +1528,54 @@ class Template_Builder {
     function tf_template_builder_custom_template($template) {
         global $post;
         
-        // Only proceed if Elementor is loaded
-        if (!did_action('elementor/loaded')) {
+        // Only proceed if Elementor or Bricks is loaded
+        if ( ! did_action('elementor/loaded') && ! did_action('bricks/loaded') && ! class_exists('Bricks\\Frontend') ) {
             return $template;
         }
         
         // Check if we're viewing a template builder post
         if (is_singular('tf_template_builder')) {
-            $document = \Elementor\Plugin::$instance->documents->get_doc_for_frontend($post->ID);
-            
-            if ($document && $document::get_property('support_wp_page_templates')) {
-                $page_template = $document->get_meta('_wp_page_template');
-                $page_template = in_array($page_template, ['elementor_header_footer', 'elementor_canvas']) 
-                    ? $page_template 
-                    : 'elementor_header_footer';
+            // Determine which builder this template uses
+            $builder_type = $this->tf_get_builder_type($post->ID);
 
-                $template_module = \Elementor\Plugin::$instance->modules_manager->get_modules('page-templates');
-                $template_path = $template_module->get_template_path($page_template);
+            // ELEMENTOR preview handling
+            if ($builder_type === 'elementor' && did_action('elementor/loaded')) {
+                $document = \Elementor\Plugin::$instance->documents->get_doc_for_frontend($post->ID);
 
-                // Fallback to kit default template if needed
-                if ('elementor_theme' !== $page_template && $document->is_built_with_elementor()) {
-                    $kit_default_template = \Elementor\Plugin::$instance->kits_manager->get_current_settings('default_page_template');
-                    $template_path = $template_module->get_template_path($kit_default_template);
+                if ($document && $document::get_property('support_wp_page_templates')) {
+                    $page_template = $document->get_meta('_wp_page_template');
+                    $page_template = in_array($page_template, ['elementor_header_footer', 'elementor_canvas']) 
+                        ? $page_template 
+                        : 'elementor_header_footer';
+
+                    $template_module = \Elementor\Plugin::$instance->modules_manager->get_modules('page-templates');
+                    $template_path = $template_module->get_template_path($page_template);
+
+                    // Fallback to kit default template if needed
+                    if ('elementor_theme' !== $page_template && $document->is_built_with_elementor()) {
+                        $kit_default_template = \Elementor\Plugin::$instance->kits_manager->get_current_settings('default_page_template');
+                        $template_path = $template_module->get_template_path($kit_default_template);
+                    }
+
+                    if ($template_path) {
+                        // Set up the content rendering callback
+                        $template_module->set_print_callback(function() use ($post) {
+                            echo \Elementor\Plugin::$instance->frontend->get_builder_content($post->ID, true); //phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+                        });
+                        
+                        return $template_path;
+                    }
                 }
+            }
 
-                if ($template_path) {
-                    // Set up the content rendering callback
-                    $template_module->set_print_callback(function() use ($post) {
-                        echo \Elementor\Plugin::$instance->frontend->get_builder_content($post->ID, true); //phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-                    });
-                    
-                    return $template_path;
-                }
+            // BRICKS preview handling: return our bricks loader template
+            if ($builder_type === 'bricks' && ( did_action('bricks/loaded') || class_exists('Bricks\\Frontend') || class_exists('Bricks\\Helpers') )) {
+                return $this->load_bricks_template($post);
             }
         }
         
         // For service templates (archive/single)
-        $service_post_types = ['tf_hotel', 'tf_tours', 'tf_apartment', 'tf_carrental'];
+        $service_post_types = ['tf_hotel', 'tf_room', 'tf_tours', 'tf_apartment', 'tf_carrental'];
         
         // Check archive pages
         if (is_post_type_archive($service_post_types)) {
@@ -978,6 +1583,10 @@ class Template_Builder {
             $active_template = $this->get_active_template($post_type, 'archive', 'all');
             
             if ($active_template) {
+                $builder = $this->tf_get_builder_type($active_template->ID);
+                if ($builder === 'bricks') {
+                    return $this->load_bricks_template($active_template);
+                }
                 return $this->load_elementor_template($active_template);
             }
         } 
@@ -995,6 +1604,10 @@ class Template_Builder {
             }
             
             if ($active_template) {
+                $builder = $this->tf_get_builder_type($active_template->ID);
+                if ($builder === 'bricks') {
+                    return $this->load_bricks_template($active_template);
+                }
                 return $this->load_elementor_template($active_template);
             }
         }
@@ -1011,28 +1624,44 @@ class Template_Builder {
                 $terms = wp_get_post_terms($post_id, $taxonomy, ['fields' => 'slugs']);
                 
                 foreach ($terms as $term) {
-                    $active_template = $this->get_active_template($post_type, 'single', $taxonomy, $term);
+                    $active_template = $this->get_single_active_template_by_taxonomy($post_type, 'single', $taxonomy, $term);
                     if ($active_template) break;
                 }
                 
                 if ($active_template) break;
                 
                 // If no term-specific template, try for a taxonomy-wide template
-                $active_template = $this->get_active_template($post_type, 'single', $taxonomy, 'all');
+                $active_template = $this->get_single_active_template_by_taxonomy($post_type, 'single', $taxonomy, 'all');
                 if ($active_template) break;
             }
             
             // If no taxonomy/term specific template, try for a general single template
             if (!$active_template) {
-                $active_template = $this->get_active_template($post_type, 'single', 'all', 'all');
+                $active_template = $this->get_single_active_template_by_taxonomy($post_type, 'single', 'all', '');
             }
             
             if ($active_template) {
+                $builder = $this->tf_get_builder_type($active_template->ID);
+                if ($builder === 'bricks') {
+                    return $this->load_bricks_template($active_template);
+                }
                 return $this->load_elementor_template($active_template);
             }
         }
 
         return $template;
+    }
+
+    private function get_preview_post_for_service($service) {
+        $args = [
+            'post_type' => $service,
+            'posts_per_page' => 1,
+            'orderby' => 'rand'
+        ];
+        
+        $posts = get_posts($args);
+        
+        return !empty($posts) ? $posts[0] : false;
     }
 
     /**
@@ -1066,6 +1695,29 @@ class Template_Builder {
             }
         }
         
+        return false;
+    }
+
+    /**
+     * Load Bricks template by returning a small loader template that
+     * will render Bricks content for the given template post.
+     */
+    private function load_bricks_template($template_post) {
+        // Ensure Bricks is available
+        if ( ! ( did_action('bricks/loaded') || class_exists('Bricks\\Frontend') || class_exists('Bricks\\Helpers') ) ) {
+            return false;
+        }
+
+        // Plugin template file that renders Bricks content
+        $loader = dirname(__FILE__) . '/bricks-template.php';
+
+        if ( is_file( $loader ) ) {
+            // Expose the template post ID so the loader can render the correct Bricks template regardless of the current global queried post (archives, taxonomies, etc.).
+            $GLOBALS['tf_bricks_template_id'] = is_object($template_post) ? $template_post->ID : intval($template_post);
+
+            return $loader;
+        }
+
         return false;
     }
 
@@ -1136,6 +1788,43 @@ class Template_Builder {
     }
 
     /**
+     * Get active template for a service, type, taxonomy and term
+     */
+    private function get_single_active_template_by_taxonomy($service, $type, $taxonomy, $term) {
+        $args = [
+            'post_type' => 'tf_template_builder',
+            'posts_per_page' => 1,
+            'meta_query' => [
+                'relation' => 'AND',
+                [
+                    'key' => 'tf_template_service',
+                    'value' => $service,
+                ],
+                [
+                    'key' => 'tf_template_type',
+                    'value' => $type,
+                ],
+                [
+                    'key' => 'tf_taxonomy_type',
+                    'value' => $taxonomy,
+                ],
+                [
+                    'key' => 'tf_taxonomy_term',
+                    'value' => $term,
+                ],
+                [
+                    'key' => 'tf_template_active',
+                    'value' => '1',
+                ]
+            ]
+        ];
+
+        $templates = get_posts($args);
+
+        return !empty($templates) ? $templates[0] : false;
+    }
+
+    /**
      * Deactivate other templates for the same service and type
      */
     private function deactivate_other_templates($current_post_id, $service, $type, $tf_taxonomy_type, $tf_taxonomy_term) {
@@ -1170,7 +1859,8 @@ class Template_Builder {
         );
         
         $templates = get_posts($args);
-        
+        $deactivated = [];
+
         foreach ($templates as $template) {
             update_post_meta($template->ID, 'tf_template_active', '0');
 
@@ -1181,43 +1871,111 @@ class Template_Builder {
             );
             
             set_transient('tf_template_deactivated_' . $template->ID, $deactivated_notice, 60);
+            $deactivated[] = $template->ID;
         }
+
+        return $deactivated;
     }
 
-    public function enforce_elementor_template_on_save($post_id, $post, $update) {
-        // Only for Elementor-built templates
-        if (did_action('elementor/loaded')) {
+    public function enforce_template_on_save($post_id, $post, $update) {
+        // Prevent autosave / revision
+        if (wp_is_post_autosave($post_id) || wp_is_post_revision($post_id)) {
+            return;
+        }
+
+        // Only our post type
+        if ($post->post_type !== 'tf_template_builder') {
+            return;
+        }
+
+        $builder_type = get_post_meta($post_id, 'tf_builder_type', true);
+
+        // ELEMENTOR SUPPORT
+        if ($builder_type === 'elementor') {
+
+            if (!did_action('elementor/loaded')) {
+                return;
+            }
+
+            // Remove Bricks meta if switching from Bricks
+            delete_post_meta($post_id, '_bricks_template_type');
+            delete_post_meta($post_id, '_bricks_editor_mode');
+
+            // Enforce Elementor template
             $page_template = get_post_meta($post_id, '_wp_page_template', true);
-    
-            // Fallback or enforce our required template
+
             if (!$page_template || $page_template === 'default') {
                 update_post_meta($post_id, '_wp_page_template', 'elementor_header_footer');
             }
-    
-            // Optional: force edit mode
+
             if (!get_post_meta($post_id, '_elementor_edit_mode', true)) {
                 update_post_meta($post_id, '_elementor_edit_mode', 'builder');
             }
+        } elseif ($builder_type === 'bricks') {
+            delete_post_meta($post_id, '_elementor_edit_mode');
+            delete_post_meta($post_id, '_elementor_data');
+
+            update_post_meta($post_id, '_bricks_template_type', 'content' );
+            update_post_meta($post_id, '_bricks_editor_mode', 'bricks');
+
+            $service       = get_post_meta($post_id, 'tf_template_service', true);
+            $template_type = get_post_meta($post_id, 'tf_template_type', true);
+            $taxonomy_type = get_post_meta($post_id, 'tf_taxonomy_type', true);
+            $taxonomy_term = get_post_meta($post_id, 'tf_taxonomy_term', true);
+
+            if ( $service && $template_type ) {
+                $this->set_bricks_template_preview_settings(
+                    $post_id, $service, $template_type, $taxonomy_type, $taxonomy_term
+                );
+            }
         }
     }
-    
+
     public function modify_elementor_edit_url($url, $document) {
         $post = $document->get_post();
 
         if ($post->post_type === 'tf_template_builder') {
-            $template_type = get_post_meta($post->ID, 'tf_template_type', true);
             $service = get_post_meta($post->ID, 'tf_template_service', true);
+            $template_type = get_post_meta($post->ID, 'tf_template_type', true);
+            $taxonomy_type = get_post_meta($post->ID, 'tf_taxonomy_type', true);
+            $taxonomy_term = get_post_meta($post->ID, 'tf_taxonomy_term', true);
 
             if ($template_type === 'archive' && $service) {
                 // Append service param to the URL
                 return add_query_arg('tf_archive_service', $service, $url);
+            }
+
+            if ($template_type === 'single' && !empty($service)) {
+                // Get a sample post of the selected service type
+                $args = [
+                    'post_type' => $service,
+                    'posts_per_page' => 1,
+                    'orderby' => 'rand'
+                ];
+                if ($taxonomy_type && $taxonomy_type !== 'all') {
+                    if($taxonomy_term !== 'all'){
+                        $args['tax_query'] = [
+                            [
+                                'taxonomy' => $taxonomy_type,
+                                'field' => 'slug',
+                                'terms' => $taxonomy_term,
+                            ]
+                        ];
+                    }
+                }
+                $sample_post = get_posts($args);
+
+                if (!empty($sample_post)) {
+                    // Add the template post ID as a parameter
+                    return add_query_arg('tf_preview_post_id', $sample_post[0]->ID, $url);
+                }
             }
         }
 
         return $url;
     }
 
-    public function setup_editor_post_data() {
+    public function setup_elementor_editor_post_data() {
         // ARCHIVE PREVIEW
         if (isset($_GET['tf_archive_service'])) {
             $post_type = sanitize_key($_GET['tf_archive_service']);
@@ -1239,6 +1997,389 @@ class Template_Builder {
                 return $vars;
             });
         }
+
+        // SINGLE PREVIEW
+        if(isset($_GET['tf_preview_post_id'])){
+            $post_id = intval($_GET['tf_preview_post_id']);
+            $preview_post = get_post($post_id);
+            if ($preview_post) {
+                global $post, $wp_query;
+            
+                // Store original post
+                $original_post = $post;
+                
+                // Set up the preview post data
+                $post = $preview_post;
+                setup_postdata($preview_post);
+                
+                // Filter to ensure Elementor uses our preview post for dynamic content
+                add_filter('elementor/frontend/builder_content_data', function($data) use ($preview_post) {
+                    $data['post_id'] = $preview_post->ID;
+                    $data['post'] = $preview_post;
+                    return $data;
+                });
+                
+                // Restore original post when editor is done
+                add_action('elementor/editor/after_enqueue_scripts', function() use ($original_post) {
+                    wp_reset_postdata();
+                    global $post;
+                    $post = $original_post;
+                    setup_postdata($post);
+                });
+            }
+        }
     }
 
+    public function setup_bricks_editor_post_data() {
+        // Only run in Bricks editor context
+        if ( ! isset( $_GET['bricks'] ) || 'run' !== $_GET['bricks'] ) {
+            return;
+        }
+
+        if ( ! class_exists( '\Bricks\Database' ) ) {
+            return;
+        }
+
+        // ARCHIVE PREVIEW
+        if ( isset( $_GET['tf_archive_service'] ) ) {
+            $post_type = sanitize_key( $_GET['tf_archive_service'] );
+            global $wp_query;
+
+            // Mock an archive query for preview purposes only
+            $wp_query = new \WP_Query([
+                'post_type'      => $post_type,
+            ]);
+
+            // Set Bricks database to recognize this as an archive template
+            \Bricks\Database::$page_data['is_archive'] = true;
+            \Bricks\Database::$page_data['post_type']  = $post_type;
+        }
+
+        // SINGLE PREVIEW - Set preview post as the display context for dynamic content
+        if ( isset( $_GET['tf_preview_post_id'] ) ) {
+            $post_id      = absint( wp_unslash( $_GET['tf_preview_post_id'] ) );
+            $preview_post = get_post( $post_id );
+
+            if ( $preview_post ) {
+                global $post, $wp_query;
+
+                // Store the template post ID for later retrieval (for saving)
+                // Get the current post - it should be the template post
+                $GLOBALS['tf_bricks_template_post_id'] = isset( $post->ID ) ? $post->ID : 0;
+                $GLOBALS['tf_bricks_template_post']    = isset( $post ) ? $post : null;
+
+                // Store preview post ID for dynamic content rendering
+                $GLOBALS['tf_bricks_preview_post_id'] = $post_id;
+                $GLOBALS['tf_bricks_preview_post']    = $preview_post;
+
+                // Set the global post to preview post for dynamic content resolution
+                $post = $preview_post;
+                setup_postdata( $preview_post );
+
+                if ( $wp_query instanceof \WP_Query ) {
+                    $wp_query->post = $preview_post;
+                }
+
+                // Update Bricks database to use preview post
+                \Bricks\Database::$page_data['preview_or_post_id'] = $post_id;
+            }
+        }
+    }
+
+    public function prepare_bricks_frontend_assets() {
+        if ( is_admin() || wp_doing_ajax() ) {
+            return;
+        }
+
+        if ( ! class_exists( '\Bricks\Frontend' ) || ! class_exists( '\Bricks\Database' ) || ! class_exists( '\Bricks\Helpers' ) ) {
+            return;
+        }
+
+        $template_post = $this->get_current_frontend_template();
+
+        if ( ! $template_post || empty( $template_post->ID ) ) {
+            return;
+        }
+
+        if ( 'bricks' !== $this->tf_get_builder_type( $template_post->ID ) ) {
+            return;
+        }
+
+        $template_id = absint( $template_post->ID );
+
+        if ( ! $template_id ) {
+            return;
+        }
+
+        $GLOBALS['tf_bricks_template_id'] = $template_id;
+
+        // Tell Bricks this is the active content template.
+        \Bricks\Database::$active_templates['content'] = $template_id;
+
+        // Keep template queued for Bricks frontend processing.
+        if ( property_exists( '\Bricks\Frontend', 'template_ids_to_enqueue' ) ) {
+            if ( ! in_array( $template_id, \Bricks\Frontend::$template_ids_to_enqueue, true ) ) {
+                \Bricks\Frontend::$template_ids_to_enqueue[] = $template_id;
+            }
+        }
+
+        // Resolve correct preview/current post id.
+        $current_post_id = 0;
+
+        if ( isset( $_GET['tf_preview_post_id'] ) ) {
+            $current_post_id = absint( wp_unslash( $_GET['tf_preview_post_id'] ) );
+        } elseif ( is_singular() && ! is_singular( 'tf_template_builder' ) ) {
+            $current_post_id = get_queried_object_id();
+        } else {
+            $current_post_id = $template_id;
+        }
+
+        \Bricks\Database::$page_data['preview_or_post_id'] = $current_post_id;
+
+        /**
+         * THIS IS THE IMPORTANT PART:
+         * Inject the template builder content into Bricks page data
+         * so inline element CSS is generated from this template.
+         */
+        $template_bricks_data = \Bricks\Helpers::get_bricks_data( $template_id, 'content' );
+
+        if ( ! empty( $template_bricks_data ) && is_array( $template_bricks_data ) ) {
+            \Bricks\Database::$page_data['content'] = $template_bricks_data;
+        }
+    }
+
+    private function get_current_frontend_template() {
+        $service_post_types = [ 'tf_hotel', 'tf_room', 'tf_tours', 'tf_apartment', 'tf_carrental' ];
+
+        // Template builder single preview
+        if ( is_singular( 'tf_template_builder' ) ) {
+            return get_queried_object();
+        }
+
+        // Archive
+        if ( is_post_type_archive( $service_post_types ) ) {
+            $post_type = get_query_var( 'post_type' );
+
+            if ( is_array( $post_type ) ) {
+                $post_type = reset( $post_type );
+            }
+
+            if ( empty( $post_type ) ) {
+                $queried_object = get_queried_object();
+                if ( ! empty( $queried_object->name ) ) {
+                    $post_type = $queried_object->name;
+                }
+            }
+
+            if ( empty( $post_type ) ) {
+                return false;
+            }
+
+            return $this->get_active_template( $post_type, 'archive', 'all' );
+        }
+
+        // Taxonomy archive
+        if ( is_tax() ) {
+            $term_obj = get_queried_object();
+
+            if ( ! empty( $term_obj->taxonomy ) && ! empty( $term_obj->slug ) ) {
+                $template_post = $this->get_active_template_by_taxonomy( $term_obj->taxonomy, $term_obj->slug );
+
+                if ( ! $template_post ) {
+                    $template_post = $this->get_active_template_by_taxonomy( $term_obj->taxonomy, 'all' );
+                }
+
+                return $template_post;
+            }
+        }
+
+        // Single
+        if ( is_singular( $service_post_types ) ) {
+            $post_id = get_queried_object_id();
+
+            if ( ! $post_id ) {
+                return false;
+            }
+
+            $post_type  = get_post_type( $post_id );
+            $taxonomies = get_object_taxonomies( $post_type );
+
+            foreach ( $taxonomies as $taxonomy ) {
+                $terms = wp_get_post_terms( $post_id, $taxonomy, [ 'fields' => 'slugs' ] );
+
+                if ( is_wp_error( $terms ) || empty( $terms ) ) {
+                    continue;
+                }
+
+                foreach ( $terms as $term ) {
+                    $template_post = $this->get_single_active_template_by_taxonomy( $post_type, 'single', $taxonomy, $term );
+                    if ( $template_post ) {
+                        return $template_post;
+                    }
+                }
+
+                $template_post = $this->get_single_active_template_by_taxonomy( $post_type, 'single', $taxonomy, 'all' );
+                if ( $template_post ) {
+                    return $template_post;
+                }
+            }
+
+            return $this->get_single_active_template_by_taxonomy( $post_type, 'single', 'all', '' );
+        }
+
+        return false;
+    }
+
+    public function tf_template_builder_filter_dropdowns() {
+        global $typenow;
+
+        if ($typenow === 'tf_template_builder') {
+            // Get all template builder posts to extract existing values and display only used filters
+            $args = array(
+                'post_type'      => 'tf_template_builder',
+                'posts_per_page' => -1,
+                'post_status'    => array('publish', 'draft', 'pending', 'future', 'private'),
+                'fields'         => 'ids',
+            );
+            $post_ids = get_posts($args);
+
+            $services       = array();
+            $types          = array();
+            $builders       = array();
+
+            $service_labels = [
+                'tf_hotel'     => esc_html__('Hotel', 'tourfic'),
+                'tf_tours'     => esc_html__('Tour', 'tourfic'),
+                'tf_apartment' => esc_html__('Apartment', 'tourfic'),
+                'tf_carrental' => esc_html__('Car Rental', 'tourfic'),
+                'tf_room'      => esc_html__('Room', 'tourfic'),
+            ];
+
+            $builder_labels = [
+                'bricks'    => esc_html__('Bricks', 'tourfic'),
+                'elementor' => esc_html__('Elementor', 'tourfic'),
+                'default'   => esc_html__('Default', 'tourfic'),
+            ];
+
+            foreach ($post_ids as $pid) {
+                $service = get_post_meta($pid, 'tf_template_service', true);
+                $type    = get_post_meta($pid, 'tf_template_type', true);
+                $builder = $this->tf_get_builder_type($pid);
+
+                if (!empty($service)) {
+                    $services[$service] = isset($service_labels[$service]) ? $service_labels[$service] : ucfirst($service);
+                }
+
+                if (!empty($type)) {
+                    $types[$type] = ucfirst($type);
+                }
+
+                if (!empty($builder)) {
+                    $builders[$builder] = isset($builder_labels[$builder]) ? $builder_labels[$builder] : ucfirst($builder);
+                }
+            }
+
+            // Output filter dropdowns
+            $this->render_filter_select('tf_template_service', esc_html__('Filter by Service', 'tourfic'), $services);
+            $this->render_filter_select('tf_template_type', esc_html__('Filter by Type', 'tourfic'), $types);
+            $this->render_filter_select('tf_template_builder_type', esc_html__('Filter by Builder', 'tourfic'), $builders);
+        }
+    }
+
+    private function render_filter_select($name, $placeholder, $options) {
+        $selected = isset($_GET[$name]) ? sanitize_text_field(wp_unslash($_GET[$name])) : '';
+        echo '<select name="' . esc_attr($name) . '">';
+        echo '<option value="">' . esc_html($placeholder) . '</option>';
+        foreach ($options as $value => $label) {
+            echo '<option value="' . esc_attr($value) . '" ' . selected($selected, $value, false) . '>' . esc_html($label) . '</option>';
+        }
+        echo '</select>';
+    }
+
+    public function tf_template_builder_filter_query($query) {
+        global $pagenow;
+
+        if (is_admin() && $pagenow === 'edit.php' && $query->is_main_query() && $query->get('post_type') === 'tf_template_builder') {
+            $meta_query = array();
+
+            $filters = array(
+                'tf_template_service',
+                'tf_template_type',
+            );
+
+            foreach ($filters as $filter) {
+                if (!empty($_GET[$filter])) {
+                    $meta_query[] = array(
+                        'key'     => $filter,
+                        'value'   => sanitize_text_field(wp_unslash($_GET[$filter])),
+                        'compare' => '=',
+                    );
+                }
+            }
+
+            // Builder type filter
+            if (!empty($_GET['tf_template_builder_type'])) {
+                $builder = sanitize_text_field(wp_unslash($_GET['tf_template_builder_type']));
+                if ($builder === 'bricks') {
+                    $meta_query[] = array(
+                        'key'   => '_bricks_editor_mode',
+                        'value' => 'bricks',
+                        'compare' => '=',
+                    );
+                } elseif ($builder === 'elementor') {
+                    $meta_query[] = array(
+                        'key'   => '_elementor_edit_mode',
+                        'value' => 'builder',
+                        'compare' => '=',
+                    );
+                } elseif ($builder === 'default') {
+                    $meta_query[] = array(
+                        'relation' => 'AND',
+                        array(
+                            'relation' => 'OR',
+                            array(
+                                'key' => '_bricks_editor_mode',
+                                'compare' => 'NOT EXISTS',
+                            ),
+                            array(
+                                'key' => '_bricks_editor_mode',
+                                'value' => 'bricks',
+                                'compare' => '!=',
+                            ),
+                        ),
+                        array(
+                            'relation' => 'OR',
+                            array(
+                                'key' => '_elementor_edit_mode',
+                                'compare' => 'NOT EXISTS',
+                            ),
+                            array(
+                                'key' => '_elementor_edit_mode',
+                                'value' => 'builder',
+                                'compare' => '!=',
+                            ),
+                        ),
+                    );
+                }
+            }
+
+            if (!empty($meta_query)) {
+                $query->set('meta_query', $meta_query);
+            }
+        }
+    }
+
+    private function tf_get_builder_type($post_id) {
+        // Bricks builder
+        if ( get_post_meta($post_id, '_bricks_editor_mode', true) === 'bricks' ) {
+            return 'bricks';
+        }
+
+        // Elementor builder
+        if ( get_post_meta($post_id, '_elementor_edit_mode', true ) === 'builder' ) {
+            return 'elementor';
+        }
+
+        return 'default';
+    }
 }
