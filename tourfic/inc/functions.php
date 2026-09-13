@@ -6,10 +6,246 @@ use Tourfic\Classes\Helper;
 use Tourfic\Classes\Room\Availability;
 use Tourfic\Classes\Room\Room;
 
+if ( ! function_exists( 'tourfic_get_public_search_request' ) ) {
+	/**
+	 * Return the verified and sanitized public search request.
+	 *
+	 * Companion plugins may add owned fields by extending the schema with one of
+	 * the supported types: text, key, post_type, absint, decimal, toggle,
+	 * key_list, absint_list, or binary_list.
+	 *
+	 * @return array<string, mixed>
+	 */
+	function tourfic_get_public_search_request() {
+		$nonce = isset( $_GET['tourfic_search_nonce'] )
+			? sanitize_text_field( wp_unslash( $_GET['tourfic_search_nonce'] ) )
+			: '';
+
+		if ( ! wp_verify_nonce( $nonce, 'tourfic_public_search' ) ) {
+			return array();
+		}
+
+		$schema = array(
+			'type'                     => 'post_type',
+			'place'                    => 'text',
+			'place-name'               => 'text',
+			'destination'              => 'text',
+			'pickup'                   => 'text',
+			'pickup-name'              => 'text',
+			'dropoff'                  => 'text',
+			'dropoff-name'             => 'text',
+			'check-in-out-date'        => 'text',
+			'check-in-date'            => 'text',
+			'check-out-date'           => 'text',
+			'tour_date'                => 'text',
+			'pickup-date'              => 'text',
+			'pickup_date'              => 'text',
+			'dropoff-date'             => 'text',
+			'dropoff_date'             => 'text',
+			'pickup-time'              => 'text',
+			'pickup_time'              => 'text',
+			'dropoff-time'             => 'text',
+			'dropoff_time'             => 'text',
+			'room-option'              => 'text',
+			'adults'                   => 'absint',
+			'children'                 => 'absint',
+			'infant'                   => 'absint',
+			'room'                     => 'absint',
+			'min_seat'                 => 'absint',
+			'max_seat'                 => 'absint',
+			'tf-author'                => 'absint',
+			'from'                     => 'decimal',
+			'to'                       => 'decimal',
+			'driver_age'               => 'toggle',
+			'same_location'            => 'toggle',
+			'features'                 => 'key_list',
+			'types'                    => 'key_list',
+			'room_types'               => 'key_list',
+			'car_brand'                => 'absint_list',
+			'children_ages'            => 'absint_list',
+			'car_transmission'         => 'binary_list',
+			'carplay_android_auto'     => 'binary_list',
+			'car_category'             => 'key_list',
+			'car_fueltype'             => 'key_list',
+			'car_engine_year'          => 'key_list',
+		);
+
+		/**
+		 * Filter the allowlisted public search request schema.
+		 *
+		 * @param array<string, string> $schema Field names mapped to sanitizer types.
+		 */
+		$schema = apply_filters( 'tourfic_public_search_request_schema', $schema );
+		if ( ! is_array( $schema ) ) {
+			return array();
+		}
+
+		$supported_types = array(
+			'text',
+			'key',
+			'post_type',
+			'absint',
+			'decimal',
+			'toggle',
+			'key_list',
+			'absint_list',
+			'binary_list',
+		);
+		$request         = array();
+
+		foreach ( $schema as $field => $type ) {
+			if (
+				! is_string( $field ) ||
+				! preg_match( '/^[a-z0-9_-]+$/', $field ) ||
+				! in_array( $type, $supported_types, true ) ||
+				! isset( $_GET[ $field ] )
+			) {
+				continue;
+			}
+
+			$value = map_deep( wp_unslash( $_GET[ $field ] ), 'sanitize_text_field' );
+
+			switch ( $type ) {
+				case 'text':
+					if ( is_scalar( $value ) ) {
+						$request[ $field ] = sanitize_text_field( (string) $value );
+					}
+					break;
+
+				case 'key':
+					if ( is_scalar( $value ) ) {
+						$request[ $field ] = sanitize_key( (string) $value );
+					}
+					break;
+
+				case 'post_type':
+					if ( is_scalar( $value ) ) {
+						$post_type = sanitize_key( (string) $value );
+						if ( in_array( $post_type, array( 'tf_tours', 'tf_hotel', 'tf_room', 'tf_apartment', 'tf_carrental' ), true ) ) {
+							$request[ $field ] = $post_type;
+						}
+					}
+					break;
+
+				case 'absint':
+					if ( is_scalar( $value ) ) {
+						$request[ $field ] = absint( $value );
+					}
+					break;
+
+				case 'decimal':
+					if ( is_scalar( $value ) ) {
+						$decimal = sanitize_text_field( (string) $value );
+						if ( preg_match( '/^\d+(?:\.\d+)?$/', $decimal ) ) {
+							$request[ $field ] = $decimal;
+						}
+					}
+					break;
+
+				case 'toggle':
+					if ( is_scalar( $value ) ) {
+						$request[ $field ] = 'on' === sanitize_key( (string) $value ) ? 'on' : '';
+					}
+					break;
+
+				case 'key_list':
+					$items             = is_array( $value ) ? $value : explode( ',', (string) $value );
+					$request[ $field ] = array_values(
+						array_filter(
+							array_map(
+								static function ( $item ) {
+									return is_scalar( $item ) ? sanitize_key( (string) $item ) : '';
+								},
+								$items
+							)
+						)
+					);
+					break;
+
+				case 'absint_list':
+					$items             = is_array( $value ) ? $value : explode( ',', (string) $value );
+					$request[ $field ] = array_values(
+						array_filter(
+							array_map(
+								static function ( $item ) {
+									return is_scalar( $item ) ? absint( $item ) : 0;
+								},
+								$items
+							)
+						)
+					);
+					break;
+
+				case 'binary_list':
+					$items             = is_array( $value ) ? $value : explode( ',', (string) $value );
+					$request[ $field ] = array_values(
+						array_filter(
+							array_map(
+								static function ( $item ) {
+									$item = is_scalar( $item ) ? sanitize_key( (string) $item ) : '';
+
+									return in_array( $item, array( '0', '1' ), true ) ? $item : null;
+								},
+								$items
+							),
+							static function ( $item ) {
+								return null !== $item;
+							}
+						)
+					);
+					break;
+			}
+		}
+
+		return $request;
+	}
+}
+
+if ( ! function_exists( 'tourfic_is_block_theme' ) ) {
+	/**
+	 * Check for a block theme without breaking WordPress versions before 5.9.
+	 *
+	 * @return bool
+	 */
+	function tourfic_is_block_theme() {
+		$block_theme_check = 'wp_is_block_theme';
+
+		return function_exists( $block_theme_check ) && $block_theme_check();
+	}
+}
+
+if ( ! function_exists( 'tourfic_render_block_header_area' ) ) {
+	/**
+	 * Render the block-theme header area when the API is available.
+	 *
+	 * @return void
+	 */
+	function tourfic_render_block_header_area() {
+		$header_renderer = 'block_header_area';
+		if ( function_exists( $header_renderer ) ) {
+			$header_renderer();
+		}
+	}
+}
+
+if ( ! function_exists( 'tourfic_render_block_footer_area' ) ) {
+	/**
+	 * Render the block-theme footer area when the API is available.
+	 *
+	 * @return void
+	 */
+	function tourfic_render_block_footer_area() {
+		$footer_renderer = 'block_footer_area';
+		if ( function_exists( $footer_renderer ) ) {
+			$footer_renderer();
+		}
+	}
+}
+
 /**
  * Show admin warning if a required file is missing
  */
-function tf_file_missing( $files = '' ) {
+function tourfic_file_missing( $files = '' ) {
 
 	if ( is_admin() ) {
 		if ( ! empty( $files ) ) {
@@ -22,17 +258,16 @@ function tf_file_missing( $files = '' ) {
 
 }
 
-add_action( 'admin_notices', 'tf_file_missing' );
-add_action( 'plugins_loaded', 'tf_add_elelmentor_addon' );
+add_action( 'admin_notices', 'tourfic_file_missing' );
 
-if ( ! function_exists( 'tf_tour_traveler_info_mode_settings' ) ) {
+if ( ! function_exists( 'tourfic_tour_traveler_info_mode_settings' ) ) {
 	/**
 	 * Inject tour traveler info collection mode under Tour Options -> Extras.
 	 *
 	 * @param array $sections Settings sections.
 	 * @return array
 	 */
-	function tf_tour_traveler_info_mode_settings( $sections ) {
+	function tourfic_tour_traveler_info_mode_settings( $sections ) {
 		if ( empty( $sections['tour_booking_settings']['fields'] ) || ! is_array( $sections['tour_booking_settings']['fields'] ) ) {
 			return $sections;
 		}
@@ -75,16 +310,16 @@ if ( ! function_exists( 'tf_tour_traveler_info_mode_settings' ) ) {
 		return $sections;
 	}
 }
-add_filter( 'tf_settings_sections', 'tf_tour_traveler_info_mode_settings', 30 );
+add_filter( 'tourfic_settings_sections', 'tourfic_tour_traveler_info_mode_settings', 30 );
 
-if ( ! function_exists( 'tf_tour_traveler_compliance_settings' ) ) {
+if ( ! function_exists( 'tourfic_tour_traveler_compliance_settings' ) ) {
 	/**
 	 * Inject traveler compliance settings into Tour options.
 	 *
 	 * @param array $sections Settings sections.
 	 * @return array
 	 */
-	function tf_tour_traveler_compliance_settings( $sections ) {
+	function tourfic_tour_traveler_compliance_settings( $sections ) {
 		if ( empty( $sections['tour_booking_settings']['fields'] ) || ! is_array( $sections['tour_booking_settings']['fields'] ) ) {
 			return $sections;
 		}
@@ -215,28 +450,28 @@ if ( ! function_exists( 'tf_tour_traveler_compliance_settings' ) ) {
 		return $sections;
 	}
 }
-add_filter( 'tf_settings_sections', 'tf_tour_traveler_compliance_settings', 35 );
+add_filter( 'tourfic_settings_sections', 'tourfic_tour_traveler_compliance_settings', 35 );
 
-if ( ! function_exists( 'tf_tour_is_global_traveler_info_enabled' ) ) {
+if ( ! function_exists( 'tourfic_tour_is_global_traveler_info_enabled' ) ) {
 	/**
 	 * Check whether global tour traveler info is enabled.
 	 *
 	 * @return bool
 	 */
-	function tf_tour_is_global_traveler_info_enabled() {
-		return function_exists( 'is_tf_pro' ) && is_tf_pro() && ! empty( Helper::tfopt( 'disable_traveller_info' ) );
+	function tourfic_tour_is_global_traveler_info_enabled() {
+		return ! empty( Helper::tfopt( 'disable_traveller_info' ) );
 	}
 }
 
-if ( ! function_exists( 'tf_tour_is_traveler_info_enabled' ) ) {
+if ( ! function_exists( 'tourfic_tour_is_traveler_info_enabled' ) ) {
 	/**
 	 * Check whether traveler info should be collected for a tour.
 	 *
 	 * @param array $tour_meta Tour meta settings.
 	 * @return bool
 	 */
-	function tf_tour_is_traveler_info_enabled( $tour_meta = array() ) {
-		if ( ! tf_tour_is_global_traveler_info_enabled() ) {
+	function tourfic_tour_is_traveler_info_enabled( $tour_meta = array() ) {
+		if ( ! tourfic_tour_is_global_traveler_info_enabled() ) {
 			return false;
 		}
 
@@ -248,13 +483,13 @@ if ( ! function_exists( 'tf_tour_is_traveler_info_enabled' ) ) {
 	}
 }
 
-if ( ! function_exists( 'tf_tour_get_traveler_info_fields' ) ) {
+if ( ! function_exists( 'tourfic_tour_get_traveler_info_fields' ) ) {
 	/**
 	 * Get configured tour traveler info fields.
 	 *
 	 * @return array
 	 */
-	function tf_tour_get_traveler_info_fields() {
+	function tourfic_tour_get_traveler_info_fields() {
 		$fields = Helper::tfopt( 'without-payment-field' );
 		$fields = ! empty( $fields ) ? Helper::tf_data_types( $fields ) : array();
 
@@ -262,13 +497,13 @@ if ( ! function_exists( 'tf_tour_get_traveler_info_fields' ) ) {
 	}
 }
 
-if ( ! function_exists( 'tf_tour_get_age_validation_settings' ) ) {
+if ( ! function_exists( 'tourfic_tour_get_age_validation_settings' ) ) {
 	/**
 	 * Get traveler age validation settings.
 	 *
 	 * @return array
 	 */
-	function tf_tour_get_age_validation_settings() {
+	function tourfic_tour_get_age_validation_settings() {
 		$adult_min_age  = Helper::tfopt( 'tour_traveler_adult_min_age' );
 		$child_min_age  = Helper::tfopt( 'tour_traveler_child_min_age' );
 		$infant_max_age = Helper::tfopt( 'tour_traveler_infant_max_age' );
@@ -278,19 +513,19 @@ if ( ! function_exists( 'tf_tour_get_age_validation_settings' ) ) {
 			'adult_min_age'   => '' !== (string) $adult_min_age ? max( 1, absint( $adult_min_age ) ) : 12,
 			'child_min_age'   => '' !== (string) $child_min_age ? absint( $child_min_age ) : 2,
 			'infant_max_age'  => '' !== (string) $infant_max_age ? max( 1, absint( $infant_max_age ) ) : 2,
-			'date_format'     => tf_tour_get_user_date_format(),
+			'date_format'     => tourfic_tour_get_user_date_format(),
 			'collection_mode' => ! empty( Helper::tfopt( 'tour_traveler_info_collection_mode' ) ) ? sanitize_key( Helper::tfopt( 'tour_traveler_info_collection_mode' ) ) : 'all',
 		);
 	}
 }
 
-if ( ! function_exists( 'tf_tour_get_user_date_format' ) ) {
+if ( ! function_exists( 'tourfic_tour_get_user_date_format' ) ) {
 	/**
 	 * Get configured user-facing date format.
 	 *
 	 * @return string
 	 */
-	function tf_tour_get_user_date_format() {
+	function tourfic_tour_get_user_date_format() {
 		$date_format = ! empty( Helper::tfopt( 'tf-date-format-for-users' ) ) ? sanitize_text_field( Helper::tfopt( 'tf-date-format-for-users' ) ) : 'Y/m/d';
 		$allowed     = array( 'Y/m/d', 'd/m/Y', 'm/d/Y', 'Y-m-d', 'd-m-Y', 'm-d-Y', 'Y.m.d', 'd.m.Y', 'm.d.Y' );
 
@@ -298,13 +533,13 @@ if ( ! function_exists( 'tf_tour_get_user_date_format' ) ) {
 	}
 }
 
-if ( ! function_exists( 'tf_tour_get_supported_date_formats' ) ) {
+if ( ! function_exists( 'tourfic_tour_get_supported_date_formats' ) ) {
 	/**
 	 * Get date formats supported by traveler age validation.
 	 *
 	 * @return array
 	 */
-	function tf_tour_get_supported_date_formats() {
+	function tourfic_tour_get_supported_date_formats() {
 		return array(
 			'Y/m/d',
 			'Y-m-d',
@@ -319,20 +554,20 @@ if ( ! function_exists( 'tf_tour_get_supported_date_formats' ) ) {
 	}
 }
 
-if ( ! function_exists( 'tf_tour_get_age_validation_field_names' ) ) {
+if ( ! function_exists( 'tourfic_tour_get_age_validation_field_names' ) ) {
 	/**
 	 * Get traveler date field names that should be age-validated.
 	 *
 	 * @return array
 	 */
-	function tf_tour_get_age_validation_field_names() {
-		$settings = tf_tour_get_age_validation_settings();
+	function tourfic_tour_get_age_validation_field_names() {
+		$settings = tourfic_tour_get_age_validation_settings();
 		if ( empty( $settings['enabled'] ) ) {
 			return array();
 		}
 
 		$field_names = array();
-		$fields      = tf_tour_get_traveler_info_fields();
+		$fields      = tourfic_tour_get_traveler_info_fields();
 
 		if ( empty( $fields ) ) {
 			return array( 'tf_dob' );
@@ -350,16 +585,16 @@ if ( ! function_exists( 'tf_tour_get_age_validation_field_names' ) ) {
 	}
 }
 
-if ( ! function_exists( 'tf_tour_get_file_upload_fields' ) ) {
+if ( ! function_exists( 'tourfic_tour_get_file_upload_fields' ) ) {
 	/**
 	 * Get configured traveler file upload fields.
 	 *
 	 * @return array
 	 */
-	function tf_tour_get_file_upload_fields() {
+	function tourfic_tour_get_file_upload_fields() {
 		$file_fields = array();
 
-		foreach ( tf_tour_get_traveler_info_fields() as $field ) {
+		foreach ( tourfic_tour_get_traveler_info_fields() as $field ) {
 			if ( empty( $field['reg-fields-type'] ) || 'file' !== $field['reg-fields-type'] || empty( $field['reg-field-name'] ) ) {
 				continue;
 			}
@@ -376,18 +611,18 @@ if ( ! function_exists( 'tf_tour_get_file_upload_fields' ) ) {
 	}
 }
 
-if ( ! function_exists( 'tf_tour_get_frontend_compliance_config' ) ) {
+if ( ! function_exists( 'tourfic_tour_get_frontend_compliance_config' ) ) {
 	/**
 	 * Get traveler compliance config for localized frontend JS.
 	 *
 	 * @return array
 	 */
-	function tf_tour_get_frontend_compliance_config() {
-		$settings = tf_tour_get_age_validation_settings();
+	function tourfic_tour_get_frontend_compliance_config() {
+		$settings = tourfic_tour_get_age_validation_settings();
 
 		return array(
 			'enabled'         => ! empty( $settings['enabled'] ),
-			'field_names'     => tf_tour_get_age_validation_field_names(),
+			'field_names'     => tourfic_tour_get_age_validation_field_names(),
 			'adult_min_age'   => max( 1, absint( $settings['adult_min_age'] ) ),
 			'child_min_age'   => absint( $settings['child_min_age'] ),
 			'infant_max_age'  => max( 1, absint( $settings['infant_max_age'] ) ),
@@ -397,7 +632,7 @@ if ( ! function_exists( 'tf_tour_get_frontend_compliance_config' ) ) {
 	}
 }
 
-if ( ! function_exists( 'tf_tour_parse_date_by_format' ) ) {
+if ( ! function_exists( 'tourfic_tour_parse_date_by_format' ) ) {
 	/**
 	 * Parse a date string by a strict Tourfic date format.
 	 *
@@ -405,7 +640,7 @@ if ( ! function_exists( 'tf_tour_parse_date_by_format' ) ) {
 	 * @param string $date_format Date format.
 	 * @return DateTimeImmutable|null
 	 */
-	function tf_tour_parse_date_by_format( $date_string, $date_format ) {
+	function tourfic_tour_parse_date_by_format( $date_string, $date_format ) {
 		$date_string = trim( (string) $date_string );
 		$date_format = trim( (string) $date_format );
 		if ( '' === $date_string || '' === $date_format ) {
@@ -451,20 +686,20 @@ if ( ! function_exists( 'tf_tour_parse_date_by_format' ) ) {
 	}
 }
 
-if ( ! function_exists( 'tf_tour_parse_user_date' ) ) {
+if ( ! function_exists( 'tourfic_tour_parse_user_date' ) ) {
 	/**
 	 * Parse a date using Tourfic's configured date format and canonical fallbacks.
 	 *
 	 * @param string $date_string Date string.
 	 * @return DateTimeImmutable|null
 	 */
-	function tf_tour_parse_user_date( $date_string ) {
+	function tourfic_tour_parse_user_date( $date_string ) {
 		$date_string = sanitize_text_field( (string) $date_string );
 		if ( '' === $date_string ) {
 			return null;
 		}
 
-		$date_parts = tf_split_date_range( $date_string, false );
+		$date_parts = tourfic_split_date_range( $date_string, false );
 		if ( ! empty( $date_parts[0] ) ) {
 			$date_string = $date_parts[0];
 		}
@@ -472,13 +707,13 @@ if ( ! function_exists( 'tf_tour_parse_user_date' ) ) {
 		$date_formats = array_values(
 			array_unique(
 				array_merge(
-					array( tf_tour_get_user_date_format() ),
-					tf_tour_get_supported_date_formats()
+					array( tourfic_tour_get_user_date_format() ),
+					tourfic_tour_get_supported_date_formats()
 				)
 			)
 		);
 		foreach ( $date_formats as $date_format ) {
-			$date = tf_tour_parse_date_by_format( $date_string, $date_format );
+			$date = tourfic_tour_parse_date_by_format( $date_string, $date_format );
 
 			if ( $date instanceof DateTimeImmutable ) {
 				return $date;
@@ -489,21 +724,21 @@ if ( ! function_exists( 'tf_tour_parse_user_date' ) ) {
 	}
 }
 
-if ( ! function_exists( 'tf_tour_get_reference_timestamp' ) ) {
+if ( ! function_exists( 'tourfic_tour_get_reference_timestamp' ) ) {
 	/**
 	 * Get booking reference timestamp from selected tour date.
 	 *
 	 * @param string $tour_date Tour date.
 	 * @return int
 	 */
-	function tf_tour_get_reference_timestamp( $tour_date ) {
-		$date = tf_tour_parse_user_date( $tour_date );
+	function tourfic_tour_get_reference_timestamp( $tour_date ) {
+		$date = tourfic_tour_parse_user_date( $tour_date );
 
 		return $date instanceof DateTimeImmutable ? $date->getTimestamp() : current_time( 'timestamp' );
 	}
 }
 
-if ( ! function_exists( 'tf_tour_calculate_age' ) ) {
+if ( ! function_exists( 'tourfic_tour_calculate_age' ) ) {
 	/**
 	 * Calculate traveler age.
 	 *
@@ -511,8 +746,8 @@ if ( ! function_exists( 'tf_tour_calculate_age' ) ) {
 	 * @param int|null $reference_time Reference timestamp.
 	 * @return int|null
 	 */
-	function tf_tour_calculate_age( $date_string, $reference_time = null ) {
-		$dob_date = tf_tour_parse_user_date( $date_string );
+	function tourfic_tour_calculate_age( $date_string, $reference_time = null ) {
+		$dob_date = tourfic_tour_parse_user_date( $date_string );
 		if ( ! $dob_date instanceof DateTimeImmutable ) {
 			return null;
 		}
@@ -531,7 +766,7 @@ if ( ! function_exists( 'tf_tour_calculate_age' ) ) {
 	}
 }
 
-if ( ! function_exists( 'tf_tour_get_passenger_type_map' ) ) {
+if ( ! function_exists( 'tourfic_tour_get_passenger_type_map' ) ) {
 	/**
 	 * Get traveler index to passenger type map.
 	 *
@@ -540,7 +775,7 @@ if ( ! function_exists( 'tf_tour_get_passenger_type_map' ) ) {
 	 * @param int $infants  Infants.
 	 * @return array
 	 */
-	function tf_tour_get_passenger_type_map( $adults, $children, $infants ) {
+	function tourfic_tour_get_passenger_type_map( $adults, $children, $infants ) {
 		$map   = array();
 		$index = 1;
 
@@ -560,7 +795,7 @@ if ( ! function_exists( 'tf_tour_get_passenger_type_map' ) ) {
 	}
 }
 
-if ( ! function_exists( 'tf_tour_age_matches_passenger_type' ) ) {
+if ( ! function_exists( 'tourfic_tour_age_matches_passenger_type' ) ) {
 	/**
 	 * Check if age matches passenger type.
 	 *
@@ -568,8 +803,8 @@ if ( ! function_exists( 'tf_tour_age_matches_passenger_type' ) ) {
 	 * @param int    $age            Traveler age.
 	 * @return bool
 	 */
-	function tf_tour_age_matches_passenger_type( $passenger_type, $age ) {
-		$settings      = tf_tour_get_age_validation_settings();
+	function tourfic_tour_age_matches_passenger_type( $passenger_type, $age ) {
+		$settings      = tourfic_tour_get_age_validation_settings();
 		$adult_min_age = max( 1, absint( $settings['adult_min_age'] ) );
 		$child_min_age = absint( $settings['child_min_age'] );
 		$infant_max_age = max( 1, absint( $settings['infant_max_age'] ) );
@@ -590,14 +825,36 @@ if ( ! function_exists( 'tf_tour_age_matches_passenger_type' ) ) {
 	}
 }
 
-if ( ! function_exists( 'tf_tour_normalize_file_field_value' ) ) {
+if ( ! function_exists( 'tourfic_tour_sanitize_traveler_details' ) ) {
+	/**
+	 * Sanitize nested traveler form values.
+	 *
+	 * @param mixed $value Raw traveler value.
+	 * @return mixed
+	 */
+	function tourfic_tour_sanitize_traveler_details( $value ) {
+		if ( is_array( $value ) ) {
+			$sanitized = array();
+			foreach ( $value as $key => $item ) {
+				$sanitized_key               = is_int( $key ) || ctype_digit( (string) $key ) ? absint( $key ) : sanitize_key( $key );
+				$sanitized[ $sanitized_key ] = tourfic_tour_sanitize_traveler_details( $item );
+			}
+
+			return $sanitized;
+		}
+
+		return is_scalar( $value ) ? sanitize_text_field( (string) $value ) : '';
+	}
+}
+
+if ( ! function_exists( 'tourfic_tour_normalize_file_field_value' ) ) {
 	/**
 	 * Normalize stored file field value.
 	 *
 	 * @param mixed $value Raw value.
 	 * @return array
 	 */
-	function tf_tour_normalize_file_field_value( $value ) {
+	function tourfic_tour_normalize_file_field_value( $value ) {
 		if ( is_object( $value ) ) {
 			$value = (array) $value;
 		}
@@ -613,7 +870,7 @@ if ( ! function_exists( 'tf_tour_normalize_file_field_value' ) ) {
 	}
 }
 
-if ( ! function_exists( 'tf_tour_get_uploaded_traveler_file' ) ) {
+if ( ! function_exists( 'tourfic_tour_get_uploaded_traveler_file' ) ) {
 	/**
 	 * Get nested traveler file upload from request.
 	 *
@@ -622,32 +879,38 @@ if ( ! function_exists( 'tf_tour_get_uploaded_traveler_file' ) ) {
 	 * @param array  $files          Files array.
 	 * @return array|null
 	 */
-	function tf_tour_get_uploaded_traveler_file( $traveler_index, $field_name, $files = array() ) {
-		$files = ! empty( $files ) ? $files : $_FILES; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
-
-		if ( empty( $files['traveller']['name'][ $traveler_index ][ $field_name ] ) ) {
+	function tourfic_tour_get_uploaded_traveler_file( $traveler_index, $field_name, $files = array() ) {
+		if ( empty( $files ) || ! is_array( $files ) || empty( $files['traveller']['name'][ $traveler_index ][ $field_name ] ) ) {
 			return null;
 		}
 
 		return array(
-			'name'     => $files['traveller']['name'][ $traveler_index ][ $field_name ],
-			'type'     => $files['traveller']['type'][ $traveler_index ][ $field_name ],
-			'tmp_name' => $files['traveller']['tmp_name'][ $traveler_index ][ $field_name ],
-			'error'    => $files['traveller']['error'][ $traveler_index ][ $field_name ],
-			'size'     => $files['traveller']['size'][ $traveler_index ][ $field_name ],
+			'name'     => sanitize_file_name( wp_unslash( $files['traveller']['name'][ $traveler_index ][ $field_name ] ) ),
+			'type'     => isset( $files['traveller']['type'][ $traveler_index ][ $field_name ] )
+				? sanitize_mime_type( wp_unslash( $files['traveller']['type'][ $traveler_index ][ $field_name ] ) )
+				: '',
+			'tmp_name' => isset( $files['traveller']['tmp_name'][ $traveler_index ][ $field_name ] )
+				? sanitize_text_field( wp_unslash( $files['traveller']['tmp_name'][ $traveler_index ][ $field_name ] ) )
+				: '',
+			'error'    => isset( $files['traveller']['error'][ $traveler_index ][ $field_name ] )
+				? absint( $files['traveller']['error'][ $traveler_index ][ $field_name ] )
+				: UPLOAD_ERR_NO_FILE,
+			'size'     => isset( $files['traveller']['size'][ $traveler_index ][ $field_name ] )
+				? absint( $files['traveller']['size'][ $traveler_index ][ $field_name ] )
+				: 0,
 		);
 	}
 }
 
-if ( ! function_exists( 'tf_tour_validate_traveler_document_upload' ) ) {
+if ( ! function_exists( 'tourfic_tour_validate_traveler_document_upload' ) ) {
 	/**
 	 * Validate uploaded traveler document.
 	 *
 	 * @param array $file Uploaded file.
 	 * @return true|WP_Error
 	 */
-	function tf_tour_validate_traveler_document_upload( $file ) {
-		if ( ! empty( $file['error'] ) ) {
+	function tourfic_tour_validate_traveler_document_upload( $file ) {
+		if ( empty( $file['name'] ) || empty( $file['tmp_name'] ) || ! empty( $file['error'] ) ) {
 			return new WP_Error( 'tf_traveler_file_upload_error', esc_html__( 'The traveler document upload failed. Please try again.', 'tourfic' ) );
 		}
 
@@ -666,7 +929,7 @@ if ( ! function_exists( 'tf_tour_validate_traveler_document_upload' ) ) {
 	}
 }
 
-if ( ! function_exists( 'tf_tour_unique_traveler_document_filename' ) ) {
+if ( ! function_exists( 'tourfic_tour_unique_traveler_document_filename' ) ) {
 	/**
 	 * Generate a unique traveler document filename.
 	 *
@@ -675,14 +938,14 @@ if ( ! function_exists( 'tf_tour_unique_traveler_document_filename' ) ) {
 	 * @param string $ext  Extension.
 	 * @return string
 	 */
-	function tf_tour_unique_traveler_document_filename( $dir, $name, $ext ) {
+	function tourfic_tour_unique_traveler_document_filename( $dir, $name, $ext ) {
 		unset( $dir, $name );
 
 		return 'tf-traveler-' . wp_generate_password( 16, false, false ) . $ext;
 	}
 }
 
-if ( ! function_exists( 'tf_tour_store_traveler_document_upload' ) ) {
+if ( ! function_exists( 'tourfic_tour_store_traveler_document_upload' ) ) {
 	/**
 	 * Upload and attach a traveler document.
 	 *
@@ -692,15 +955,11 @@ if ( ! function_exists( 'tf_tour_store_traveler_document_upload' ) ) {
 	 * @param int    $traveler_index Traveler index.
 	 * @return array|WP_Error
 	 */
-	function tf_tour_store_traveler_document_upload( $file, $post_id, $field_name, $traveler_index ) {
-		$validation = tf_tour_validate_traveler_document_upload( $file );
+	function tourfic_tour_store_traveler_document_upload( $file, $post_id, $field_name, $traveler_index ) {
+		$validation = tourfic_tour_validate_traveler_document_upload( $file );
 		if ( is_wp_error( $validation ) ) {
 			return $validation;
 		}
-
-		require_once ABSPATH . 'wp-admin/includes/file.php';
-		require_once ABSPATH . 'wp-admin/includes/media.php';
-		require_once ABSPATH . 'wp-admin/includes/image.php';
 
 		$upload = wp_handle_upload(
 			$file,
@@ -712,7 +971,7 @@ if ( ! function_exists( 'tf_tour_store_traveler_document_upload' ) ) {
 					'jpeg' => 'image/jpeg',
 					'png'  => 'image/png',
 				),
-				'unique_filename_callback' => 'tf_tour_unique_traveler_document_filename',
+				'unique_filename_callback' => 'tourfic_tour_unique_traveler_document_filename',
 			)
 		);
 
@@ -747,7 +1006,7 @@ if ( ! function_exists( 'tf_tour_store_traveler_document_upload' ) ) {
 	}
 }
 
-if ( ! function_exists( 'tf_tour_process_traveler_document_fields' ) ) {
+if ( ! function_exists( 'tourfic_tour_process_traveler_document_fields' ) ) {
 	/**
 	 * Process traveler document uploads and preserve existing values.
 	 *
@@ -757,19 +1016,19 @@ if ( ! function_exists( 'tf_tour_process_traveler_document_fields' ) ) {
 	 * @param array $expected_traveler_indexes Traveler indexes expected to have upload fields.
 	 * @return array|WP_Error
 	 */
-	function tf_tour_process_traveler_document_fields(
+	function tourfic_tour_process_traveler_document_fields(
 		$traveler_details,
 		$post_id,
 		$files = array(),
 		$expected_traveler_indexes = array()
 	) {
-		$file_fields = tf_tour_get_file_upload_fields();
+		$file_fields = tourfic_tour_get_file_upload_fields();
 		if ( empty( $file_fields ) ) {
 			return $traveler_details;
 		}
 
 		$traveler_details = is_array( $traveler_details ) ? $traveler_details : array();
-		$files            = ! empty( $files ) ? $files : $_FILES; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+		$files            = is_array( $files ) ? $files : array();
 		$file_indexes     = ! empty( $files['traveller']['name'] ) && is_array( $files['traveller']['name'] )
 			? array_keys( $files['traveller']['name'] )
 			: array();
@@ -793,11 +1052,11 @@ if ( ! function_exists( 'tf_tour_process_traveler_document_fields' ) ) {
 			}
 
 			foreach ( $file_fields as $field_name => $field ) {
-				$uploaded_file = tf_tour_get_uploaded_traveler_file( $traveler_index, $field_name, $files );
-				$existing_file = ! empty( $traveler_data[ $field_name ] ) ? tf_tour_normalize_file_field_value( $traveler_data[ $field_name ] ) : array();
+				$uploaded_file = tourfic_tour_get_uploaded_traveler_file( $traveler_index, $field_name, $files );
+				$existing_file = ! empty( $traveler_data[ $field_name ] ) ? tourfic_tour_normalize_file_field_value( $traveler_data[ $field_name ] ) : array();
 
 				if ( ! empty( $uploaded_file ) ) {
-					$stored_file = tf_tour_store_traveler_document_upload( $uploaded_file, $post_id, $field_name, $traveler_index );
+					$stored_file = tourfic_tour_store_traveler_document_upload( $uploaded_file, $post_id, $field_name, $traveler_index );
 					if ( is_wp_error( $stored_file ) ) {
 						return $stored_file;
 					}
@@ -821,7 +1080,7 @@ if ( ! function_exists( 'tf_tour_process_traveler_document_fields' ) ) {
 	}
 }
 
-if ( ! function_exists( 'tf_tour_get_traveler_field_value' ) ) {
+if ( ! function_exists( 'tourfic_tour_get_traveler_field_value' ) ) {
 	/**
 	 * Get a traveler field value by normalized field name.
 	 *
@@ -829,7 +1088,7 @@ if ( ! function_exists( 'tf_tour_get_traveler_field_value' ) ) {
 	 * @param string $field_name     Normalized field name.
 	 * @return mixed|null
 	 */
-	function tf_tour_get_traveler_field_value( $traveler_data, $field_name ) {
+	function tourfic_tour_get_traveler_field_value( $traveler_data, $field_name ) {
 		if ( ! is_array( $traveler_data ) ) {
 			return null;
 		}
@@ -848,7 +1107,7 @@ if ( ! function_exists( 'tf_tour_get_traveler_field_value' ) ) {
 	}
 }
 
-if ( ! function_exists( 'tf_tour_validate_traveler_age_limits' ) ) {
+if ( ! function_exists( 'tourfic_tour_validate_traveler_age_limits' ) ) {
 	/**
 	 * Validate traveler ages against passenger types.
 	 *
@@ -860,9 +1119,9 @@ if ( ! function_exists( 'tf_tour_validate_traveler_age_limits' ) ) {
 	 * @param bool   $require_traveler_fields Whether expected traveler fields must be present.
 	 * @return true|WP_Error
 	 */
-	function tf_tour_validate_traveler_age_limits( $traveler_details, $adults, $children, $infants, $tour_date, $require_traveler_fields = false ) {
-		$settings    = tf_tour_get_age_validation_settings();
-		$field_names = tf_tour_get_age_validation_field_names();
+	function tourfic_tour_validate_traveler_age_limits( $traveler_details, $adults, $children, $infants, $tour_date, $require_traveler_fields = false ) {
+		$settings    = tourfic_tour_get_age_validation_settings();
+		$field_names = tourfic_tour_get_age_validation_field_names();
 
 		if ( empty( $settings['enabled'] ) || empty( $field_names ) ) {
 			return true;
@@ -873,14 +1132,14 @@ if ( ! function_exists( 'tf_tour_validate_traveler_age_limits' ) ) {
 			return true;
 		}
 
-		$type_map       = tf_tour_get_passenger_type_map( $adults, $children, $infants );
+		$type_map       = tourfic_tour_get_passenger_type_map( $adults, $children, $infants );
 		$traveler_details = is_array( $traveler_details ) ? $traveler_details : array();
 
 		if ( empty( $traveler_details ) && ! $require_traveler_fields ) {
 			return true;
 		}
 
-		$reference_date = tf_tour_parse_user_date( $tour_date );
+		$reference_date = tourfic_tour_parse_user_date( $tour_date );
 		if ( ! $reference_date instanceof DateTimeImmutable ) {
 			return new WP_Error( 'tf_traveler_booking_date_required', esc_html__( 'You must select booking date', 'tourfic' ) );
 		}
@@ -905,7 +1164,7 @@ if ( ! function_exists( 'tf_tour_validate_traveler_age_limits' ) ) {
 			}
 
 			foreach ( $field_names as $field_name ) {
-				$field_value = tf_tour_get_traveler_field_value( $traveler_data, $field_name );
+				$field_value = tourfic_tour_get_traveler_field_value( $traveler_data, $field_name );
 				if ( empty( $field_value ) || is_array( $field_value ) ) {
 					if ( $require_traveler_fields ) {
 						return new WP_Error( 'tf_traveler_age_mismatch', esc_html__( 'The entered date of birth does not match the selected passenger type.', 'tourfic' ) );
@@ -914,8 +1173,8 @@ if ( ! function_exists( 'tf_tour_validate_traveler_age_limits' ) ) {
 					continue;
 				}
 
-				$age = tf_tour_calculate_age( $field_value, $reference_time );
-				if ( null === $age || ! tf_tour_age_matches_passenger_type( $passenger_type, $age ) ) {
+				$age = tourfic_tour_calculate_age( $field_value, $reference_time );
+				if ( null === $age || ! tourfic_tour_age_matches_passenger_type( $passenger_type, $age ) ) {
 					return new WP_Error( 'tf_traveler_age_mismatch', esc_html__( 'The entered date of birth does not match the selected passenger type.', 'tourfic' ) );
 				}
 			}
@@ -925,58 +1184,91 @@ if ( ! function_exists( 'tf_tour_validate_traveler_age_limits' ) ) {
 	}
 }
 
-if ( ! function_exists( 'tf_tour_user_can_manage_traveler_documents' ) ) {
+if ( ! function_exists( 'tourfic_tour_user_can_manage_traveler_documents' ) ) {
 	/**
-	 * Check if current user can manage traveler documents.
+	 * Check if the current user can access a traveler document attachment.
 	 *
+	 * @param int $attachment_id Attachment ID.
 	 * @return bool
 	 */
-	function tf_tour_user_can_manage_traveler_documents() {
-		return current_user_can( 'manage_options' ) || current_user_can( 'tf_manager_options' ) || current_user_can( 'tf_vendor_options' );
+	function tourfic_tour_user_can_manage_traveler_documents( $attachment_id ) {
+		$attachment_id = absint( $attachment_id );
+		$attachment     = $attachment_id ? get_post( $attachment_id ) : null;
+		if ( ! $attachment || 'attachment' !== $attachment->post_type || 'private' !== $attachment->post_status ) {
+			return false;
+		}
+
+		$tour_id = absint( get_post_meta( $attachment_id, '_tf_traveler_document_post_id', true ) );
+		if ( ! $tour_id || 'tf_tours' !== get_post_type( $tour_id ) ) {
+			return false;
+		}
+
+		if ( current_user_can( 'manage_options' ) ) {
+			return true;
+		}
+
+		if ( ! current_user_can( 'edit_post', $tour_id ) ) {
+			return false;
+		}
+
+		$user = wp_get_current_user();
+		if ( in_array( 'tf_vendor', (array) $user->roles, true ) ) {
+			return absint( get_post_field( 'post_author', $tour_id ) ) === get_current_user_id();
+		}
+
+		return current_user_can( 'tf_manager_options' ) || current_user_can( 'edit_tf_tourss' );
 	}
 }
 
-if ( ! function_exists( 'tf_tour_get_traveler_document_download_url' ) ) {
+if ( ! function_exists( 'tourfic_tour_get_traveler_document_download_url' ) ) {
 	/**
 	 * Get secure download URL for traveler document.
 	 *
 	 * @param int $attachment_id Attachment ID.
 	 * @return string
 	 */
-	function tf_tour_get_traveler_document_download_url( $attachment_id ) {
+	function tourfic_tour_get_traveler_document_download_url( $attachment_id ) {
 		$attachment_id = absint( $attachment_id );
-		if ( $attachment_id <= 0 ) {
+		if ( $attachment_id <= 0 || ! tourfic_tour_user_can_manage_traveler_documents( $attachment_id ) ) {
 			return '';
 		}
 
 		return wp_nonce_url(
-			admin_url( 'admin-post.php?action=tf_download_traveler_document&attachment_id=' . $attachment_id ),
-			'tf_download_traveler_document_' . $attachment_id
+			admin_url( 'admin-post.php?action=tourfic_download_traveler_document&attachment_id=' . $attachment_id ),
+			'tourfic_download_traveler_document_' . $attachment_id
 		);
 	}
 }
 
-if ( ! function_exists( 'tf_download_traveler_document' ) ) {
+if ( ! function_exists( 'tourfic_download_traveler_document' ) ) {
 	/**
 	 * Download a traveler document.
 	 *
 	 * @return void
 	 */
-	function tf_download_traveler_document() {
-		if ( ! tf_tour_user_can_manage_traveler_documents() ) {
-			wp_die( esc_html__( 'You do not have permission to download this file.', 'tourfic' ) );
-		}
-
+	function tourfic_download_traveler_document() {
 		$attachment_id = isset( $_GET['attachment_id'] ) ? absint( wp_unslash( $_GET['attachment_id'] ) ) : 0;
 		$nonce         = isset( $_GET['_wpnonce'] ) ? sanitize_text_field( wp_unslash( $_GET['_wpnonce'] ) ) : '';
 
-		if ( $attachment_id <= 0 || ! wp_verify_nonce( $nonce, 'tf_download_traveler_document_' . $attachment_id ) ) {
+		if ( $attachment_id <= 0 || ! wp_verify_nonce( $nonce, 'tourfic_download_traveler_document_' . $attachment_id ) ) {
 			wp_die( esc_html__( 'Invalid download request.', 'tourfic' ) );
+		}
+
+		if ( ! tourfic_tour_user_can_manage_traveler_documents( $attachment_id ) ) {
+			wp_die( esc_html__( 'You do not have permission to download this file.', 'tourfic' ) );
 		}
 
 		$file_path = get_attached_file( $attachment_id );
 		if ( empty( $file_path ) || ! file_exists( $file_path ) ) {
 			wp_die( esc_html__( 'The requested file is no longer available.', 'tourfic' ) );
+		}
+
+		WP_Filesystem();
+
+		global $wp_filesystem;
+		$file_contents = $wp_filesystem->get_contents( $file_path );
+		if ( false === $file_contents ) {
+			wp_die( esc_html__( 'The requested file could not be read.', 'tourfic' ) );
 		}
 
 		$file_name = get_post_meta( $attachment_id, '_tf_traveler_document_original_filename', true );
@@ -989,28 +1281,29 @@ if ( ! function_exists( 'tf_download_traveler_document' ) ) {
 		header( 'X-Content-Type-Options: nosniff' );
 		header( 'Content-Type: ' . $mime_type );
 		header( 'Content-Disposition: attachment; filename="' . $file_name . '"' );
-		header( 'Content-Length: ' . filesize( $file_path ) );
+		header( 'Content-Length: ' . strlen( $file_contents ) );
 
-		readfile( $file_path );
+		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Binary file contents must be sent unchanged.
+		echo $file_contents;
 		exit;
 	}
 }
-add_action( 'admin_post_tf_download_traveler_document', 'tf_download_traveler_document' );
+add_action( 'admin_post_tourfic_download_traveler_document', 'tourfic_download_traveler_document' );
 
 /**
  * Car Functions
  */
-if ( file_exists( TF_INC_PATH . 'functions/functions-car.php' ) ) {
-	require_once TF_INC_PATH . 'functions/functions-car.php';
+if ( file_exists( TOURFIC_INC_PATH . 'functions/functions-car.php' ) ) {
+	require_once TOURFIC_INC_PATH . 'functions/functions-car.php';
 } else {
-	tf_file_missing( TF_INC_PATH . 'functions/functions-car.php' );
+	tourfic_file_missing( TOURFIC_INC_PATH . 'functions/functions-car.php' );
 }
 
 /*
  * Temporary functions
  */
-if(!function_exists('tf_data_types')){
-	function tf_data_types( $var ) {
+if(!function_exists('tourfic_data_types')){
+	function tourfic_data_types( $var ) {
 		if ( ! empty( $var ) && gettype( $var ) == "string" ) {
 			$tf_serialize_date = preg_replace_callback( '!s:(\d+):"(.*?)";!', function ( $match ) {
 				return ( $match[1] == strlen( $match[2] ) ) ? $match[0] : 's:' . strlen( $match[2] ) . ':"' . $match[2] . '";';
@@ -1037,8 +1330,8 @@ if(!function_exists('tourfic_character_limit_callback')){
 	}
 }
 
-if(!function_exists('tf_is_search_form_tab_type')){
-	function tf_is_search_form_tab_type( $type, $type_arr ) {
+if(!function_exists('tourfic_is_search_form_tab_type')){
+	function tourfic_is_search_form_tab_type( $type, $type_arr ) {
 		if ( in_array( $type, $type_arr ) || in_array( 'all', $type_arr ) ) {
 			return true;
 		}
@@ -1047,8 +1340,8 @@ if(!function_exists('tf_is_search_form_tab_type')){
 	}
 }
 
-if(!function_exists('tf_is_search_form_single_tab')){
-	function tf_is_search_form_single_tab( $type_arr ) {
+if(!function_exists('tourfic_is_search_form_single_tab')){
+	function tourfic_is_search_form_single_tab( $type_arr ) {
 		if ( count( $type_arr ) === 1 && $type_arr[0] !== 'all' ) {
 			return true;
 		}
@@ -1074,101 +1367,50 @@ if(!function_exists('tourfic_order_table_data')){
 			return \Tourfic\Classes\Helper::tourfic_order_table_data( $query );
 		}
 
-		global $wpdb;
-		$query_type          = sanitize_key( $query['post_type'] );
-		$query_select        = '*' === trim( $query['select'] ) ? '*' : preg_replace( '/[^a-zA-Z0-9_, ]/', '', $query['select'] );
-		$values              = array( $query_type );
-		$query_where         = '';
-
-		if ( isset( $query['where'] ) && is_array( $query['where'] ) ) {
-			$allowed_columns = array(
-				'order_id'    => '%d',
-				'post_id'     => '%d',
-				'customer_id' => '%d',
-				'room_id'     => '%s',
-				'ostatus'     => '%s',
-				'checkinout'  => '%s',
-			);
-
-			foreach ( $query['where'] as $column => $value ) {
-				if ( ! isset( $allowed_columns[ $column ] ) || '' === $value || null === $value ) {
-					continue;
-				}
-
-				$query_where .= " AND {$column} = {$allowed_columns[ $column ]}";
-				$values[]     = '%d' === $allowed_columns[ $column ] ? absint( $value ) : sanitize_text_field( $value );
-			}
-		}
-
-		if ( ! empty( $query['orderby'] ) ) {
-			$allowed_orderby = array( 'id', 'order_id', 'order_date', 'check_in', 'check_out' );
-			$orderby         = sanitize_key( $query['orderby'] );
-			if ( in_array( $orderby, $allowed_orderby, true ) ) {
-				$order        = ! empty( $query['order'] ) && 'ASC' === strtoupper( $query['order'] ) ? 'ASC' : 'DESC';
-				$query_where .= " ORDER BY {$orderby} {$order}";
-			}
-		}
-
-		$tf_tour_book_orders = $wpdb->get_results( $wpdb->prepare( "SELECT $query_select FROM {$wpdb->prefix}tf_order_data WHERE post_type = %s $query_where", $values ), ARRAY_A );
-
-		return $tf_tour_book_orders;
+		return array();
 	}
 }
 
 if ( ! function_exists( 'tourfic_get_user_order_table_data' ) ) {
 	function tourfic_get_user_order_table_data( $query ) {
 		global $wpdb;
-		$query_select   = $query['select'];
-		$query_type     = $query['post_type'];
-		$query_customer = $query['customer_id']; // Change from 'author' to 'customer_id'
-		$query_limit    = $query['limit'];
+		$allowed_post_types = array( 'hotel', 'tour', 'apartment', 'car', 'room' );
+		$query_types        = array_map( 'sanitize_key', (array) ( $query['post_type'] ?? array() ) );
+		$query_types        = array_values( array_intersect( $query_types, $allowed_post_types ) );
+		$query_customer     = absint( $query['customer_id'] ?? 0 );
+		$orders_result      = array();
 
-		// Adjust the query to use customer_id instead of post_author
-		if ( ! is_array( $query_type ) ) {
-			$orders_result = $wpdb->get_results($wpdb->prepare(
-				"SELECT $query_select FROM {$wpdb->prefix}tf_order_data WHERE post_type = %s AND customer_id = %d ORDER BY order_id DESC $query_limit",
-				$query_type, $query_customer
-			), ARRAY_A );
-		} else {
-			$orders_result = $wpdb->get_results($wpdb->prepare(
-				"SELECT $query_select FROM {$wpdb->prefix}tf_order_data WHERE post_type IN (" . implode( ',', array_fill( 0, count( $query_type ), '%s' ) ) . ") AND customer_id = %d ORDER BY order_id DESC $query_limit",
-				array_merge( $query_type, array( $query_customer ) ) // Add customer_id to the array
-			), ARRAY_A );
+		if ( empty( $query_types ) || empty( $query_customer ) ) {
+			return $orders_result;
 		}
+
+		foreach ( $query_types as $query_type ) {
+			$type_orders   = $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+				$wpdb->prepare(
+					"SELECT * FROM {$wpdb->prefix}tf_order_data WHERE post_type = %s AND customer_id = %d ORDER BY order_id DESC",
+					$query_type,
+					$query_customer
+				),
+				ARRAY_A
+			);
+			$orders_result = array_merge( $orders_result, $type_orders );
+		}
+
+		usort(
+			$orders_result,
+			function ( $first_order, $second_order ) {
+				return absint( $second_order['order_id'] ) <=> absint( $first_order['order_id'] );
+			}
+		);
 
 		return $orders_result;
 	}
 }
 
-if(!function_exists('tf_affiliate_callback')){
-	function tf_affiliate_callback() {
-		if ( current_user_can( 'activate_plugins' ) ) {
-			?>
-			<div class="tf-field tf-field-notice" style="width:100%;">
-				<div class="tf-fieldset" style="margin: 0px;">
-					<div class="tf-field-notice-inner tf-notice-info">
-						<div class="tf-field-notice-content has-content">
-							<?php if ( ! is_plugin_active( 'tourfic-affiliate/tourfic-affiliate.php' ) && ! file_exists( WP_PLUGIN_DIR . '/tourfic-affiliate/tourfic-affiliate.php' ) ) : ?>
-								<span style="margin-right: 15px;"><?php echo esc_html__( "Tourfic affiliate addon is not installed. Please install and activate it to use this feature.", "tourfic" ); ?> </span>
-								<a target="_blank" href="https://portal.themefic.com/my-account/downloads" class="tf-admin-btn tf-btn-secondary tf-submit-btn"
-								   style="margin-top: 5px;"><?php echo esc_html__( "Download", "tourfic" ); ?></a>
-							<?php elseif ( ! is_plugin_active( 'tourfic-affiliate/tourfic-affiliate.php' ) && file_exists( WP_PLUGIN_DIR . '/tourfic-affiliate/tourfic-affiliate.php' ) ) : ?>
-								<span style="margin-right: 15px;"><?php echo esc_html__( "Tourfic affiliate addon is not activated. Please activate it to use this feature.", "tourfic" ); ?> </span>
-								<a href="#" class="tf-admin-btn tf-btn-secondary tf-affiliate-active" style="margin-top: 5px;"><?php echo esc_html__( 'Activate Tourfic Affiliate', 'tourfic' ); ?></a>
-							<?php endif; ?>
-						</div>
-					</div>
-				</div>
-			</div>
-			<?php
-		}
-	}
-}
-
-if(!function_exists('tf_set_order')){
-	function tf_set_order( $order_data ) {
+if(!function_exists('tourfic_set_order')){
+	function tourfic_set_order( $order_data ) {
 		global $wpdb;
-		$all_order_ids = $wpdb->get_col( "SELECT order_id FROM {$wpdb->prefix}tf_order_data" );
+		$all_order_ids = $wpdb->get_col( "SELECT order_id FROM {$wpdb->prefix}tf_order_data" ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		do {
 			$order_id = wp_rand( 10000000, 99999999 );
 		} while ( in_array( $order_id, $all_order_ids ) );
@@ -1191,7 +1433,7 @@ if(!function_exists('tf_set_order')){
 
 		$order_data = wp_parse_args( $order_data, $defaults );
 
-		$wpdb->query(
+		$wpdb->query( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 			$wpdb->prepare(
 				"INSERT INTO {$wpdb->prefix}tf_order_data
 				( order_id, post_id, post_type, room_number, check_in, check_out, billing_details, shipping_details, order_details, customer_id, payment_method, ostatus, order_date )
@@ -1218,9 +1460,9 @@ if(!function_exists('tf_set_order')){
 	}
 }
 
-if(!function_exists('tf_custom_wp_kses_allow_tags')){
-	function tf_custom_wp_kses_allow_tags() {
-		// Allow all HTML tags and attributes
+if(!function_exists('tourfic_custom_wp_kses_allow_tags')){
+	function tourfic_custom_wp_kses_allow_tags() {
+		// Extend post HTML for Tourfic-generated form controls and SVG icons.
 		$allowed_tags = wp_kses_allowed_html( 'post' );
 
 		// Add form-related tags to the allowed tags
@@ -1293,14 +1535,6 @@ if(!function_exists('tf_custom_wp_kses_allow_tags')){
 			'id'    => true,
 		);
 
-		$allowed_tags['script'] = array(
-			'src'   => true,
-			'type'  => true,
-			'class' => true,
-			'id'    => true,
-			'async' => true,
-			'defer' => true,
-		);
 		$allowed_tags['button'] = array(
 			'class'    => true,
 			'id'       => true,
@@ -1308,25 +1542,6 @@ if(!function_exists('tf_custom_wp_kses_allow_tags')){
 			'data-*'   => true,
 
 		);
-		$allowed_tags['style']  = array(
-			'class' => true,
-			'id'    => true,
-		);
-
-		$allowed_tags['iframe'] = array(
-			'class'           => true,
-			'id'              => true,
-			'allowfullscreen' => true,
-			'frameborder'     => true,
-			'src'             => true,
-			'style'           => true,
-			'width'           => true,
-			'height'          => true,
-			'title'           => true,
-			'allow'           => true,
-			'data-*'          => true,
-		);
-
 		$allowed_tags["svg"] = array(
 			'class'           => true,
 			'aria-hidden'     => true,
@@ -1393,7 +1608,7 @@ if(!function_exists('tf_custom_wp_kses_allow_tags')){
 	}
 }
 
-if ( ! function_exists( 'tf_split_date_range' ) ) {
+if ( ! function_exists( 'tourfic_split_date_range' ) ) {
 	/**
 	 * Split a Tourfic date range into start and end dates.
 	 *
@@ -1405,7 +1620,7 @@ if ( ! function_exists( 'tf_split_date_range' ) ) {
 	 * @param bool   $single_date_as_range Whether a single date should be returned as both start and end.
 	 * @return array{0:string,1:string}
 	 */
-	function tf_split_date_range( $date_range, $single_date_as_range = true ) {
+	function tourfic_split_date_range( $date_range, $single_date_as_range = true ) {
 		$date_range = sanitize_text_field( (string) $date_range );
 		$date_range = trim( preg_replace( '/\s+/u', ' ', $date_range ) );
 
@@ -1451,8 +1666,8 @@ if ( ! function_exists( 'tf_split_date_range' ) ) {
 	}
 }
 
-if(!function_exists('tf_convert_date_format')) {
-	function tf_convert_date_format( $date, $currentFormat ) {
+if(!function_exists('tourfic_convert_date_format')) {
+	function tourfic_convert_date_format( $date, $currentFormat ) {
 		$dateTime = DateTime::createFromFormat( $currentFormat, $date );
 
 		if ( $dateTime === false ) {
@@ -1463,8 +1678,8 @@ if(!function_exists('tf_convert_date_format')) {
 	}
 }
 
-if(!function_exists('tf_tour_date_format_changer')) {
-	function tf_tour_date_format_changer($date, $format) {
+if(!function_exists('tourfic_tour_date_format_changer')) {
+	function tourfic_tour_date_format_changer($date, $format) {
 		if(!empty($date) && !empty($format)) {
 			$date = new DateTime($date);
 			$formattedDate = $date->format($format);
@@ -1474,7 +1689,7 @@ if(!function_exists('tf_tour_date_format_changer')) {
 		} else return;
 	}
 }
-function tf_normalize_date( $date ) {
+function tourfic_normalize_date( $date ) {
     $date = sanitize_text_field( $date );
     if ( empty( $date ) ) {
         return '';
@@ -1499,31 +1714,30 @@ function tf_normalize_date( $date ) {
 /**
  * Remove room order ids
  */
-function tf_remove_order_ids_from_room() {
-    $title = esc_html__( "Reset Room Availability", "tourfic" );
+function tourfic_remove_order_ids_from_room() {
+	$title = esc_html__( 'Reset Room Availability', 'tourfic' );
     $subtitle = wp_kses_post(
         sprintf(
             __( 'Remove order ids linked with this room.<br><b style="color: red;">Be aware! It is irreversible!</b>', 'tourfic' ),
         )
     );
 
-    $button_text = esc_html__( "Reset", "tourfic" );
-
-    echo '
-    <div class="csf-title">
-        <h4>' . $title . '</h4>
-        <div class="csf-subtitle-text">' . $subtitle . '</div>
-    </div>
-    <div class="csf-fieldset">
-        <button type="button" class="button button-large tf-order-remove remove-order-ids">' . $button_text . '</button>
-    </div>
-    <div class="clear"></div>
-    ';
+	$button_text = esc_html__( 'Reset', 'tourfic' );
+	?>
+	<div class="csf-title">
+		<h4><?php echo esc_html( $title ); ?></h4>
+		<div class="csf-subtitle-text"><?php echo wp_kses_post( $subtitle ); ?></div>
+	</div>
+	<div class="csf-fieldset">
+		<button type="button" class="button button-large tf-order-remove remove-order-ids"><?php echo esc_html( $button_text ); ?></button>
+	</div>
+	<div class="clear"></div>
+	<?php
 }
 
 
-if ( ! function_exists( 'tf_get_room_unit_capacity_values' ) ) {
-	function tf_get_room_unit_capacity_values( array $rooms_meta, $capacity_key ) {
+if ( ! function_exists( 'tourfic_get_room_unit_capacity_values' ) ) {
+	function tourfic_get_room_unit_capacity_values( array $rooms_meta, $capacity_key ) {
 		$capacity_values = array();
 
 		foreach ( $rooms_meta as $room_meta ) {
@@ -1541,8 +1755,8 @@ if ( ! function_exists( 'tf_get_room_unit_capacity_values' ) ) {
 	}
 }
 
-if ( ! function_exists( 'tf_get_total_room_units' ) ) {
-	function tf_get_total_room_units( array $rooms_meta ) {
+if ( ! function_exists( 'tourfic_get_total_room_units' ) ) {
+	function tourfic_get_total_room_units( array $rooms_meta ) {
 		$total_room_units = 0;
 
 		foreach ( $rooms_meta as $room_meta ) {
@@ -1553,8 +1767,8 @@ if ( ! function_exists( 'tf_get_total_room_units' ) ) {
 	}
 }
 
-if ( ! function_exists( 'tf_room_unit_capacity_passes' ) ) {
-	function tf_room_unit_capacity_passes( array $capacity_values, $requested_people, $requested_rooms ) {
+if ( ! function_exists( 'tourfic_room_unit_capacity_passes' ) ) {
+	function tourfic_room_unit_capacity_passes( array $capacity_values, $requested_people, $requested_rooms ) {
 		if ( empty( $requested_people ) ) {
 			return true;
 		}
@@ -1569,8 +1783,8 @@ if ( ! function_exists( 'tf_room_unit_capacity_passes' ) ) {
 	}
 }
 
-if ( ! function_exists( 'tf_filter_room_metas_available_for_period' ) ) {
-	function tf_filter_room_metas_available_for_period( array $rooms_meta, array $date_strings ) {
+if ( ! function_exists( 'tourfic_filter_room_metas_available_for_period' ) ) {
+	function tourfic_filter_room_metas_available_for_period( array $rooms_meta, array $date_strings ) {
 		if ( empty( $date_strings ) ) {
 			return $rooms_meta;
 		}
@@ -1585,8 +1799,8 @@ if ( ! function_exists( 'tf_filter_room_metas_available_for_period' ) ) {
 	}
 }
 
-if(!function_exists('tf_filter_hotel_by_date')) {
-	function tf_filter_hotel_by_date( $period, array &$not_found, array $data = [] ): void {
+if(!function_exists('tourfic_filter_hotel_by_date')) {
+	function tourfic_filter_hotel_by_date( $period, array &$not_found, array $data = [] ): void {
 
 		// Form Data
 		if ( isset( $data[4] ) && isset( $data[5] ) ) {
@@ -1630,16 +1844,16 @@ if(!function_exists('tf_filter_hotel_by_date')) {
 			}
 		}
 
-		$capacity_rooms_meta = tf_filter_room_metas_available_for_period( $rooms_meta, $searching_period );
-		$adult_capacities = tf_get_room_unit_capacity_values( $capacity_rooms_meta, 'adult' );
-		$adult_capacity_pass = tf_room_unit_capacity_passes( $adult_capacities, $adults, $requested_rooms );
+		$capacity_rooms_meta = tourfic_filter_room_metas_available_for_period( $rooms_meta, $searching_period );
+		$adult_capacities = tourfic_get_room_unit_capacity_values( $capacity_rooms_meta, 'adult' );
+		$adult_capacity_pass = tourfic_room_unit_capacity_passes( $adult_capacities, $adults, $requested_rooms );
 		$adult_result = ! empty( $adult_capacities );
 
-		$child_capacities = tf_get_room_unit_capacity_values( $capacity_rooms_meta, 'child' );
-		$child_capacity_pass = tf_room_unit_capacity_passes( $child_capacities, $child, $requested_rooms );
+		$child_capacities = tourfic_get_room_unit_capacity_values( $capacity_rooms_meta, 'child' );
+		$child_capacity_pass = tourfic_room_unit_capacity_passes( $child_capacities, $child, $requested_rooms );
 		$childs_result = ! empty( $child_capacities );
 
-		$total_room_units = tf_get_total_room_units( $capacity_rooms_meta );
+		$total_room_units = tourfic_get_total_room_units( $capacity_rooms_meta );
 		$room_validation = $total_room_units >= $requested_rooms;
 
 		// If adult and child number validation is true proceed
@@ -1860,36 +2074,36 @@ if(!function_exists('tf_filter_hotel_by_date')) {
 }
 
 //review temp functions
-if(!function_exists('tf_calculate_comments_rating')){
-	function tf_calculate_comments_rating( $comments, &$tf_overall_rate, &$total_rating ) {
+if(!function_exists('tourfic_calculate_comments_rating')){
+	function tourfic_calculate_comments_rating( $comments, &$tf_overall_rate, &$total_rating ) {
 
         $tf_overall_rate = [];
         foreach ( $comments as $comment ) {
-            tf_calculate_user_ratings( $comment, $tf_overall_rate, $total_rating );
+            tourfic_calculate_user_ratings( $comment, $tf_overall_rate, $total_rating );
     
         }
-        $total_rating = tf_average_ratings( $total_rating );
+        $total_rating = tourfic_average_ratings( $total_rating );
     
     }
 }
 
-if(!function_exists('tf_calculate_user_ratings')){
-	function tf_calculate_user_ratings( $comment, &$overall_rating, &$total_rate ) {
+if(!function_exists('tourfic_calculate_user_ratings')){
+	function tourfic_calculate_user_ratings( $comment, &$overall_rating, &$total_rate ) {
         if ( ! is_array( $total_rate ) ) {
             $total_rate = array();
         }
-        $tf_comment_meta = get_comment_meta( $comment->comment_ID, TF_COMMENT_META, true );
-        $tf_base_rate    = get_comment_meta( $comment->comment_ID, TF_BASE_RATE, true );
+        $tf_comment_meta = get_comment_meta( $comment->comment_ID, TOURFIC_COMMENT_META, true );
+        $tf_base_rate    = get_comment_meta( $comment->comment_ID, TOURFIC_BASE_RATE, true );
     
         if ( $tf_comment_meta ) {
-            $total_rate[] = tf_average_rating_change_on_base( tf_average_ratings( $tf_comment_meta ), $tf_base_rate );
+            $total_rate[] = tourfic_average_rating_change_on_base( tourfic_average_ratings( $tf_comment_meta ), $tf_base_rate );
     
             foreach ( $tf_comment_meta as $key => $ratings ) {
                 // calculate rate
-                $ratings = tf_average_rating_change_on_base( $ratings, $tf_base_rate );
+                $ratings = tourfic_average_rating_change_on_base( $ratings, $tf_base_rate );
     
                 if ( is_array( $ratings ) ) {
-                    $overall_rating[ $key ][] = tf_average_ratings( $ratings );
+                    $overall_rating[ $key ][] = tourfic_average_ratings( $ratings );
                 } else {
                     $overall_rating[ $key ][] = $ratings;
                 }
@@ -1899,8 +2113,8 @@ if(!function_exists('tf_calculate_user_ratings')){
     }
 }
 
-if(!function_exists('tf_average_ratings')){
-	function tf_average_ratings( $ratings = [] ) {
+if(!function_exists('tourfic_average_ratings')){
+	function tourfic_average_ratings( $ratings = [] ) {
 
         if ( ! $ratings ) {
             return 0;
@@ -1921,8 +2135,8 @@ if(!function_exists('tf_average_ratings')){
     }
 }
 
-if(!function_exists('tf_average_rating_change_on_base')){
-	function tf_average_rating_change_on_base( $rating, $base_rate = 5 ) {
+if(!function_exists('tourfic_average_rating_change_on_base')){
+	function tourfic_average_rating_change_on_base( $rating, $base_rate = 5 ) {
 
         $settings_base = ! empty ( Helper::tfopt( 'r-base' ) ) ? Helper::tfopt( 'r-base' ) : 5;
         $base_rate     = ! empty ( $base_rate ) ? $base_rate : 5;
@@ -1941,8 +2155,8 @@ if(!function_exists('tf_average_rating_change_on_base')){
 
 // Admin Color Palette
 
-if(!function_exists('tf_custom_color_palette_values')){
-	function tf_custom_color_palette_values(){
+if(!function_exists('tourfic_custom_color_palette_values')){
+	function tourfic_custom_color_palette_values(){
 		$tf_brand_data = ! empty( Helper::tf_data_types( Helper::tfopt( "tf-custom-brand" ) ) ) ? Helper::tf_data_types( Helper::tfopt( "tf-custom-brand" ) ) : [];
 		$tf_text_data = ! empty( Helper::tf_data_types( Helper::tfopt( "tf-custom-text" ) ) ) ? Helper::tf_data_types( Helper::tfopt( "tf-custom-text" ) ) : [];
 		
@@ -1960,9 +2174,10 @@ if(!function_exists('tf_custom_color_palette_values')){
 	}
 }
 
-function tf_get_main_post_meta($translated_post_id, $meta_key) {
+function tourfic_get_main_post_meta($translated_post_id, $meta_key) {
 	if (function_exists('wpml_get_default_language')) {
 		$default_lang = wpml_get_default_language();
+		// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- WPML-owned hook.
 		$main_post_id = apply_filters('wpml_object_id', $translated_post_id, 'tf_hotel', false, $default_lang);
 	} else {
 		$main_post_id = $translated_post_id;
@@ -1971,9 +2186,10 @@ function tf_get_main_post_meta($translated_post_id, $meta_key) {
 	return get_post_meta($main_post_id, $meta_key, true);
 }
 
-function tf_update_main_post_meta($translated_post_id, $meta_key, $value) {
+function tourfic_update_main_post_meta($translated_post_id, $meta_key, $value) {
 	if (function_exists('wpml_get_default_language')) {
 		$default_lang = wpml_get_default_language();
+		// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- WPML-owned hook.
 		$main_post_id = apply_filters('wpml_object_id', $translated_post_id, 'tf_hotel', false, $default_lang);
 	} else {
 		$main_post_id = $translated_post_id;

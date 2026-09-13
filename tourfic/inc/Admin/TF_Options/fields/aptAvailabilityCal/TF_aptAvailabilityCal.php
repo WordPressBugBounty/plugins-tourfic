@@ -4,8 +4,8 @@ defined( 'ABSPATH' ) || exit;
 
 use \Tourfic\Classes\Helper;
 
-if ( ! class_exists( 'TF_aptAvailabilityCal' ) ) {
-	class TF_aptAvailabilityCal extends TF_Fields {
+if ( ! class_exists( 'Tourfic_aptAvailabilityCal' ) ) {
+	class Tourfic_aptAvailabilityCal extends Tourfic_Fields {
 
 		public function __construct( $field, $value = '', $settings_id = '', $parent_field = '' ) {
 			parent::__construct( $field, $value, $settings_id, $parent_field );
@@ -17,8 +17,8 @@ if ( ! class_exists( 'TF_aptAvailabilityCal' ) ) {
 			if ( $post_type !== 'tf_apartment' ) {
 				return;
 			}
-			$meta         = get_post_meta( $post->ID, 'tf_apartment_opt', true );
-			$pricing_type = ! empty( $meta['pricing_type'] ) ? $meta['pricing_type'] : 'per_night';
+			$meta            = get_post_meta( $post->ID, 'tf_apartment_opt', true );
+			$show_base_price = (bool) apply_filters( 'tourfic_apartment_availability_show_base_price', true, $meta, $post->ID );
 			if ( Helper::tf_is_woo_active() ) {
 				?>
                 <div class="tf-apt-cal-wrap">
@@ -41,26 +41,14 @@ if ( ! class_exists( 'TF_aptAvailabilityCal' ) ) {
                             </div>
                         </div>
 
-                        <div class="tf-field-number tf-price-by-night" style="display: <?php echo esc_attr( $pricing_type == 'per_night' ? 'block' : 'none' ) ?>; width: calc(50% - 12px)">
+                        <div class="tf-field-number tf-price-by-night" style="display: <?php echo $show_base_price ? 'block' : 'none'; ?>; width: calc(50% - 12px)">
                             <label class="tf-field-label"><?php echo esc_html__( 'Price', 'tourfic' ); ?></label>
                             <input type="number" min="0" name="tf_apt_price" placeholder="<?php echo esc_html__( 'Price', 'tourfic' ); ?>">
                         </div>
 
-                        <div class="tf-field-number tf-price-by-person" style="display: <?php echo esc_attr( $pricing_type == 'per_person' ? 'block' : 'none' ) ?>; width: calc(50% - 12px)">
-                            <label class="tf-field-label"><?php echo esc_html__( 'Adult Price', 'tourfic' ); ?></label>
-                            <input type="number" min="0" name="tf_apt_adult_price" placeholder="<?php echo esc_html__( 'Adult Price', 'tourfic' ); ?>">
-                        </div>
-
-                        <div class="tf-field-number tf-price-by-person" style="display: <?php echo esc_attr( $pricing_type == 'per_person' ? 'block' : 'none' ) ?>; width: calc(50% - 12px)">
-                            <label class="tf-field-label"><?php echo esc_html__( 'Child Price', 'tourfic' ); ?></label>
-                            <input type="number" min="0" name="tf_apt_child_price" placeholder="<?php echo esc_html__( 'Child Price', 'tourfic' ); ?>">
-                        </div>
-
-                        <div class="tf-field-number tf-price-by-person" style="display: <?php echo esc_attr( $pricing_type == 'per_person' ? 'block' : 'none' ) ?>; width: calc(50% - 12px)">
-                            <label class="tf-field-label"><?php echo esc_html__( 'Infant Price', 'tourfic' ); ?></label>
-                            <input type="number" min="0" name="tf_apt_infant_price" placeholder="<?php echo esc_html__( 'Infant Price', 'tourfic' ); ?>">
-                        </div>
-
+						<div class="tf-apartment-availability-extension-fields">
+							<?php do_action( 'tourfic_apartment_availability_price_fields', $meta, $post->ID ); ?>
+						</div>
                         <div class="tf-field-select" style="width: calc(50% - 12px)">
                             <label class="tf-field-label"><?php echo esc_html__( 'Status', 'tourfic' ); ?></label>
                             <select name="tf_apt_status" class="tf-select">
@@ -85,7 +73,7 @@ if ( ! class_exists( 'TF_aptAvailabilityCal' ) ) {
                                 </div>
                             </div>
                         </div>
-                        
+
                         <div class="tf-calendar-save tf-save-calendar">
                             <input type="hidden" name="new_post" value="<?php echo $this->value ? 'false' : 'true'; ?>">
                             <input type="hidden" name="apartment_id" value="<?php echo esc_attr( get_the_ID() ); ?>">

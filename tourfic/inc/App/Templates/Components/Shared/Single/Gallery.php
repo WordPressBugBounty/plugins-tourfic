@@ -76,6 +76,16 @@ class Gallery {
 			$gallery_ids = explode( ',', $gallery );
 		}
 
+		if (
+			'style3' === $style
+			&& 'tf_apartment' === $post_type
+			&& has_post_thumbnail( $post_id )
+		) {
+			$featured_image_id = (string) get_post_thumbnail_id( $post_id );
+			$gallery_ids       = array_values( array_diff( $gallery_ids, array( $featured_image_id ) ) );
+			array_unshift( $gallery_ids, $featured_image_id );
+		}
+
 		$disable_review_sec = ! empty( $disable_review_sec ) ? $disable_review_sec : $s_review;
 
 		echo ! empty( $wrapper_open ) ? wp_kses_post( $wrapper_open ) : '';
@@ -100,7 +110,7 @@ class Gallery {
 		?>
 		<div class="tf-single-gallery__style-1 tf-hero-gallery">
 			<div class="tf-gallery-featured <?php echo empty( $gallery_ids ) ? esc_attr( 'tf-without-gallery-featured' ) : ''; ?>">
-				<img src="<?php echo ! empty( wp_get_attachment_url( get_post_thumbnail_id(), 'tf_gallery_thumb' ) ) ? esc_url( wp_get_attachment_url( get_post_thumbnail_id(), 'tf_gallery_thumb' ) ) : esc_url( TF_ASSETS_APP_URL . 'images/feature-default.jpg' ); ?>" alt="<?php echo get_post_meta( get_post_thumbnail_id(), '_wp_attachment_image_alt', true ); ?>">
+				<img src="<?php echo ! empty( wp_get_attachment_url( get_post_thumbnail_id(), 'tf_gallery_thumb' ) ) ? esc_url( wp_get_attachment_url( get_post_thumbnail_id(), 'tf_gallery_thumb' ) ) : esc_url( TOURFIC_ASSETS_APP_URL . 'images/feature-default.jpg' ); ?>" alt="<?php echo esc_attr( get_post_meta( get_post_thumbnail_id(), '_wp_attachment_image_alt', true ) ); ?>">
 				
 				<?php if(empty($builder)): ?>
 					<div class="featured-meta-gallery-videos">
@@ -153,7 +163,7 @@ class Gallery {
 		?>
 			<div class="tf-car-hero-gallery">
 				<div class="tf-featured-car">
-					<img src="<?php echo ! empty( wp_get_attachment_url( get_post_thumbnail_id(), 'tf_gallery_thumb' ) ) ? esc_url( wp_get_attachment_url( get_post_thumbnail_id(), 'tf_gallery_thumb' ) ) : esc_url( TF_ASSETS_APP_URL . 'images/feature-default.jpg' ); ?>" alt="<?php esc_attr_e( 'Car Image', 'tourfic' ); ?>">
+					<img src="<?php echo ! empty( wp_get_attachment_url( get_post_thumbnail_id(), 'tf_gallery_thumb' ) ) ? esc_url( wp_get_attachment_url( get_post_thumbnail_id(), 'tf_gallery_thumb' ) ) : esc_url( TOURFIC_ASSETS_APP_URL . 'images/feature-default.jpg' ); ?>" alt="<?php esc_attr_e( 'Car Image', 'tourfic' ); ?>">
 
 					<div class="tf-featured-reviews">
 						<a href="#tf-reviews" class="tf-single-rating">
@@ -242,8 +252,8 @@ class Gallery {
 					<div class="list-single-main-media fl-wrap" id="sec1">
 						<div class="single-slider-wrapper fl-wrap">
 							<div class="tf_slider-for fl-wrap tf-slick-slider">
-								<a href="<?php echo ! empty( get_the_post_thumbnail_url( $post_id, 'tf_gallery_thumb' ) ) ? esc_url( get_the_post_thumbnail_url( $post_id, 'tf_gallery_thumb' ) ) : esc_url( TF_ASSETS_APP_URL . 'images/feature-default.jpg' ); ?>" class="slick-slide-item-link" data-fancybox="hotel-gallery">
-									<img src="<?php echo ! empty( get_the_post_thumbnail_url( $post_id, 'tf_gallery_thumb' ) ) ? esc_url( get_the_post_thumbnail_url( $post_id, 'tf_gallery_thumb' ) ) : esc_url( TF_ASSETS_APP_URL . 'images/feature-default.jpg' ); ?>" alt="">
+								<a href="<?php echo ! empty( get_the_post_thumbnail_url( $post_id, 'tf_gallery_thumb' ) ) ? esc_url( get_the_post_thumbnail_url( $post_id, 'tf_gallery_thumb' ) ) : esc_url( TOURFIC_ASSETS_APP_URL . 'images/feature-default.jpg' ); ?>" class="slick-slide-item-link" data-fancybox="hotel-gallery">
+									<img src="<?php echo ! empty( get_the_post_thumbnail_url( $post_id, 'tf_gallery_thumb' ) ) ? esc_url( get_the_post_thumbnail_url( $post_id, 'tf_gallery_thumb' ) ) : esc_url( TOURFIC_ASSETS_APP_URL . 'images/feature-default.jpg' ); ?>" alt="">
 								</a>
 							</div>
 						</div>
@@ -337,7 +347,7 @@ class Gallery {
 					if ( has_post_thumbnail() ) {
 						the_post_thumbnail( 'tf_apartment_single_thumb' );
 					} else {
-						echo '<img src="' . esc_url( TF_ASSETS_APP_URL . 'images/feature-default.jpg' ) . '" alt="feature-default">';
+						echo '<img src="' . esc_url( TOURFIC_ASSETS_APP_URL . 'images/feature-default.jpg' ) . '" alt="feature-default">';
 					}
 					?>
 				<?php endif; ?>

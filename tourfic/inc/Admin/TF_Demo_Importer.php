@@ -39,28 +39,24 @@ class TF_Demo_Importer {
 
 		// Check for errors
 		if (is_wp_error($response)) {
-			error_log('Error downloading image: ' . $response->get_error_message());
 			return false;
 		}
 
 		// Check response code
 		$response_code = wp_remote_retrieve_response_code($response);
 		if (200 !== $response_code) {
-			error_log('Invalid response code when downloading image: ' . $response_code);
 			return false;
 		}
 
 		// Get the image data
 		$image_data = wp_remote_retrieve_body($response);
 		if (empty($image_data)) {
-			error_log('Empty image data received');
 			return false;
 		}
 
 		// Get content type to verify this is actually an image
 		$content_type = wp_remote_retrieve_header($response, 'content-type');
-		if (!str_contains($content_type, 'image/')) {
-			error_log('URL does not point to an image (Content-Type: ' . $content_type . ')');
+		if ( false === strpos( $content_type, 'image/' ) ) {
 			return false;
 		}
 
@@ -88,7 +84,7 @@ class TF_Demo_Importer {
 			}
 		}
 
-		$dummy_hotels_files = TF_ASSETS_PATH . 'demo/hotel-data.csv';
+		$dummy_hotels_files = TOURFIC_ASSETS_PATH . 'demo/hotel-data.csv';
 		if ( file_exists( $dummy_hotels_files ) ) {
 			$dummy_hotel_fields = array(
 				'id',
@@ -206,7 +202,7 @@ class TF_Demo_Importer {
 										if ( ! is_wp_error( $parent_result ) ) {
 											$parent_term_id = $parent_result['term_id'];
 										} else {
-											error_log( 'Error creating parent term: ' . $parent_result->get_error_message() );
+											continue;
 										}
 									} else {
 										$parent_term_id = $parent_term->term_id;
@@ -229,7 +225,7 @@ class TF_Demo_Importer {
 											if ( ! is_wp_error( $child_result ) ) {
 												$child_term_id = $child_result['term_id'];
 											} else {
-												error_log( 'Error creating child term: ' . $child_result->get_error_message() );
+												continue;
 											}
 										} else {
 											$child_term_id = $child_term->term_id;
@@ -254,7 +250,7 @@ class TF_Demo_Importer {
 											$term_id = $term_result['term_id'];
 											wp_set_post_terms( $post_id, $term_id, $taxonomy_name, true );
 										} else {
-											error_log( 'Error creating term: ' . $term_result->get_error_message() );
+											continue;
 										}
 									} else {
 										wp_set_post_terms( $post_id, $term->term_id, $taxonomy_name, true );
@@ -583,10 +579,6 @@ class TF_Demo_Importer {
 
 					}
 					//update or insert hotels
-					if ( ! function_exists( 'post_exists' ) ) {
-						require_once ABSPATH . 'wp-includes/post.php';
-					}
-
 					// Create an array to store the post data for the current row
 					$post_data = array(
 						'post_type'    => 'tf_hotel',
@@ -626,7 +618,7 @@ class TF_Demo_Importer {
 										if ( ! is_wp_error( $parent_result ) ) {
 											$parent_term_id = $parent_result['term_id'];
 										} else {
-											error_log( 'Error creating parent term: ' . $parent_result->get_error_message() );
+											continue;
 										}
 									} else {
 										$parent_term_id = $parent_term->term_id;
@@ -649,7 +641,7 @@ class TF_Demo_Importer {
 											if ( ! is_wp_error( $child_result ) ) {
 												$child_term_id = $child_result['term_id'];
 											} else {
-												error_log( 'Error creating child term: ' . $child_result->get_error_message() );
+												continue;
 											}
 										} else {
 											$child_term_id = $child_term->term_id;
@@ -674,7 +666,7 @@ class TF_Demo_Importer {
 											$term_id = $term_result['term_id'];
 											wp_set_post_terms( $post_id, $term_id, $taxonomy_name, true );
 										} else {
-											error_log( 'Error creating term: ' . $term_result->get_error_message() );
+											continue;
 										}
 									} else {
 										wp_set_post_terms( $post_id, $term->term_id, $taxonomy_name, true );
@@ -707,7 +699,7 @@ class TF_Demo_Importer {
 			}
 		}
 
-		$dummy_tours_files  = TF_ASSETS_PATH . 'demo/tour-data.csv';
+		$dummy_tours_files  = TOURFIC_ASSETS_PATH . 'demo/tour-data.csv';
 		$dummy_tours_fields = array(
 			'id',
 			'post_title',
@@ -888,7 +880,7 @@ class TF_Demo_Importer {
 									if ( ! is_wp_error( $parent_result ) ) {
 										$parent_term_id = $parent_result['term_id'];
 									} else {
-										error_log( 'Error creating parent term: ' . $parent_result->get_error_message() );
+										continue;
 									}
 								} else {
 									$parent_term_id = $parent_term->term_id;
@@ -910,7 +902,7 @@ class TF_Demo_Importer {
 										if ( ! is_wp_error( $child_result ) ) {
 											$child_term_ids[] = $child_result['term_id'];
 										} else {
-											error_log( 'Error creating child term: ' . $child_result->get_error_message() );
+											continue;
 										}
 									} else {
 										$child_term_ids[] = $child_term->term_id;
@@ -935,7 +927,7 @@ class TF_Demo_Importer {
 										$term_id = $term_result['term_id'];
 										wp_set_post_terms( $post_id, $term_id, $taxonomy_name, true );
 									} else {
-										error_log( 'Error creating term: ' . $term_result->get_error_message() );
+										continue;
 									}
 								} else {
 									wp_set_post_terms( $post_id, $term->term_id, $taxonomy_name, true );
@@ -1283,10 +1275,6 @@ class TF_Demo_Importer {
 
 				}
 
-				if ( ! function_exists( 'post_exists' ) ) {
-					require_once ABSPATH . 'wp-includes/post.php';
-				}
-
 				// Create an array to store the post data for the current row
 				$post_data = array(
 					'post_type'    => 'tf_tours',
@@ -1327,7 +1315,7 @@ class TF_Demo_Importer {
 									if ( ! is_wp_error( $parent_result ) ) {
 										$parent_term_id = $parent_result['term_id'];
 									} else {
-										error_log( 'Error creating parent term: ' . $parent_result->get_error_message() );
+										continue;
 									}
 								} else {
 									$parent_term_id = $parent_term->term_id;
@@ -1349,7 +1337,7 @@ class TF_Demo_Importer {
 										if ( ! is_wp_error( $child_result ) ) {
 											$child_term_ids[] = $child_result['term_id'];
 										} else {
-											error_log( 'Error creating child term: ' . $child_result->get_error_message() );
+											continue;
 										}
 									} else {
 										$child_term_ids[] = $child_term->term_id;
@@ -1374,7 +1362,7 @@ class TF_Demo_Importer {
 										$term_id = $term_result['term_id'];
 										wp_set_post_terms( $post_id, $term_id, $taxonomy_name, true );
 									} else {
-										error_log( 'Error creating term: ' . $term_result->get_error_message() );
+										continue;
 									}
 								} else {
 									wp_set_post_terms( $post_id, $term->term_id, $taxonomy_name, true );
@@ -1403,7 +1391,7 @@ class TF_Demo_Importer {
 			}
 		}
 
-		$dummy_apartments_files = TF_ASSETS_PATH . 'demo/apartment-data.csv';
+		$dummy_apartments_files = TOURFIC_ASSETS_PATH . 'demo/apartment-data.csv';
 		if ( file_exists( $dummy_apartments_files ) ) {
 			$dummy_apartment_fields = array(
 				'id',
@@ -1924,10 +1912,6 @@ class TF_Demo_Importer {
 
 					}
 					//update or insert hotels
-					if ( ! function_exists( 'post_exists' ) ) {
-						require_once ABSPATH . 'wp-includes/post.php';
-					}
-
 					// Create an array to store the post data for the current row
 					$post_data = array(
 						'post_type'    => 'tf_apartment',
@@ -2052,7 +2036,7 @@ class TF_Demo_Importer {
 			}
 		}
 		
-		$dummy_cars_files = TF_ASSETS_PATH . 'demo/car-data.csv';
+		$dummy_cars_files = TOURFIC_ASSETS_PATH . 'demo/car-data.csv';
 		$dummy_cars_fields = array(
 			'id',
 			'post_title',
@@ -2523,10 +2507,6 @@ class TF_Demo_Importer {
 					
 				}
 	
-				if ( ! function_exists( 'post_exists' ) ) {
-					require_once ABSPATH . 'wp-includes/post.php';
-				}
-				
 				// Create an array to store the post data for the current row
 				$post_data = array(
 					'post_type'    => 'tf_carrental',

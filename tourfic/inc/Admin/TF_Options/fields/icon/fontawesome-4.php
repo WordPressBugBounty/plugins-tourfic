@@ -1,5 +1,8 @@
 <?php
-function fontawesome_four_icons() {
+
+defined( 'ABSPATH' ) || exit;
+
+function tourfic_fontawesome_four_icons() {
 	$icons = array(
 		'fa fa-glass',
 		'fa fa-music',

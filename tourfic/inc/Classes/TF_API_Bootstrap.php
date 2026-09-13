@@ -7,19 +7,19 @@ class TF_API_Bootstrap {
 	use \Tourfic\Traits\Singleton;
 
 	public function __construct() {
-		if ( ( function_exists( 'is_tf_pro' ) && is_tf_pro() ) || class_exists( 'TF_FD_API_Routes' ) ) {
+		if ( ! apply_filters( 'tourfic_register_core_api_routes', true ) || class_exists( 'TF_FD_API_Routes' ) ) {
 			return;
 		}
 
 		$this->load_api_classes();
 
-		if ( class_exists( 'TF_API_Routes' ) ) {
-			\TF_API_Routes::get_instance();
+		if ( class_exists( 'Tourfic_API_Routes' ) ) {
+			\Tourfic_API_Routes::get_instance();
 		}
 	}
 
 	private function load_api_classes() {
-		$base_path = TF_INC_PATH . 'Classes/REST_API/';
+		$base_path = TOURFIC_INC_PATH . 'Classes/REST_API/';
 		$files     = array(
 			'TF_Rest_API.php',
 			'TF_Tour_Rest_API.php',

@@ -57,6 +57,10 @@ class FAQ {
 			return;
 		}
 
+		if ( empty( $faqs ) ) {
+			return;
+		}
+
 		echo ! empty( $wrapper_open ) ? wp_kses_post( $wrapper_open ) : '';
 
 		if ( 'style1' === $style && ! empty( $faqs ) ) {
@@ -216,11 +220,11 @@ class FAQ {
 		$builder = !empty( $settings['builder'] ) ? $settings['builder'] : '';
 
 		echo ('yes' === $wrapper || !empty( $builder )) ? '<span class="tf-faq-open-icon">' : '';
-		echo self::render_icon_html( ! empty( $settings['open_icon'] ) ? $settings['open_icon'] : [], $default_open_icon );
+		echo wp_kses( self::render_icon_html( ! empty( $settings['open_icon'] ) ? $settings['open_icon'] : [], $default_open_icon ), tourfic_custom_wp_kses_allow_tags() );
 		echo ('yes' === $wrapper || !empty( $builder )) ? '</span>' : '';
 
 		echo ('yes' === $wrapper || !empty( $builder )) ? '<span class="tf-faq-close-icon">' : '';
-		echo self::render_icon_html( ! empty( $settings['close_icon'] ) ? $settings['close_icon'] : [], $default_close_icon );
+		echo wp_kses( self::render_icon_html( ! empty( $settings['close_icon'] ) ? $settings['close_icon'] : [], $default_close_icon ), tourfic_custom_wp_kses_allow_tags() );
 		echo ('yes' === $wrapper || !empty( $builder )) ? '</span>' : '';
 	}
 

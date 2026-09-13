@@ -127,7 +127,7 @@ class Pricing {
 
 		$tour_availability_data = self::normalize_tour_availability( $meta );
 		
-		$package_pricing = function_exists( 'is_tf_pro' ) && is_tf_pro() && ! empty( $meta['package_pricing'] ) ? $meta['package_pricing'] : '';
+		$package_pricing = ! empty( $meta['package_pricing'] ) ? $meta['package_pricing'] : '';
 		$package_pricing_values = ! empty( $package_pricing ) && is_array( $package_pricing ) ? array_values( $package_pricing ) : [];
 
 		if ( ! empty( $tour_availability_data ) && ! Helper::is_all_unavailable( $tour_availability_data ) ) {
@@ -295,7 +295,7 @@ class Pricing {
 		$pricing_rule                     = ! empty( $meta['pricing'] ) ? $meta['pricing'] : '';
 		$tour_availability_data = self::normalize_tour_availability( $meta );
 
-		$package_pricing = function_exists( 'is_tf_pro' ) && is_tf_pro() && ! empty( $meta['package_pricing'] ) ? $meta['package_pricing'] : '';
+		$package_pricing = ! empty( $meta['package_pricing'] ) ? $meta['package_pricing'] : '';
 		$package_pricing_values = ! empty( $package_pricing ) && is_array( $package_pricing ) ? array_values( $package_pricing ) : [];
 
 		$group_price    = ! empty( $meta['group_price'] ) ? $meta['group_price'] : 0;
@@ -548,7 +548,7 @@ class Pricing {
 			}
 		}
 
-		$package_pricing = function_exists( 'is_tf_pro' ) && is_tf_pro() && ! empty( $meta['package_pricing'] ) ? $meta['package_pricing'] : '';
+		$package_pricing = ! empty( $meta['package_pricing'] ) ? $meta['package_pricing'] : '';
 		if(!empty($package_pricing) && $pricing_rule=='package'){
 			foreach($package_pricing as $package){
 				if (!empty($package['adult_tabs'][2]['min_adult'])) {
@@ -641,7 +641,6 @@ class Pricing {
 		$total_people         = $adult_count + $child_count + $infant_count;
 		$total_people_booking = $adult_count + $child_count;
 
-		$tour_type            = ! empty( $meta['type'] ) ? $meta['type'] : '';
 		$pricing_rule         = ! empty( $meta['pricing'] ) ? $meta['pricing'] : '';
 		$disable_adult_price  = ! empty( $meta['disable_adult_price'] ) ? $meta['disable_adult_price'] : false;
 		$disable_child_price  = ! empty( $meta['disable_child_price'] ) ? $meta['disable_child_price'] : false;
@@ -772,7 +771,7 @@ class Pricing {
 			endwhile;
 
 		endif;
-		wp_reset_query();
+		wp_reset_postdata();
 		if ( ! empty( $tftours_min_maxprices ) && count( $tftours_min_maxprices ) > 1 ) {
 			$tour_max_price_val = max( $tftours_min_maxprices );
 			$tour_min_price_val = min( $tftours_min_maxprices );
@@ -811,7 +810,7 @@ class Pricing {
 
 		$tour_availability_data = self::normalize_tour_availability( $meta );
 
-		$package_pricing = function_exists( 'is_tf_pro' ) && is_tf_pro() && ! empty( $meta['package_pricing'] ) ? $meta['package_pricing'] : '';
+		$package_pricing = ! empty( $meta['package_pricing'] ) ? $meta['package_pricing'] : '';
 
 		if(!empty($tour_availability_data)){
 			foreach ($tour_availability_data as $data) {

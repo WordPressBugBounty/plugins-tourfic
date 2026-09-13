@@ -49,6 +49,7 @@ class Listings {
                 <div class="tf-archive-header-right tf-flex tf-flex-space-bttn tf-flex-align-center tf-flex-gap-16">
                     <?php if($show_sorting == 'yes') : ?>
                         <form class="tf-archive-ordering" method="get">
+                            <?php wp_nonce_field( 'tourfic_public_search', 'tourfic_search_nonce', false ); ?>
                             <select class="tf-orderby tf-room-archive-action-btn" name="tf-orderby" id="tf-orderby">
                                 <option value="default"><?php echo esc_html__( 'Default Sorting', 'tourfic' ); ?></option>
                                 <option value="rating"><?php echo esc_html__( 'Sort By Average Rating', 'tourfic' ); ?></option>
@@ -85,7 +86,7 @@ class Listings {
             </div>
 
             <div class="tf-room-archive-result">
-                <?php do_action("tf_room_archive_roomd_items_before"); ?>
+                <?php do_action("tourfic_room_archive_roomd_items_before"); ?>
                 <div class="tf-room-item-cards tf-flex tf-room-result archive_ajax_result">
                     <?php
                     if ($query->have_posts()) {
@@ -104,11 +105,10 @@ class Listings {
                         </div>
                     <?php endif; ?>
                 </div>
-                <?php do_action("tf_room_archive_roomd_items_after"); ?>
+                <?php do_action("tourfic_room_archive_roomd_items_after"); ?>
             </div>
             <?php echo empty($builder) ? '</div>' : ''; ?>
         </div>
         <?php
 	}
 }
-

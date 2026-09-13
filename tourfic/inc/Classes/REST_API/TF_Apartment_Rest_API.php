@@ -4,8 +4,8 @@ defined( 'ABSPATH' ) || exit;
 
 use \Tourfic\Classes\Helper;
 
-if ( ! class_exists( 'TF_Apartment_Rest_API' ) ) {
-	class TF_Apartment_Rest_API extends TF_Rest_API {
+if ( ! class_exists( 'Tourfic_Apartment_Rest_API' ) ) {
+	class Tourfic_Apartment_Rest_API extends Tourfic_Rest_API {
 
 		/*
 		 * instance
@@ -32,13 +32,13 @@ if ( ! class_exists( 'TF_Apartment_Rest_API' ) ) {
 		public function tf_get_apartments( $request ) {
 			$per_page = $request->get_param( 'per_page' ) ? $request->get_param( 'per_page' ) : 10;
 			$page     = $request->get_param( 'page' ) ? $request->get_param( 'page' ) : 1;
-			$author   = $request->get_param( 'user' ) ? $request->get_param( 'user' ) : get_current_user_id();
+			$author   = $this->tf_management_author( $request, 'user', 'edit_others_tf_apartments' );
 
 			$query_apartments = new WP_Query( array(
 				'post_type'      => 'tf_apartment',
 				'posts_per_page' => $per_page,
 				'post_status'    => array( 'publish', 'pending', 'draft' ),
-				'author'         => $this->user_has_role( $author, 'administrator' ) ? '' : $author,
+				'author'         => $author,
 				'paged'          => $page,
 			) );
 			$apartments       = array();
@@ -69,6 +69,12 @@ if ( ! class_exists( 'TF_Apartment_Rest_API' ) ) {
 			);
 
 			return $apartments;
+		}
+
+		public function tf_apartment_permission_callback( WP_REST_Request $request ) {
+			$id_param = null !== $request->get_param( 'apartment_id' ) ? 'apartment_id' : '';
+
+			return $this->tf_management_permission_callback( $request, 'edit_tf_apartments', 'edit_others_tf_apartments', 'tf_apartment', $id_param );
 		}
 
 		/*
@@ -142,7 +148,7 @@ if ( ! class_exists( 'TF_Apartment_Rest_API' ) ) {
 			}
 			if ( ! empty( $rooms ) ):
 				foreach ( $rooms as $room ) {
-					$pricing_by = ! empty( $room['pricing-by'] ) ? $room['pricing-by'] : 1;
+					$pricing_by = apply_filters( 'tourfic_room_pricing_mode', 1, $room );
 					if ( $pricing_by == 1 ) {
 						$price        = ! empty( $room['price'] ) ? $room['price'] : '';
 						$room_price[] = $price;
@@ -167,15 +173,14 @@ if ( ! class_exists( 'TF_Apartment_Rest_API' ) ) {
 				$apartment_data        = get_post_meta( $apartment_id, 'tf_apartment_opt', true );
 				$apt_availability_data = isset( $apartment_data['apt_availability'] ) && ! empty( $apartment_data['apt_availability'] ) ? json_decode( $apartment_data['apt_availability'], true ) : [];
 			} else {
-				$apt_availability_data = get_option( 'tf_apt_availability' );
-				delete_option( 'tf_apt_availability' );
+				$apt_availability_data = array();
 			}
 
 			if ( ! empty( $apt_availability_data ) && is_array( $apt_availability_data ) ) {
 				$apt_availability_data = array_values( $apt_availability_data );
 				$apt_availability_data = array_map( function ( $item ) {
 					$item['editable'] = false;
-					$item['start']    = date( 'Y-m-d', strtotime( $item['check_in'] ) );
+					$item['start']    = gmdate( 'Y-m-d', strtotime( $item['check_in'] ) );
 					$item['title']    = $item['pricing_type'] == 'per_night' ? esc_html__( 'Price: ', 'tourfic' ) . wc_price( $item['price'] ) : esc_html__( 'Adult: ', 'tourfic' ) . wc_price( $item['adult_price'] ) . '<br>' . esc_html__( 'Child: ', 'tourfic' ) . wc_price( $item['child_price'] ) . '<br>' . esc_html__( 'Infant: ', 'tourfic' ) . wc_price( $item['infant_price'] );
 
 					if ( $item['status'] == 'unavailable' ) {
@@ -194,4 +199,4 @@ if ( ! class_exists( 'TF_Apartment_Rest_API' ) ) {
 	}
 }
 
-TF_Apartment_Rest_API::get_instance();
+Tourfic_Apartment_Rest_API::get_instance();

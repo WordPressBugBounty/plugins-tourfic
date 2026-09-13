@@ -34,7 +34,8 @@ class Car_Connectivity_Filter extends \WP_Widget {
      */
     public function widget( $args, $instance ) {
 
-        $posttype = isset( $_GET['type'] ) ? sanitize_text_field( wp_unslash( $_GET['type'] ) ) : get_post_type();
+        $tourfic_search_request = \tourfic_get_public_search_request();
+        $posttype               = isset( $tourfic_search_request['type'] ) ? $tourfic_search_request['type'] : get_post_type();
 
         if ( is_admin() || 'tf_carrental' === $posttype ) {
             extract( $args );
@@ -45,8 +46,8 @@ class Car_Connectivity_Filter extends \WP_Widget {
                 : ( ! empty( $instance['available_label'] ) ? $instance['available_label'] : esc_html__( 'CarPlay / Android Auto', 'tourfic' ) );
 
             $selected_values = array();
-            if ( isset( $_GET['carplay_android_auto'] ) && function_exists( 'tf_normalize_car_binary_filter_values' ) ) {
-                $selected_values = tf_normalize_car_binary_filter_values( wp_unslash( $_GET['carplay_android_auto'] ) );
+            if ( isset( $tourfic_search_request['carplay_android_auto'] ) && function_exists( 'tourfic_normalize_car_binary_filter_values' ) ) {
+                $selected_values = tourfic_normalize_car_binary_filter_values( $tourfic_search_request['carplay_android_auto'] );
             }
 
             echo wp_kses_post( $before_widget );

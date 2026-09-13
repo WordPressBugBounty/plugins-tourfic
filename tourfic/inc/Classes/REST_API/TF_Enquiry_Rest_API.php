@@ -4,8 +4,8 @@ defined( 'ABSPATH' ) || exit;
 
 use \Tourfic\Classes\Helper;
 
-if ( ! class_exists( 'TF_Enquiry_Rest_API' ) ) {
-	class TF_Enquiry_Rest_API extends TF_Rest_API {
+if ( ! class_exists( 'Tourfic_Enquiry_Rest_API' ) ) {
+	class Tourfic_Enquiry_Rest_API extends Tourfic_Rest_API {
 
 		/*
 		 * instance
@@ -25,6 +25,10 @@ if ( ! class_exists( 'TF_Enquiry_Rest_API' ) ) {
 		 * @author Foysal
 		 */
 		public function tf_get_enquiries( $request ) {
+			$permission = $this->tf_enquiry_permission_callback( $request );
+			if ( is_wp_error( $permission ) ) {
+				return $permission;
+			}
 			$current_user_id = get_current_user_id();
 			$post_type       = $this->tf_validate_allowed_param( $request, 'post_type', $this->tf_enquiry_post_types(), true );
 			$post_id         = $this->tf_get_rest_absint_param( $request, 'post_id' );
@@ -37,36 +41,33 @@ if ( ! class_exists( 'TF_Enquiry_Rest_API' ) ) {
 			}
 
 			global $wpdb;
-			$where  = array( 'post_type = %s' );
-			$values = array( $post_type );
+			$where = array( $wpdb->prepare( 'post_type = %s', $post_type ) );
 
 			if ( ! empty( $post_id ) ) {
-				$where[]  = 'post_id = %d';
-				$values[] = $post_id;
+				$where[] = $wpdb->prepare( 'post_id = %d', $post_id );
 			}
 
 			if ( ! empty( $filters ) ) {
 				if ( 'not-replied' === $filters ) {
-					$where[]  = 'enquiry_status != %s';
-					$values[] = 'replied';
+					$where[] = $wpdb->prepare( 'enquiry_status != %s', 'replied' );
 				} elseif ( 'not-responded' === $filters ) {
-					$where[]  = 'enquiry_status != %s';
-					$values[] = 'responded';
+					$where[] = $wpdb->prepare( 'enquiry_status != %s', 'responded' );
 				} else {
-					$where[]  = 'enquiry_status = %s';
-					$values[] = $filters;
+					$where[] = $wpdb->prepare( 'enquiry_status = %s', $filters );
 				}
 			}
 
-			if ( $this->tf_current_user_can_manage_records() ) {
-				$hotel_enquiry_result = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM {$wpdb->prefix}tf_enquiry_data WHERE " . implode( ' AND ', $where ) . " ORDER BY id DESC", $values ), ARRAY_A );
-			} elseif ( $this->user_has_role( $current_user_id, 'tf_vendor' ) ) {
-				$where[]  = 'author_id = %d';
-				$values[] = $current_user_id;
-				$hotel_enquiry_result = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM {$wpdb->prefix}tf_enquiry_data WHERE " . implode( ' AND ', $where ) . " ORDER BY id DESC", $values ), ARRAY_A );
-			} else {
-				return new WP_Error( 'rest_forbidden', esc_html__( 'You are not authorized to access this endpoint.', 'tourfic' ), array( 'status' => 403 ) );
+			if ( ! $this->tf_current_user_can_manage_records( $post_type, 'enquiry' ) ) {
+				$where[] = $wpdb->prepare(
+					"(author_id = %d OR post_id IN (SELECT ID FROM {$wpdb->posts} WHERE post_author = %d AND post_type = %s))",
+					$current_user_id,
+					$current_user_id,
+					$post_type
+				);
 			}
+
+			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.PreparedSQL.InterpolatedNotPrepared,PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- Every dynamic clause is prepared above.
+			$hotel_enquiry_result = $wpdb->get_results( "SELECT * FROM {$wpdb->prefix}tf_enquiry_data WHERE " . implode( ' AND ', $where ) . ' ORDER BY id DESC', ARRAY_A );
 
 			$enquirys_data = array();
 			foreach ( $hotel_enquiry_result as $enquiry ) {		
@@ -86,7 +87,7 @@ if ( ! class_exists( 'TF_Enquiry_Rest_API' ) ) {
         public function tf_get_enquiry_details( $request ){
             global $wpdb;
 			$id    = absint( $request->get_param( 'id' ) );
-			$enquiry = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$wpdb->prefix}tf_enquiry_data WHERE id = %d", $id ), ARRAY_A );
+			$enquiry = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$wpdb->prefix}tf_enquiry_data WHERE id = %d", $id ), ARRAY_A ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 			if ( empty( $enquiry ) ) {
 				return new WP_Error( 'tf_enquiry_not_found', esc_html__( 'Enquiry not found.', 'tourfic' ), array( 'status' => 404 ) );
 			}
@@ -103,8 +104,8 @@ if ( ! class_exists( 'TF_Enquiry_Rest_API' ) ) {
 			}
 
             list($date, $time) = explode(" ", $date_time_format);
-            $formatted_date = date( "M d, Y", strtotime($date));
-            $formatted_time = date( "h:i:s A", strtotime($time));
+			$formatted_date = wp_date( 'M d, Y', strtotime( $date ) );
+			$formatted_time = wp_date( 'h:i:s A', strtotime( $time ) );
 
             $enquiry['formatted_date'] = $formatted_date;
             $enquiry['formatted_time'] = $formatted_time;
@@ -126,4 +127,4 @@ if ( ! class_exists( 'TF_Enquiry_Rest_API' ) ) {
 	}
 }
 
-TF_Enquiry_Rest_API::get_instance();
+Tourfic_Enquiry_Rest_API::get_instance();

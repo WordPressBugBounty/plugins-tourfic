@@ -16,7 +16,7 @@ class TF_Apartment_Backend_Booking extends TF_Backend_Booking {
 
 	protected array $args = array(
 		'name'      => 'apartment',
-		'prefix'    => 'tf-apartment',
+		'prefix'    => 'tourfic-apartment',
 		'post_type' => 'tf_apartment',
 		'caps'      => 'edit_tf_apartments'
 	);
@@ -28,9 +28,9 @@ class TF_Apartment_Backend_Booking extends TF_Backend_Booking {
 		$this->set_settings_fields();
 
 		// actions
-		add_action( 'wp_ajax_tf_check_available_apartment', array( $this, 'check_avaibility_callback' ) );
-		add_action( 'wp_ajax_tf_check_apartment_aditional_fees', array( $this, 'tf_check_apartment_aditional_fees_callback' ) );
-		add_action( 'wp_ajax_tf_backend_apartment_booking', array( $this, 'backend_booking_callback' ) );
+		add_action( 'wp_ajax_tourfic_check_available_apartment', array( $this, 'check_avaibility_callback' ) );
+		add_action( 'wp_ajax_tourfic_check_apartment_aditional_fees', array( $this, 'tf_check_apartment_aditional_fees_callback' ) );
+		add_action( 'wp_ajax_tourfic_backend_apartment_booking', array( $this, 'backend_booking_callback' ) );
 	}
 
 	function set_settings_fields() {
@@ -104,24 +104,15 @@ class TF_Apartment_Backend_Booking extends TF_Backend_Booking {
 	}
 
 	public function tf_check_apartment_aditional_fees_callback() {
-		// Add nonce for security and authentication.
-		check_ajax_referer( 'updates', '_nonce' );
-
-		// Check if the current user has the required capability.
-		if (!current_user_can('manage_options')) {
-			wp_send_json_error(esc_html__('You do not have permission to access this resource.', 'tourfic'));
-			return;
-		}
-
-		$apartment_id = isset( $_POST['apartment_id'] ) ? sanitize_text_field( $_POST['apartment_id'] ) : 0;
+		$request      = $this->read_request( array( 'apartment_id' => 'positive' ) );
+		$apartment_id = $request['apartment_id'];
+		$this->authorize_listing( $apartment_id );
 		$meta = get_post_meta( $apartment_id, 'tf_apartment_opt', true );
-		$from         = isset( $_POST['from'] ) ? sanitize_text_field( $_POST['from'] ) : '';
-		$to           = isset( $_POST['to'] ) ? sanitize_text_field( $_POST['to'] ) : '';
 
 		$additional_fees = ! empty( $meta["additional_fees"] ) ? $meta["additional_fees"] : array();
 
 		$all_fees = [];
-		if ( function_exists( 'is_tf_pro' ) && is_tf_pro() && ! empty( $additional_fees ) ) {
+		if ( ! empty( $additional_fees ) ) {
 			if ( count( $additional_fees ) > 0 ) {
 				foreach ( $additional_fees as $fees ) {
 					$all_fees[] = array(
@@ -205,7 +196,7 @@ class TF_Apartment_Backend_Booking extends TF_Backend_Booking {
 
 		$apartment_pricing = 0;
 
-		if ( $availability_switch === '1' && ! empty( $apt_availability ) && function_exists( 'is_tf_pro' ) && is_tf_pro() ) {
+		if ( $availability_switch === '1' && ! empty( $apt_availability ) ) {
 			$apartment_avail = json_decode( $apt_availability, true );
 
 			if ( ! empty( $apartment_avail ) ) {
@@ -265,24 +256,12 @@ class TF_Apartment_Backend_Booking extends TF_Backend_Booking {
 	}
 
 	function check_avaibility_callback() {
-		// Add nonce for security and authentication.
-		check_ajax_referer( 'updates', '_nonce' );
-
-		// Check if the current user has the required capability.
-		if (!current_user_can('manage_options')) {
-			wp_send_json_error(esc_html__('You do not have permission to access this resource.', 'tourfic'));
-			return;
-		}
-
-		$apartment_id = isset( $_POST['apartment_id'] ) ? sanitize_text_field( $_POST['apartment_id'] ) : '';
-		$from         = isset( $_POST['from'] ) ? sanitize_text_field( $_POST['from'] ) : '';
-		$to           = isset( $_POST['to'] ) ? sanitize_text_field( $_POST['to'] ) : '';
-
-		$loop = new \WP_Query( array(
-			'post_type'      => 'tf_apartment',
-			'post_status'    => 'publish',
-			'posts_per_page' => - 1,
-		) );
+		$request = $this->read_request( array( 'from' => 'date', 'to' => 'date' ) );
+		$from    = $request['from'];
+		$to      = $request['to'];
+		$this->validate_date_range( $from, $to );
+		$loop = new \WP_Query( $this->listing_query_args() );
+		$tf_total_filters = array();
 
 		$period = '';
 		if ( ! empty( $from ) && ! empty( $to ) ) {
@@ -318,22 +297,18 @@ class TF_Apartment_Backend_Booking extends TF_Backend_Booking {
 	}
 
 	function backend_booking_callback() {
-		// Add nonce for security and authentication.
-		check_ajax_referer( 'tf_backend_booking_nonce_action', 'tf_backend_booking_nonce' );
+		$field = $this->read_request( array(
+			'tf_available_apartments'       => 'positive',
+			'tf_apartment_date'             => 'date_range',
+			'tf_apartment_adults_number'    => 'positive',
+			'tf_apartment_children_number'  => 'number',
+			'tf_apartment_infant_number'    => 'number',
+		), true );
+		$this->authorize_listing( $field['tf_available_apartments'], true );
 
 		$response = array(
 			'success' => false,
 		);
-
-		$field = [];
-		foreach ( $_POST as $key => $value ) {
-			if ( $key === 'tf_apartment_date' ) {
-				$field[ $key ]['from'] = sanitize_text_field( $value['from'] );
-				$field[ $key ]['to']   = sanitize_text_field( $value['to'] );
-			} else {
-				$field[ $key ] = $value;
-			}
-		}
 
 		$required_fields = array(
 			'tf_apartment_booked_by',
@@ -372,16 +347,6 @@ class TF_Apartment_Backend_Booking extends TF_Backend_Booking {
 		$check_from   = ! empty( $field['tf_apartment_date']['from'] ) ? $field['tf_apartment_date']['from'] : '';
 		$check_to     = ! empty( $field['tf_apartment_date']['to'] ) ? $field['tf_apartment_date']['to'] : '';
 		$apt_data     = get_post_meta( $apt_id, 'tf_apartment_opt', true );
-
-		if ( function_exists( 'is_tf_pro' ) && is_tf_pro() ) {
-			$additional_fees = ! empty( $apt_data['additional_fees'] ) ? $apt_data['additional_fees'] : array();
-		} else {
-			$additional_fees [] = array(
-				"additional_fee_label" => ! empty( $apt_data['additional_fee_label'] ) ? $apt_data['additional_fee_label'] : '',
-				"additional_fee"       => ! empty( $apt_data['additional_fee'] ) ? $apt_data['additional_fee'] : 0,
-				"fee_type"             => ! empty( $apt_data['fee_type'] ) ? $apt_data['fee_type'] : '',
-			);
-		}
 
 		if( !empty( $apt_data["enable_availability"]) && $apt_data["enable_availability"] == 1 ) {
 			// $total_price = $this->get_total_apartment_price( $apt_id, $check_from, $check_to, $adult_count, $child_count, $infant_count, $additional_fees );
@@ -458,8 +423,8 @@ class TF_Apartment_Backend_Booking extends TF_Backend_Booking {
 			);
 
 			$order_id = Helper::tf_set_order( $order_data );
-			if ( function_exists( 'is_tf_pro' ) && is_tf_pro() && ! empty( $order_id ) ) {
-				do_action( 'tf_offline_payment_booking_confirmation', $order_id, $order_data );
+			if ( ! empty( $order_id ) ) {
+				do_action( 'tourfic_offline_payment_booking_confirmation', $order_id, $order_data );
 			}
 
 			if ( ! empty( Helper::tf_data_types( Helper::tfopt( 'tf-integration' ) )['tf-new-order-google-calendar'] ) && Helper::tf_data_types( Helper::tfopt( 'tf-integration' ) )['tf-new-order-google-calendar'] == "1" ) {
@@ -471,7 +436,7 @@ class TF_Apartment_Backend_Booking extends TF_Backend_Booking {
 				 * @param array  $order_data The items in the order.
 				 * @param string $type Order type
 				 */
-				apply_filters( 'tf_after_booking_completed_calendar_data', $order_id, $order_data, '' );
+				apply_filters( 'tourfic_after_booking_completed_calendar_data', $order_id, $order_data, '' );
 			}
 
 			$response['success'] = true;

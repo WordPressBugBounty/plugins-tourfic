@@ -1602,7 +1602,8 @@ h3.section-heading {
   margin-bottom: 5px;
   display: inline-block;
 }
-.tf-title-area .tf-title-wrap .tf-title-left .tf-map-link i, .tf-title-area .tf-title-wrap .tf-title-left .tf-map-link svg {
+.tf-title-area .tf-title-wrap .tf-title-left .tf-map-link i,
+.tf-title-area .tf-title-wrap .tf-title-left .tf-map-link svg {
   margin-right: 4px;
 }
 .tf-title-area .tf-title-wrap .tf-title-left .tf-map-link .tf-d-ib {
@@ -3639,7 +3640,8 @@ li.tf-filter-item {
 .tf-withoutpayment-booking-confirm .tf-withoutpayment-popup .tf-booking-content-summery .tf-booking-content .tf-booking-content-traveller .tf-single-tour-extra .tf_quantity-acrselection .quanity-acr-select {
   justify-content: flex-end;
 }
-.tf-withoutpayment-booking .tf-withoutpayment-popup .tf-booking-content-summery .tf-booking-content .tf-booking-content-extra .tf-single-tour-extra .tf_quantity-acrselection .quanity-acr-dec, .tf-withoutpayment-booking .tf-withoutpayment-popup .tf-booking-content-summery .tf-booking-content .tf-booking-content-extra .tf-single-tour-extra .tf_quantity-acrselection .quanity-acr-inc,
+.tf-withoutpayment-booking .tf-withoutpayment-popup .tf-booking-content-summery .tf-booking-content .tf-booking-content-extra .tf-single-tour-extra .tf_quantity-acrselection .quanity-acr-dec,
+.tf-withoutpayment-booking .tf-withoutpayment-popup .tf-booking-content-summery .tf-booking-content .tf-booking-content-extra .tf-single-tour-extra .tf_quantity-acrselection .quanity-acr-inc,
 .tf-withoutpayment-booking .tf-withoutpayment-popup .tf-booking-content-summery .tf-booking-content .tf-booking-content-traveller .tf-single-tour-extra .tf_quantity-acrselection .quanity-acr-dec,
 .tf-withoutpayment-booking .tf-withoutpayment-popup .tf-booking-content-summery .tf-booking-content .tf-booking-content-traveller .tf-single-tour-extra .tf_quantity-acrselection .quanity-acr-inc,
 .tf-withoutpayment-booking-confirm .tf-withoutpayment-popup .tf-booking-content-summery .tf-booking-content .tf-booking-content-extra .tf-single-tour-extra .tf_quantity-acrselection .quanity-acr-dec,
@@ -3793,6 +3795,10 @@ li.tf-filter-item {
 .tf-withoutpayment-booking-confirm .tf-withoutpayment-popup .tf-booking-content-summery .tf-booking-content .tf-booking-content-traveller .tf-single-tour-traveller .traveller-info .traveller-single-info input[type=email]::placeholder {
   color: var(--tf-text-lite);
 }
+.tf-withoutpayment-booking .tf-withoutpayment-popup .tf-booking-content-summery .tf-booking-content .tf-booking-content-traveller .tf-single-tour-traveller .traveller-info .traveller-single-info .tf-date-picker.flatpickr-input::placeholder,
+.tf-withoutpayment-booking-confirm .tf-withoutpayment-popup .tf-booking-content-summery .tf-booking-content .tf-booking-content-traveller .tf-single-tour-traveller .traveller-info .traveller-single-info .tf-date-picker.flatpickr-input::placeholder {
+  color: var(--tf-text-heading) !important;
+}
 .tf-withoutpayment-booking .tf-withoutpayment-popup .tf-booking-content-summery .tf-booking-content .tf-booking-content-traveller .tf-single-tour-traveller .traveller-info .traveller-single-info input[type=text]:focus,
 .tf-withoutpayment-booking .tf-withoutpayment-popup .tf-booking-content-summery .tf-booking-content .tf-booking-content-traveller .tf-single-tour-traveller .traveller-info .traveller-single-info input[type=email]:focus,
 .tf-withoutpayment-booking .tf-withoutpayment-popup .tf-booking-content-summery .tf-booking-content .tf-booking-content-traveller .tf-single-tour-traveller .traveller-info .traveller-single-info input[type=date]:focus,
@@ -3926,7 +3932,8 @@ li.tf-filter-item {
   color: var(--tf-text-heading);
   font-size: 16px;
   font-weight: 500;
-  line-height: 20px; /* 125% */
+  line-height: 20px;
+  /* 125% */
   margin: 0;
 }
 .tf-withoutpayment-booking .tf-withoutpayment-popup .tf-booking-content-summery .tf-booking-content .tf-booking-content-package .tf-single-package .tf-package-content .tf-pacakge-persons .tf-pacakge-times .tf-package-time,
@@ -18246,7 +18253,8 @@ div#tf-destinationautocomplete-list div:before {
   padding: 16px 32px;
   font-size: 1rem;
 }
-.tf-single-template__two .tf-review-form-wrapper .tf-review-form-container form input[type=text], .tf-single-template__two .tf-review-form-wrapper .tf-review-form-container form textarea {
+.tf-single-template__two .tf-review-form-wrapper .tf-review-form-container form input[type=text],
+.tf-single-template__two .tf-review-form-wrapper .tf-review-form-container form textarea {
   border: 1px solid var(--tf-border-lite);
   padding: 8px;
   color: var(--tf-text-paragraph);
@@ -18619,6 +18627,8 @@ div#tf-destinationautocomplete-list div:before {
   flex-direction: row;
   gap: 15px;
   min-height: 150px;
+  height: auto;
+  box-sizing: border-box;
 }
 @media only screen and (max-width: 768px) {
   .tf-single-template__two .tf-reviews-wrapper .tf-reviews-slider .tf-reviews-item {
@@ -18926,7 +18936,8 @@ div#tf-destinationautocomplete-list div:before {
   color: var(--tf-text-paragraph);
   padding: 0px;
 }
-.tf-single-template__two .tf-search-date-wrapper .acr-dec svg path, .tf-single-template__two .tf-search-date-wrapper .acr-dec svg rect,
+.tf-single-template__two .tf-search-date-wrapper .acr-dec svg path,
+.tf-single-template__two .tf-search-date-wrapper .acr-dec svg rect,
 .tf-single-template__two .tf-search-date-wrapper .acr-inc svg path,
 .tf-single-template__two .tf-search-date-wrapper .acr-inc svg rect {
   fill: var(--tf-text-paragraph);
@@ -22221,7 +22232,8 @@ div#tf-destinationautocomplete-list div:before {
 .single-tf_room .tf-single-template__two .tf-review-form-wrapper .tf-review-form-container form .tf-review-submit .tf_btn:hover {
   box-shadow: 0 40px 40px 0 color-mix(in srgb, var(--tf-links-color, var(--tf-primary)) 16%, transparent), 0 32px 32px 0 color-mix(in srgb, var(--tf-links-color, var(--tf-primary)) 14%, transparent), 0 24px 24px 0 color-mix(in srgb, var(--tf-links-color, var(--tf-primary)) 12%, transparent), 0 20px 20px 0 color-mix(in srgb, var(--tf-links-color, var(--tf-primary)) 10%, transparent), 0 16px 16px 0 color-mix(in srgb, var(--tf-links-color, var(--tf-primary)) 8%, transparent), 0 12px 12px 0 color-mix(in srgb, var(--tf-links-color, var(--tf-primary)) 6%, transparent), 0 8px 8px 0 color-mix(in srgb, var(--tf-links-color, var(--tf-primary)) 4%, transparent), 0 4px 4px 0 color-mix(in srgb, var(--tf-links-color, var(--tf-primary)) 2%, transparent);
 }
-.single-tf_room .tf-single-template__two .tf-review-form-wrapper .tf-review-form-container form input[type=text], .single-tf_room .tf-single-template__two .tf-review-form-wrapper .tf-review-form-container form textarea {
+.single-tf_room .tf-single-template__two .tf-review-form-wrapper .tf-review-form-container form input[type=text],
+.single-tf_room .tf-single-template__two .tf-review-form-wrapper .tf-review-form-container form textarea {
   border: 1px solid var(--tf-border-lite);
   padding: 8px;
   color: var(--tf-text-paragraph);

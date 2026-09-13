@@ -4,8 +4,8 @@ defined( 'ABSPATH' ) || exit;
 
 use \Tourfic\Classes\Helper;
 
-if ( ! class_exists( 'TF_User_Rest_API' ) ) {
-	class TF_User_Rest_API extends TF_Rest_API {
+if ( ! class_exists( 'Tourfic_User_Rest_API' ) ) {
+	class Tourfic_User_Rest_API extends Tourfic_Rest_API {
 
 		protected $log_reg_settings = array();
 
@@ -27,7 +27,27 @@ if ( ! class_exists( 'TF_User_Rest_API' ) ) {
 		 * @author Foysal
 		 */
 		public function tf_get_users( $request ) {
-			$user_roles = $request->get_param( 'roles' ) ? $request->get_param( 'roles' ) : array();
+			$permission = $this->tf_admin_permission_callback( $request );
+			if ( is_wp_error( $permission ) ) {
+				return $permission;
+			}
+			$user_roles = $request->get_param( 'roles' );
+			$user_roles = null === $user_roles || '' === $user_roles ? array() : $user_roles;
+			$user_roles = is_string( $user_roles ) ? explode( ',', $user_roles ) : $user_roles;
+			if ( ! is_array( $user_roles ) ) {
+				return new WP_Error( 'rest_invalid_param', esc_html__( 'Invalid user roles.', 'tourfic' ), array( 'status' => 400 ) );
+			}
+			foreach ( $user_roles as $role ) {
+				if ( ! is_string( $role ) || '' === $role || sanitize_key( $role ) !== $role ) {
+					return new WP_Error( 'rest_invalid_param', esc_html__( 'Invalid user roles.', 'tourfic' ), array( 'status' => 400 ) );
+				}
+			}
+			if ( ! current_user_can( 'list_users' ) ) {
+				if ( array_diff( $user_roles, array( 'tf_vendor' ) ) ) {
+					return new WP_Error( 'rest_forbidden', esc_html__( 'You are not authorized to access these users.', 'tourfic' ), array( 'status' => 403 ) );
+				}
+				$user_roles = array( 'tf_vendor' );
+			}
 			$users      = get_users( array(
 				'role__in' => $user_roles,
 				'number'   => - 1,
@@ -37,10 +57,10 @@ if ( ! class_exists( 'TF_User_Rest_API' ) ) {
 
 			foreach ( $users as $user ) {
 				global $wpdb;
-				$tf_vendor_order_earning = $wpdb->get_results( $wpdb->prepare( "SELECT SUM(amount) FROM {$wpdb->prefix}tf_vendor_balance_history WHERE wstatus = %s AND vendor_id = %s", "completed", $user->ID ), ARRAY_A );
+				$tf_vendor_order_earning = $wpdb->get_results( $wpdb->prepare( "SELECT SUM(amount) FROM {$wpdb->prefix}tf_vendor_balance_history WHERE wstatus = %s AND vendor_id = %s", "completed", $user->ID ), ARRAY_A ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 				$total_earning           = ! empty( $tf_vendor_order_earning ) ? wc_price( $tf_vendor_order_earning[0]['SUM(amount)'] ) : wc_price( 0 );
 
-				$tf_vendor_balace  = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$wpdb->prefix}tf_vendor_balance WHERE vendor_id = %s", $user->ID ) );
+				$tf_vendor_balace  = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$wpdb->prefix}tf_vendor_balance WHERE vendor_id = %s", $user->ID ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 				$total_earning_int = ! empty( $tf_vendor_balace->total_amount ) ? $tf_vendor_balace->total_amount : 0;
 				$total_withdraw    = ! empty( $tf_vendor_balace->total_withdraw ) ? wc_price( $tf_vendor_balace->total_withdraw ) : wc_price( 0 );
 				$vendor_status     = get_user_meta( $user->ID, 'tf_vendor_approval', true );
@@ -60,7 +80,7 @@ if ( ! class_exists( 'TF_User_Rest_API' ) ) {
 					'slug'               => $user->user_nicename,
 					'roles'              => $user->roles,
 					'status'             => $vendor_status === 'enabled' ? esc_html__( 'Approved', 'tourfic' ) : esc_html__( 'Pending', 'tourfic' ),
-					'registered_date'    => date( "M d, Y", strtotime( $user->user_registered ) ),
+					'registered_date'    => wp_date( 'M d, Y', strtotime( $user->user_registered ) ),
 					'total_earning_int'  => $total_earning_int,
 					'total_earning'      => $total_earning,
 					'total_withdraw'     => $total_withdraw,
@@ -90,7 +110,7 @@ if ( ! class_exists( 'TF_User_Rest_API' ) ) {
 			$user    = get_user_by( 'id', $user_id );
 
 			if ( ! $user ) {
-				return new WP_Error( 'rest_forbidden', esc_html__( 'You are not authorized to access this endpoint.' ), array( 'status' => 403 ) );
+				return new WP_Error( 'rest_forbidden', esc_html__( 'You are not authorized to access this endpoint.', 'tourfic' ), array( 'status' => 403 ) );
 			}
 
 			if ( ! $this->tf_current_user_can_access_user( $user->ID ) ) {
@@ -128,7 +148,7 @@ if ( ! class_exists( 'TF_User_Rest_API' ) ) {
 
 			if ( $this->user_has_role( $user_id, 'tf_vendor' ) ) {
 				global $wpdb;
-				$tf_vendor_balace  = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$wpdb->prefix}tf_vendor_balance WHERE vendor_id = %s", $user->ID ) );
+				$tf_vendor_balace  = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$wpdb->prefix}tf_vendor_balance WHERE vendor_id = %s", $user->ID ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 				$total_earning     = ! empty( $tf_vendor_balace->total_amount ) ? wc_price( $tf_vendor_balace->total_amount ) : wc_price( 0 );
 				$total_earning_int = ! empty( $tf_vendor_balace->total_amount ) ? $tf_vendor_balace->total_amount : 0;
 				$total_withdraw    = ! empty( $tf_vendor_balace->total_withdraw ) ? wc_price( $tf_vendor_balace->total_withdraw ) : wc_price( 0 );
@@ -149,7 +169,7 @@ if ( ! class_exists( 'TF_User_Rest_API' ) ) {
 				$user_data['total_withdraw']                = $total_withdraw;
 				$user_data['status']                        = $vendor_status;
 
-				$vendor_fields = ! empty( Helper::tf_data_types( tfopt( 'log_reg_settings' ) )['vendor-registration'] ) ? Helper::tf_data_types( tfopt( 'log_reg_settings' ) )['vendor-registration'] : '';
+				$vendor_fields = ! empty( Helper::tf_data_types( Helper::tfopt( 'log_reg_settings' ) )['vendor-registration'] ) ? Helper::tf_data_types( Helper::tfopt( 'log_reg_settings' ) )['vendor-registration'] : '';
 				if ( is_array( $vendor_fields ) && ! empty( $vendor_fields ) ) {
 					foreach ( $vendor_fields as $field ) {
 						if ( $field['reg-fields-type'] == 'checkbox' ) {
@@ -162,7 +182,7 @@ if ( ! class_exists( 'TF_User_Rest_API' ) ) {
 				}
 
 				//google data
-				$_tf_integration_settings = is_array( get_user_meta( $user->ID, '_tf_integration_settings', true ) ) ? get_user_meta( $user->ID, '_tf_integration_settings', true ) : array();
+				$_tf_integration_settings = is_array( get_user_meta( $user->ID, 'tourfic_integration_settings', true ) ) ? get_user_meta( $user->ID, 'tourfic_integration_settings', true ) : array();
 				$user_data['tf_google_client_id'] = get_user_meta( $user->ID, 'tf_google_client_id', true );
 				$user_data['tf_google_secret_key'] = get_user_meta( $user->ID, 'tf_google_secret_key', true );
 				$user_data['tf_google_redirect_url'] = site_url().'/wp-json/tourfic/v1/integration/google-api';
@@ -186,7 +206,7 @@ if ( ! class_exists( 'TF_User_Rest_API' ) ) {
 				return new WP_Error( 'tf_rest_invalid_param', esc_html__( 'Invalid booking_type value.', 'tourfic' ), array( 'status' => 400 ) );
 			}
 
-			if ( $this->user_has_role( $current_user_id, 'customer' ) ) {
+			if ( ! empty( $current_user_id ) ) {
 
 				if($booking_type == 'all'){
 					$post_types = array();
@@ -253,7 +273,7 @@ if ( ! class_exists( 'TF_User_Rest_API' ) ) {
 			$postId          = $request->get_param( 'post_id' ) ? $request->get_param( 'post_id' ) : '';
 			$wishlist_data = array();
 			
-			if ( $this->user_has_role( $current_user_id, 'customer' ) ) {
+			if ( ! empty( $current_user_id ) ) {
 				$wishlist_items = get_user_meta( $current_user_id, 'wishlist_item', false );
 
 				if ( $remove == true && ! empty( $postId ) ) {
@@ -270,7 +290,21 @@ if ( ! class_exists( 'TF_User_Rest_API' ) ) {
 
 			return $wishlist_data;
 		}
+
+		/**
+		 * Permission callback for user self-service endpoints (bookings, wishlist).
+		 *
+		 * @param WP_REST_Request $request REST request.
+		 * @return true|WP_Error
+		 */
+		public function tf_user_self_permission_callback( WP_REST_Request $request ) {
+			if ( is_user_logged_in() && current_user_can( 'read' ) ) {
+				return true;
+			}
+
+			return new WP_Error( 'rest_forbidden', esc_html__( 'You are not authorized to access this endpoint.', 'tourfic' ), array( 'status' => 403 ) );
+		}
 	}
 }
 
-TF_User_Rest_API::get_instance();
+Tourfic_User_Rest_API::get_instance();

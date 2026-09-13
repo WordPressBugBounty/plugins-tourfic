@@ -5,7 +5,7 @@ defined( 'ABSPATH' ) || exit;
 use \Tourfic\Classes\Helper;
 ?>
 <div class="tf-single-template__legacy">
-	<?php do_action( 'tf_before_container' ); ?>
+	<?php do_action( 'tourfic_before_container' ); ?>
 
     <!-- Start title area -->
     <div class="tf-title-area tf-hotel-title sp-b-20">
@@ -72,8 +72,8 @@ use \Tourfic\Classes\Helper;
 
                     <!-- Hotel Single Widget Hook are - start -->
                     <div class="tf-hotel-single-custom-widget-wrap tf-single-widgets">
-						<?php do_action( "tf_hotel_single_widgets" ); ?>
-                        <?php do_action( "tf_single_hotel_sidebar_area_with_args", $post_id ); ?>
+						<?php do_action( "tourfic_hotel_single_widgets" ); ?>
+                        <?php do_action( "tourfic_single_hotel_sidebar_area_with_args", $tourfic_post_id ); ?>
                     </div>
                     <!-- Hotel Single Widget Hook are - end -->
                 </div>
@@ -102,24 +102,24 @@ use \Tourfic\Classes\Helper;
     ?>
 
     <!-- FAQ section Start -->
-	<?php if ( $faqs ): ?>
+	<?php if ( $tourfic_faqs ): ?>
         <div class="tf-hotel-faqs-section sp-50 tf-template-section">
             <div class="tf-container">
-                <h2 class="section-heading tf-section-title"><?php echo ! empty( $meta['faq-section-title'] ) ? esc_html( $meta['faq-section-title'] ) : ''; ?></h2>
+                <h2 class="section-heading tf-section-title"><?php echo ! empty( $tourfic_meta['faq-section-title'] ) ? esc_html( $tourfic_meta['faq-section-title'] ) : ''; ?></h2>
                 <div class="tf-section-flex tf-flex">
 					<?php \Tourfic\App\Templates\Components\Shared\Single\Enquiry::render([
                         'wrapper_open' => '<div class="tf-hotel-enquiry">',
                         'wrapper_close' => '</div>',
                     ]); ?>
                     <div class="tf-faq-items-wrapper">
-						<?php foreach ( $faqs as $key => $faq ): ?>
+						<?php foreach ( $tourfic_faqs as $tourfic_key => $tourfic_faq ): ?>
                             <div id="tf-faq-item">
                                 <div class="tf-faq-title">
-                                    <h4><?php echo esc_html( $faq['title'] ); ?></h4>
+                                    <h4><?php echo esc_html( $tourfic_faq['title'] ); ?></h4>
                                     <i class="fas fa-angle-down arrow"></i>
                                 </div>
                                 <div class="tf-faq-desc">
-                                    <p><?php echo wp_kses_post( $faq['description'] ); ?></p>
+                                    <p><?php echo wp_kses_post( $tourfic_faq['description'] ); ?></p>
                                 </div>
                             </div>
 						<?php endforeach; ?>
@@ -130,32 +130,16 @@ use \Tourfic\Classes\Helper;
 	<?php endif; ?>
     <!-- FAQ section end -->
 
-    <?php if ( ! defined( 'TF_PRO' ) && ( $address ) ) { ?>
-        <div class="map-for-mobile">
-            <div class="show-on-map">
-                <div class="tf-container">
-                    <div class="tf-btn-wrap">
-                        <a href="https://www.google.com/maps/search/<?php echo esc_attr( $address ); ?>" target="_blank" class="tf_btn tf_btn_full">
-                            <span>
-                                <i class="fas fa-map-marker-alt"></i>
-                                <?php esc_html_e( 'Show on map', 'tourfic' ); ?>
-                            </span>
-                        </a>
-                    </div>
-                </div>
-            </div>
-        </div>
-    <?php } ?>
-    <?php if ( function_exists( 'is_tf_pro' ) && is_tf_pro() && ( ! empty( $address ) || ( ! empty( $address_latitude ) && ! empty( $address_longitude ) ) ) ) { ?>
+	<?php if ( ! empty( $tourfic_address ) || ( ! empty( $tourfic_address_latitude ) && ! empty( $tourfic_address_longitude ) ) ) { ?>
         <div class="popupmap-for-mobile">
             <div class="tf-container">
                 <?php
-                if ( $tf_openstreet_map != "default" ) { ?>
+                if ( $tourfic_openstreet_map != "default" ) { ?>
                     <div class="tf-hotel-location-preview show-on-map">
-                        <iframe src="https://maps.google.com/maps?q=<?php echo esc_attr( $address_latitude ); ?>,<?php echo esc_attr( $address_longitude ); ?>&output=embed" width="100%" height="150"
+                        <iframe src="https://maps.google.com/maps?q=<?php echo esc_attr( $tourfic_address_latitude ); ?>,<?php echo esc_attr( $tourfic_address_longitude ); ?>&output=embed" width="100%" height="150"
                                 style="border:0;" allowfullscreen="" loading="lazy"></iframe>
 
-                        <a href="https://www.google.com/maps/search/<?php echo esc_attr( $address ); ?>">
+                        <a href="https://www.google.com/maps/search/<?php echo esc_attr( $tourfic_address ); ?>">
                             <div class="tf-btn-wrap">
                                 <span class="tf_btn tf_btn_secondary tf_btn_full"><?php esc_html_e( 'Show on Map', 'tourfic' ); ?></span>
                             </div>
@@ -163,25 +147,25 @@ use \Tourfic\Classes\Helper;
 
                     </div>
                 <?php } ?>
-                <?php if ( $tf_openstreet_map == "default" && ! empty( $address_latitude ) && ! empty( $address_longitude ) ) { ?>
+                <?php if ( $tourfic_openstreet_map == "default" && ! empty( $tourfic_address_latitude ) && ! empty( $tourfic_address_longitude ) ) { ?>
                     <div class="tf-hotel-location-preview show-on-map">
                         <div id="mobile-hotel-location" style="height: 130px;"></div>
 
-                        <a href="https://www.google.com/maps/search/<?php echo esc_attr( $address ); ?>">
+                        <a href="https://www.google.com/maps/search/<?php echo esc_attr( $tourfic_address ); ?>">
                             <div class="tf-btn-wrap">
                                 <span class="tf_btn tf_btn_secondary tf_btn_full"><?php esc_html_e( 'Show on Map', 'tourfic' ); ?></span>
                             </div>
                         </a>
                     </div>
                 <?php } ?>
-                <?php if ( $tf_openstreet_map == "default" && ( empty( $address_latitude ) || empty( $address_longitude ) ) ) { ?>
+                <?php if ( $tourfic_openstreet_map == "default" && ( empty( $tourfic_address_latitude ) || empty( $tourfic_address_longitude ) ) ) { ?>
 
                     <div class="tf-hotel-location-preview show-on-map">
 
-                        <iframe src="https://maps.google.com/maps?q=<?php echo esc_attr( str_replace( "#", "", $address ) ); ?>&z=17&output=embed" width="100%" height="150" style="border:0;"
+                        <iframe src="https://maps.google.com/maps?q=<?php echo esc_attr( str_replace( "#", "", $tourfic_address ) ); ?>&z=17&output=embed" width="100%" height="150" style="border:0;"
                                 allowfullscreen="" loading="lazy"></iframe>
 
-                        <a href="https://www.google.com/maps/search/<?php echo esc_attr( $address ); ?>">
+                        <a href="https://www.google.com/maps/search/<?php echo esc_attr( $tourfic_address ); ?>">
                             <div class="tf-btn-wrap">
                                 <span class="tf_btn tf_btn_secondary tf_btn_full"><?php esc_html_e( 'Show on Map', 'tourfic' ); ?></span>
                             </div>
@@ -193,12 +177,12 @@ use \Tourfic\Classes\Helper;
                 <div style="display: none;" id="tf-hotel-google-maps">
                     <div class="tf-hotel-google-maps-container">
                         <?php
-                        if ( ! empty( $address ) ) {
+                        if ( ! empty( $tourfic_address ) ) {
                             ?>
-                            <iframe src="https://maps.google.com/maps?q=<?php echo esc_attr( str_replace( "#", "", $address ) ); ?>&z=15&output=embed" width="100%" height="550" style="border:0;"
+                            <iframe src="https://maps.google.com/maps?q=<?php echo esc_attr( str_replace( "#", "", $tourfic_address ) ); ?>&z=15&output=embed" width="100%" height="550" style="border:0;"
                                     allowfullscreen="" loading="lazy"></iframe>
                         <?php } else { ?>
-                            <iframe src="https://maps.google.com/maps?q=<?php echo esc_attr( $address_latitude ); ?>,<?php echo esc_attr( $address_longitude ); ?>&z=15&output=embed" width="100%"
+                            <iframe src="https://maps.google.com/maps?q=<?php echo esc_attr( $tourfic_address_latitude ); ?>,<?php echo esc_attr( $tourfic_address_longitude ); ?>&z=15&output=embed" width="100%"
                                     height="550" style="border:0;" allowfullscreen="" loading="lazy"></iframe>
                         <?php } ?>
                     </div>
@@ -222,5 +206,5 @@ use \Tourfic\Classes\Helper;
     ]);
 	?>
 
-	<?php do_action( 'tf_after_container' ); ?>
+	<?php do_action( 'tourfic_after_container' ); ?>
 </div>

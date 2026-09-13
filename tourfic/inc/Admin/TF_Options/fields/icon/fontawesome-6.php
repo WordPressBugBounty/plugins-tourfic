@@ -1,5 +1,8 @@
 <?php
-function fontawesome_six_icons() {
+
+defined( 'ABSPATH' ) || exit;
+
+function tourfic_fontawesome_six_icons() {
 	$icons = array(
 		'fa-solid fa-fill-drip',
 		'fa-solid fa-arrows-to-circle',

@@ -1,5 +1,8 @@
 <?php
-function remix_icon() {
+
+defined( 'ABSPATH' ) || exit;
+
+function tourfic_remix_icon() {
 	$remix_icons = array(
 		'ri-24-hours-fill',
 		'ri-24-hours-line',

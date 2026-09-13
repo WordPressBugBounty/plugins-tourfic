@@ -4,8 +4,8 @@ defined( 'ABSPATH' ) || exit;
 
 use \Tourfic\Classes\Helper;
 
-if(!function_exists('tf_apt_amenities_cats')){
-	function tf_apt_amenities_cats() {
+if(!function_exists('tourfic_apt_amenities_cats')){
+	function tourfic_apt_amenities_cats() {
 		$amenities_cats = ! empty( Helper::tf_data_types( Helper::tfopt( 'amenities_cats' ) ) ) ? Helper::tf_data_types( Helper::tfopt( 'amenities_cats' ) ) : '';
 		$all_cats       = [];
 		if ( ! empty( $amenities_cats ) && is_array( $amenities_cats ) ) {
@@ -22,7 +22,7 @@ if(!function_exists('tf_apt_amenities_cats')){
 	}
 }
 
-TF_Metabox::metabox( 'tf_apartment_opt', array(
+Tourfic_Metabox::metabox( 'tf_apartment_opt', array(
 	'title'     => esc_html__( 'Apartment Settings', 'tourfic' ),
 	'post_type' => 'tf_apartment',
 	'sections'  => array(
@@ -79,12 +79,12 @@ TF_Metabox::metabox( 'tf_apartment_opt', array(
 					'options'  => array(
 						'design-1' => array(
 							'title' => esc_html__('Design 1', 'tourfic'),
-							'url'   => TF_ASSETS_ADMIN_URL . "images/template/preview-single-apt-design-1.png",
+							'url'   => TOURFIC_ASSETS_ADMIN_URL . "images/template/preview-single-apt-design-1.png",
 							'preview_link' => esc_url('https://tourfic.com/preview/apartments/2-bedroom-apartment-in-gamle-oslo/'),
 						),
 						'default'  => array(
 							'title' => esc_html__('Legacy', 'tourfic'),
-							'url'   => TF_ASSETS_ADMIN_URL . "images/template/preview-single-apt-default.png",
+							'url'   => TOURFIC_ASSETS_ADMIN_URL . "images/template/preview-single-apt-default.png",
 							'preview_link' => esc_url('https://tourfic.com/preview/apartments/barcelo-residences-dubai-marina/'),
 						),
 					),
@@ -120,21 +120,13 @@ TF_Metabox::metabox( 'tf_apartment_opt', array(
 					'type'     => 'map',
 					'label'    => esc_html__( 'Dynamic Location Search', 'tourfic' ),
 					/* translators: %s is the link to the Google Maps API Key settings */
-					'subtitle' => sprintf( wp_kses_post(__( 'Enter the specific address you wish to use for the apartment and select the correct option from the suggested addresses. This will be used to hyperlink address and display the address on the front-end map. <strong>Google Maps is also available for location. Simply set up your <a href="%s" target="_blank">Google Maps API Key</a></strong>', 'tourfic' )), esc_url( admin_url('admin.php?page=tf_settings#tab=map_settings') ) ),
+					'subtitle' => sprintf( wp_kses_post(__( 'Enter the specific address you wish to use for the apartment and select the correct option from the suggested addresses. This will be used to hyperlink address and display the address on the front-end map. <strong>Google Maps is also available for location. Simply set up your <a href="%s" target="_blank">Google Maps API Key</a></strong>', 'tourfic' )), esc_url( admin_url('admin.php?page=tourfic_settings#tab=map_settings') ) ),
 					'height'   => '250px',
 					'settings' => array(
 						'scrollWheelZoom' => true,
 					)
 				),
 				//Property Surroundings
-				array(
-					'id'    => 'tf-pro-notice',
-					'type'  => 'notice',
-					'class' => 'tf-pro-notice',
-					'notice' => 'info',
-					'icon' => 'ri-information-fill',
-					'content' => wp_kses_post(__( 'We\'re offering an additional feature called <b>property surroundings</b> in our pro plan. <a href="https://tourfic.com/" target="_blank">Upgrade to our pro package today to take advantage of this fantastic option!</a>', 'tourfic' ) ),
-				),
 			),
 		),
 		// Booking
@@ -262,14 +254,6 @@ TF_Metabox::metabox( 'tf_apartment_opt', array(
 					),
 					'default' => '1',
 				),
-				array(
-					'id'    => 'tf-pro-notice',
-					'type'  => 'notice',
-					'class' => 'tf-pro-notice',
-					'notice' => 'info',
-					'icon' => 'ri-information-fill',
-					'content' => wp_kses_post(__( 'We\'re offering some extra features like <b>per person pricing</b>, <b>external booking</b>, <b>taxable apartment</b>, <b>tax class for Woocommerce</b> in our pro plan, also you can add unlimited additional fees for apartment. <a href="https://tourfic.com/" target="_blank">Upgrade to our pro package today to take advantage of these fantastic option!</a>', 'tourfic')),
-				),
 
 				array(
 					'id'    => 'apartment-cancellation-heading',
@@ -277,14 +261,6 @@ TF_Metabox::metabox( 'tf_apartment_opt', array(
 					'title' => esc_html__( 'Cancellation Condition', 'tourfic' ),
 					'content' => __( 'Define and customize booking cancellation policies for your offerings. This section allows you to set different cancellation rules, such as timeframes for free cancellations, partial refunds, or no refunds.', 'tourfic' ),
 					'docs' => esc_url('https://themefic.com/docs/tourfic/settings/cancellation-settings/')
-				),
-				array(
-					'id'    => 'tf-pro-notice',
-					'type'  => 'notice',
-					'class' => 'tf-pro-notice',
-					'notice' => 'info',
-					'icon' => 'ri-information-fill',
-					'content' => wp_kses_post(__( 'We\'re offering some extra features like <b>booking cancellation</b> in our pro plan. <a href="https://tourfic.com/" target="_blank">Upgrade to our pro package today to take advantage of these fantastic options!</a>', 'tourfic' )),
 				),
 			),
 		),
@@ -298,14 +274,19 @@ TF_Metabox::metabox( 'tf_apartment_opt', array(
 					'title' => esc_html__( 'Availability', 'tourfic' ),
 				),
 				array(
-					'id'    => 'tf-pro-notice',
-					'type'  => 'notice',
-					'class' => 'tf-pro-notice',
-					'notice' => 'info',
-					'icon' => 'ri-information-fill',
-					'content' => wp_kses_post(__( 'Are you looking to enhance the booking system for your apartment? Our pro package offers a powerful feature that includes <strong>custom availability settings</strong> and <strong>iCal sync</strong>. This integration will streamline your operations and improve the booking experience, giving a significant boost to your apartment business. <a href="https://tourfic.com/" target="_blank">Upgrade to our pro package today to take advantage of these fantastic option!</a>', 'tourfic' ) ),
+					'id'         => 'enable_availability',
+					'type'       => 'switch',
+					'label'      => esc_html__( 'Enable Availability by Date', 'tourfic' ),
+					'default'    => false,
+					'attributes' => array(
+						'class' => 'tf_apartment_availability_by_date',
+					),
 				),
-
+				array(
+					'id'         => 'apt_availability',
+					'type'       => 'aptAvailabilityCal',
+					'dependency' => array( 'enable_availability', '!=', 'false' ),
+				),
 			),
 		),
 		//Room Management
@@ -505,8 +486,8 @@ TF_Metabox::metabox( 'tf_apartment_opt', array(
 							'type'        => 'select2',
 							'label'       => esc_html__( 'Category', 'tourfic' ),
 							'placeholder' => esc_html__( 'Select category', 'tourfic' ),
-							'options'     => tf_apt_amenities_cats(),
-							'description' => esc_html__( 'Add new category from ', 'tourfic' ) . '<a target="_blank" href="' . esc_url( admin_url('admin.php?page=tf_settings#tab=apartment_single_page') ) .'">' . esc_html__("Amenities Categories", 'tourfic') . '</a>',
+							'options'     => tourfic_apt_amenities_cats(),
+							'description' => esc_html__( 'Add new category from ', 'tourfic' ) . '<a target="_blank" href="' . esc_url( admin_url('admin.php?page=tourfic_settings#tab=apartment_single_page') ) .'">' . esc_html__("Amenities Categories", 'tourfic') . '</a>',
 							'field_width' => 50,
 						),
 						array(

@@ -4,8 +4,8 @@ defined( 'ABSPATH' ) || exit;
 
 use \Tourfic\Classes\Helper;
 
-$meta = get_post_meta( get_the_ID(), 'tf_room_opt', true );
-$pricing_by = ! empty( $meta["pricing-by"] ) ? $meta["pricing-by"] : 1;
+$tourfic_meta = get_post_meta( get_the_ID(), 'tf_room_opt', true );
+$tourfic_pricing_by = ! empty( $tourfic_meta["pricing-by"] ) ? $tourfic_meta["pricing-by"] : 1;
 ?>
 <div class="tf-single-template__two">
     <!--Hero section start -->
@@ -17,7 +17,7 @@ $pricing_by = ! empty( $meta["pricing-by"] ) ? $meta["pricing-by"] : 1;
                         <?php \Tourfic\App\Templates\Components\Shared\Single\Title::render(); ?>
                     </div>
                     <div class="tf-hero-gallery-videos">
-                        <?php if ( ! empty( $gallery_ids ) ) { ?>
+                        <?php if ( ! empty( $tourfic_gallery_ids ) ) { ?>
                             <div class="tf-hero-hotel tf-popup-buttons">
                                 <a href="#">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48" fill="none">
@@ -49,18 +49,18 @@ $pricing_by = ! empty( $meta["pricing-by"] ) ? $meta["pricing-by"] : 1;
 
                     <?php 
                     if( !empty(Helper::tf_data_types(Helper::tfopt( 'tf-template' ))['single-room-layout']) ){
-                        foreach(Helper::tf_data_types(Helper::tfopt( 'tf-template' ))['single-room-layout'] as $section){
-                            if( !empty($section['status']) && $section['status']=="1" && !empty($section['slug']) ){
-                                include TF_TEMPLATE_PART_PATH . 'room/design-1/'.$section['slug'].'.php';
+                        foreach(Helper::tf_data_types(Helper::tfopt( 'tf-template' ))['single-room-layout'] as $tourfic_section){
+                            if( !empty($tourfic_section['status']) && $tourfic_section['status']=="1" && !empty($tourfic_section['slug']) ){
+                                include TOURFIC_TEMPLATE_PART_PATH . 'room/design-1/'.$tourfic_section['slug'].'.php';
                             }
                         }
                     }else{
-                        include TF_TEMPLATE_PART_PATH . 'room/design-1/description.php';
-                        include TF_TEMPLATE_PART_PATH . 'room/design-1/amenities.php';
-                        include TF_TEMPLATE_PART_PATH . 'room/design-1/room-options.php';
-                        include TF_TEMPLATE_PART_PATH . 'room/design-1/house-rules.php';
-                        include TF_TEMPLATE_PART_PATH . 'room/design-1/cancellation-policy.php';
-                        include TF_TEMPLATE_PART_PATH . 'room/design-1/reviews.php';
+                        include TOURFIC_TEMPLATE_PART_PATH . 'room/design-1/description.php';
+                        include TOURFIC_TEMPLATE_PART_PATH . 'room/design-1/amenities.php';
+                        include TOURFIC_TEMPLATE_PART_PATH . 'room/design-1/room-options.php';
+                        include TOURFIC_TEMPLATE_PART_PATH . 'room/design-1/house-rules.php';
+                        include TOURFIC_TEMPLATE_PART_PATH . 'room/design-1/cancellation-policy.php';
+                        include TOURFIC_TEMPLATE_PART_PATH . 'room/design-1/reviews.php';
                     }
                     ?>
                 </div>
@@ -86,7 +86,7 @@ $pricing_by = ! empty( $meta["pricing-by"] ) ? $meta["pricing-by"] : 1;
             
 
             <?php 
-            if ( ! empty( $gallery_ids ) ) {
+            if ( ! empty( $tourfic_gallery_ids ) ) {
             ?>
             <!-- Hotel PopUp Starts -->       
             <div class="tf-popup-wrapper tf-hotel-popup">
@@ -94,11 +94,11 @@ $pricing_by = ! empty( $meta["pricing-by"] ) ? $meta["pricing-by"] : 1;
                     
                     <div class="tf-popup-body">
                         <?php 
-                            if ( ! empty( $gallery_ids ) ) {
-                            foreach ( $gallery_ids as $key => $gallery_item_id ) {
-                            $image_url = wp_get_attachment_url( $gallery_item_id, 'full' );
+                            if ( ! empty( $tourfic_gallery_ids ) ) {
+                            foreach ( $tourfic_gallery_ids as $tourfic_key => $tourfic_gallery_item_id ) {
+                            $tourfic_image_url = wp_get_attachment_url( $tourfic_gallery_item_id, 'full' );
                         ?>
-                        <img src="<?php echo esc_url($image_url); ?>" alt="" class="tf-popup-image">
+                        <img src="<?php echo esc_url($tourfic_image_url); ?>" alt="" class="tf-popup-image">
                         <?php } } ?>
                     </div>                
                     <div class="tf-popup-close">
@@ -116,7 +116,7 @@ $pricing_by = ! empty( $meta["pricing-by"] ) ? $meta["pricing-by"] : 1;
 
             <div id="tour_room_details_loader">
                 <div id="tour-room-details-loader-img">
-                    <img src="<?php echo esc_url(TF_ASSETS_APP_URL) ?>images/loader.gif" alt="">
+                    <img src="<?php echo esc_url(TOURFIC_ASSETS_APP_URL) ?>images/loader.gif" alt="">
                 </div>
             </div>
         </div>

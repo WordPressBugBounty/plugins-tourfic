@@ -140,17 +140,18 @@ class Sticky_Nav {
 		$address   = ! empty( $map_data['address'] ) ? $map_data['address'] : '';
 		$faqs      = ! empty( $meta['faq'] ) ? $meta['faq'] : '';
 		$tc        = ! empty( $meta['terms_conditions'] ) ? $meta['terms_conditions'] : '';
-		$pickup_date_query = ! empty( $_GET['pickup_date'] ) ? sanitize_text_field( wp_unslash( $_GET['pickup_date'] ) ) : '';
-		if ( empty( $pickup_date_query ) && ! empty( $_GET['pickup-date'] ) ) {
-			$pickup_date_query = sanitize_text_field( wp_unslash( $_GET['pickup-date'] ) );
+		$search_request = tourfic_get_public_search_request();
+		$pickup_date_query = isset( $search_request['pickup_date'] ) ? $search_request['pickup_date'] : '';
+		if ( empty( $pickup_date_query ) && ! empty( $search_request['pickup-date'] ) ) {
+			$pickup_date_query = $search_request['pickup-date'];
 		}
-		$dropoff_date_query = ! empty( $_GET['dropoff_date'] ) ? sanitize_text_field( wp_unslash( $_GET['dropoff_date'] ) ) : '';
-		if ( empty( $dropoff_date_query ) && ! empty( $_GET['dropoff-date'] ) ) {
-			$dropoff_date_query = sanitize_text_field( wp_unslash( $_GET['dropoff-date'] ) );
+		$dropoff_date_query = isset( $search_request['dropoff_date'] ) ? $search_request['dropoff_date'] : '';
+		if ( empty( $dropoff_date_query ) && ! empty( $search_request['dropoff-date'] ) ) {
+			$dropoff_date_query = $search_request['dropoff-date'];
 		}
 
-		$tf_pickup_date  = ! empty( $pickup_date_query ) && function_exists( 'tf_normalize_date' ) ? tf_normalize_date( $pickup_date_query ) : $pickup_date_query;
-		$tf_dropoff_date = ! empty( $dropoff_date_query ) && function_exists( 'tf_normalize_date' ) ? tf_normalize_date( $dropoff_date_query ) : $dropoff_date_query;
+		$tf_pickup_date  = ! empty( $pickup_date_query ) && function_exists( 'tourfic_normalize_date' ) ? tourfic_normalize_date( $pickup_date_query ) : $pickup_date_query;
+		$tf_dropoff_date = ! empty( $dropoff_date_query ) && function_exists( 'tourfic_normalize_date' ) ? tourfic_normalize_date( $dropoff_date_query ) : $dropoff_date_query;
 
 		$disable_car_time_slot    = ! empty( Helper::tfopt( 'disable-car-time-slots' ) ) ? boolval( Helper::tfopt( 'disable-car-time-slots' ) ) : false;
 		$car_time_slots           = ! empty( Helper::tfopt( 'car_time_slots' ) ) ? Helper::tfopt( 'car_time_slots' ) : '';
@@ -180,17 +181,17 @@ class Sticky_Nav {
 		}
 
 		$default_time = gmdate( 'g:i A', strtotime( $default_time_str ) );
-		$selected_pickup_time = ! empty( $_GET['pickup_time'] ) ? sanitize_text_field( wp_unslash( $_GET['pickup_time'] ) ) : '';
-		if ( empty( $selected_pickup_time ) && ! empty( $_GET['pickup-time'] ) ) {
-			$selected_pickup_time = sanitize_text_field( wp_unslash( $_GET['pickup-time'] ) );
+		$selected_pickup_time = isset( $search_request['pickup_time'] ) ? $search_request['pickup_time'] : '';
+		if ( empty( $selected_pickup_time ) && ! empty( $search_request['pickup-time'] ) ) {
+			$selected_pickup_time = $search_request['pickup-time'];
 		}
 		if ( empty( $selected_pickup_time ) ) {
 			$selected_pickup_time = $default_time;
 		}
 
-		$selected_dropoff_time = ! empty( $_GET['dropoff_time'] ) ? sanitize_text_field( wp_unslash( $_GET['dropoff_time'] ) ) : '';
-		if ( empty( $selected_dropoff_time ) && ! empty( $_GET['dropoff-time'] ) ) {
-			$selected_dropoff_time = sanitize_text_field( wp_unslash( $_GET['dropoff-time'] ) );
+		$selected_dropoff_time = isset( $search_request['dropoff_time'] ) ? $search_request['dropoff_time'] : '';
+		if ( empty( $selected_dropoff_time ) && ! empty( $search_request['dropoff-time'] ) ) {
+			$selected_dropoff_time = $search_request['dropoff-time'];
 		}
 		if ( empty( $selected_dropoff_time ) ) {
 			$selected_dropoff_time = $default_time;

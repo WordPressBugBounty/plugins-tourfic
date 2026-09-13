@@ -1,17 +1,14 @@
 <?php
 /**
- * Plugin Name:     Tourfic – Travel Booking, Hotel Booking & Car Rental WordPress Plugin
+ * Plugin Name:     Tourfic – AI Powered Travel Booking, Hotel Booking & Car Rental
  * Plugin URI:      https://themefic.com/tourfic
  * Description:     The ultimate plugin for tour, travel, accommodation, and hotel bookings. Effortlessly manage your entire online travel booking system, including orders and any WooCommerce payment method.
  * Author:          Themefic
  * Author URI:      https://themefic.com
  * Text Domain:     tourfic
  * Domain Path:     /lang/
- * Version:         2.23.2
- * Tested up to:    7.0
- * WC tested up to: 10.9
+ * Version:         2.23.5
  * Requires PHP:    7.4 
- * Elementor tested up to: 4.2
  * License: GPLv2 or later
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
 */
@@ -27,7 +24,8 @@ final class Tourfic {
 	 * @var string
 	 */
 
-	const VERSION = '2.23.2';
+	const VERSION = '2.23.5';
+	const DATABASE_VERSION = '1.0.0';
 
 	/**
 	 * Minimum PHP version required.
@@ -75,14 +73,12 @@ final class Tourfic {
 		include_once( ABSPATH . 'wp-admin/includes/plugin.php' );
 		$this->define_constants();
 
-		require __DIR__ . '/vendor/autoload.php';
-
 		//Check if WooCommerce is active, and if it isn't, disable the plugin.
 		if ( ! is_plugin_active( 'woocommerce/woocommerce.php' ) ) {
 			add_action( 'admin_notices', array( $this, 'tf_is_woo' ) );
 
 			//Ajax install & activate WooCommerce
-			add_action( "wp_ajax_tf_ajax_install_plugin", "wp_ajax_install_plugin" );
+			add_action( "wp_ajax_tourfic_ajax_install_plugin", "wp_ajax_install_plugin" );
 		}
 
 		$this->init_hooks();
@@ -93,23 +89,25 @@ final class Tourfic {
 	 */
 	private function define_constants() {
 		define( 'TOURFIC', self::VERSION );
-		define( 'TF_VERSION', self::VERSION );
-		define( 'TF_MINIMUM_PHP_VERSION', self::MINIMUM_PHP_VERSION );
-		define( 'TF_MINIMUM_WC_VERSION', self::MINIMUM_WC_VERSION );
-		define( 'TF_URL', plugin_dir_url( __FILE__ ) );
-		define( 'TF_TEMPLATES_URL', TF_URL . 'templates/' );
-		define( 'TF_ADMIN_URL', TF_URL . 'admin/' );
-		define( 'TF_ASSETS_URL', TF_URL . 'assets/' );
-		define( 'TF_ASSETS_APP_URL', TF_ASSETS_URL . 'app/' );
-		define( 'TF_ASSETS_ADMIN_URL', TF_ASSETS_URL . 'admin/' );
-		define( 'TF_PATH', trailingslashit( plugin_dir_path( __FILE__ ) ) );
-		define( 'TF_ADMIN_PATH', TF_PATH . 'inc/Admin/' );
-		define( 'TF_INC_PATH', TF_PATH . 'inc/' );
-		define( 'TF_TEMPLATE_PATH', TF_PATH . 'templates/' );
-		define( 'TF_TEMPLATE_PART_PATH', TF_TEMPLATE_PATH . 'template-parts/' );
-		define( 'TF_OPTIONS_PATH', TF_ADMIN_PATH . 'options/' );
-		define( 'TF_ASSETS_PATH', TF_PATH . 'assets/' );
-		define( 'TF_EMAIL_TEMPLATES_PATH', TF_ADMIN_PATH . 'Emails/templates/' );
+		define( 'TOURFIC_VERSION', self::VERSION );
+		define( 'TOURFIC_DATABASE_VERSION', self::DATABASE_VERSION );
+		define( 'TOURFIC_MINIMUM_PHP_VERSION', self::MINIMUM_PHP_VERSION );
+		define( 'TOURFIC_MINIMUM_WC_VERSION', self::MINIMUM_WC_VERSION );
+		define( 'TOURFIC_SETTINGS_MENU_SLUG', 'tourfic_settings' );
+		define( 'TOURFIC_URL', plugin_dir_url( __FILE__ ) );
+		define( 'TOURFIC_TEMPLATES_URL', TOURFIC_URL . 'templates/' );
+		define( 'TOURFIC_ADMIN_URL', TOURFIC_URL . 'admin/' );
+		define( 'TOURFIC_ASSETS_URL', TOURFIC_URL . 'assets/' );
+		define( 'TOURFIC_ASSETS_APP_URL', TOURFIC_ASSETS_URL . 'app/' );
+		define( 'TOURFIC_ASSETS_ADMIN_URL', TOURFIC_ASSETS_URL . 'admin/' );
+		define( 'TOURFIC_PATH', trailingslashit( plugin_dir_path( __FILE__ ) ) );
+		define( 'TOURFIC_ADMIN_PATH', TOURFIC_PATH . 'inc/Admin/' );
+		define( 'TOURFIC_INC_PATH', TOURFIC_PATH . 'inc/' );
+		define( 'TOURFIC_TEMPLATE_PATH', TOURFIC_PATH . 'templates/' );
+		define( 'TOURFIC_TEMPLATE_PART_PATH', TOURFIC_TEMPLATE_PATH . 'template-parts/' );
+		define( 'TOURFIC_OPTIONS_PATH', TOURFIC_ADMIN_PATH . 'options/' );
+		define( 'TOURFIC_ASSETS_PATH', TOURFIC_PATH . 'assets/' );
+		define( 'TOURFIC_EMAIL_TEMPLATES_PATH', TOURFIC_ADMIN_PATH . 'Emails/templates/' );
 	}
 
 	/**
@@ -122,6 +120,10 @@ final class Tourfic {
 		add_action( 'init', array( $this, 'init_plugin' ), 0 );
 		//Compatibility with custom order tables for the WooCommerce plugin
 		add_action( 'before_woocommerce_init', array( $this, 'tf_woocommerce_compatibility' ) );
+
+		if ( is_multisite() ) {
+			add_action( 'wp_initialize_site', 'tourfic_initialize_network_site', 200 );
+		}
 	}
 
 	/**
@@ -129,10 +131,7 @@ final class Tourfic {
 	 */
 	public function init_plugin() {
 		// autoloader
-		require_once TF_PATH . 'autoloader.php';
-
-		// Initialize the appsero
-		$this->appsero_init_tracker_tourfic();
+		require_once TOURFIC_PATH . 'autoloader.php';
 
 		if ( class_exists( "\Tourfic\Classes\Base" ) ) {
 			\Tourfic\Classes\Base::instance();
@@ -155,6 +154,7 @@ final class Tourfic {
 	public function includes() {}
 
 	function tf_load_textdomain() {
+		// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- WordPress core hook.
 		$locale = apply_filters( 'plugin_locale', get_locale(), 'tourfic' );
 		// Allow upgrade safe, site specific language files in /wp-content/languages/tourfic/
 		load_textdomain( 'tourfic', WP_LANG_DIR . '/tourfic/tourfic-' . $locale . '.mo' );
@@ -196,7 +196,7 @@ final class Tourfic {
                         current.addClass('updating-message').text('Installing...');
 
                         var data = {
-                            action: 'tf_ajax_install_plugin',
+                            action: 'tourfic_ajax_install_plugin',
                             _ajax_nonce: '</?php echo esc_html( wp_create_nonce( 'updates' ) ); ?>',
                             slug: plugin_slug,
                         };
@@ -248,31 +248,38 @@ final class Tourfic {
 		}
 	}
 
-	/**
-	 * Initialize the plugin tracker
-	 *
-	 * @return void
-	 */
-	public function appsero_init_tracker_tourfic() {
-
-		$client = new Appsero\Client( '19134f1b-2838-4a45-ac05-772b7dfc9850', 'Travel and Hotel Booking Solution for WooCommerce - Tourfic', __FILE__ );
-
-		// Change Admin notice text
-		$notice = sprintf( $client->__trans( 'Want to help make <strong>%1$s</strong> even more awesome? Allow %1$s to collect non-sensitive diagnostic data and usage information. I agree to get Important Product Updates & Discount related information on my email from  %1$s (I can unsubscribe anytime).' ), $client->name );
-		$client->insights()->notice( $notice );
-
-		// Active insights
-		$client->insights()->init();
-
-	}
 }
 
 Tourfic::instance();
 
-function tf_active_template_settings_callback() {
-	//all code goes here if need
-	update_option( 'tourfic_template_installed', true );
+/**
+ * Install Tourfic data when the plugin is activated.
+ *
+ * @param bool $network_wide Whether the plugin is being network activated.
+ */
+function tourfic_activate_plugin( $network_wide ) {
+	require_once TOURFIC_PATH . 'autoloader.php';
+	\Tourfic\Classes\Activator::activate( $network_wide );
 }
- 
-//Register activation hook
-register_activation_hook( __FILE__, 'tf_active_template_settings_callback' );
+
+/**
+ * Install Tourfic data when a site is added to an active network.
+ *
+ * @param WP_Site $new_site Newly initialized site.
+ */
+function tourfic_initialize_network_site( $new_site ) {
+	$network_plugins = get_site_option( 'active_sitewide_plugins', array() );
+	if ( ! isset( $network_plugins[ plugin_basename( __FILE__ ) ] ) ) {
+		return;
+	}
+
+	$site_id = isset( $new_site->blog_id ) ? absint( $new_site->blog_id ) : 0;
+	if ( ! $site_id ) {
+		return;
+	}
+
+	require_once TOURFIC_PATH . 'autoloader.php';
+	\Tourfic\Classes\Activator::install_site( $site_id );
+}
+
+register_activation_hook( __FILE__, 'tourfic_activate_plugin' );

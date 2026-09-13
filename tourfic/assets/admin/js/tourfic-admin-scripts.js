@@ -25,17 +25,17 @@
             e.preventDefault();
             var $this = $(this);
             var data = {
-                action: 'tf_delete_old_review_fields',
+                action: 'tourfic_delete_old_review_fields',
                 deleteAll: $(this).data('delete-all'),
-                _ajax_nonce: tf_admin_params.tf_nonce
+                _ajax_nonce: tourficAdminParams.tf_nonce
             };
 
             $.ajax({
                 type: 'post',
-                url: tf_admin_params.ajax_url,
+                url: tourficAdminParams.ajax_url,
                 data: data,
                 beforeSend: function (data) {
-                    notyf.success(tf_admin_params.deleting_old_review_fields);
+                    notyf.success(tourficAdminParams.deleting_old_review_fields);
                 },
                 success: function (data) {
                     notyf.success(data.data);
@@ -60,10 +60,10 @@
             var post_id = $("#post_ID").val();
             var meta_field = $this.closest('.tf-repeater-content-wrap').find('.tf-order_id input').attr('name');
             var data = {
-                action: 'tf_remove_room_order_ids',
+                action: 'tourfic_remove_room_order_ids',
                 meta_field: meta_field,
                 post_id: post_id,
-                _ajax_nonce: tf_admin_params.tf_nonce
+                _ajax_nonce: tourficAdminParams.tf_nonce
             };
 
             $.ajax({
@@ -71,7 +71,7 @@
                 url: ajaxurl,
                 data: data,
                 beforeSend: function (data) {
-                    notyf.success(tf_admin_params.deleting_room_order_ids);
+                    notyf.success(tourficAdminParams.deleting_room_order_ids);
                 },
                 success: function (response) {
                     notyf.success(response.data.message);
@@ -93,7 +93,7 @@
             if ($('input[name="tf_tours_opt[location][address]"]').val().length === 0) {
                 e.preventDefault;
                 e.stopImmediatePropagation();
-                notyf.error(tf_admin_params.tour_location_required);
+                notyf.error(tourficAdminParams.tour_location_required);
                 return false;
             }
         });
@@ -107,7 +107,7 @@
             if ($('input[name="tf_hotels_opt[map][address]"]').val().length === 0) {
                 e.preventDefault;
                 e.stopImmediatePropagation();
-                notyf.error(tf_admin_params.hotel_location_required);
+                notyf.error(tourficAdminParams.hotel_location_required);
                 return false;
             }
         });
@@ -121,7 +121,7 @@
             if ($('[name="tf_apartment_opt[map][address]"]').val().length === 0) {
                 e.preventDefault;
                 e.stopImmediatePropagation();
-                notyf.error(tf_admin_params.apartment_location_required);
+                notyf.error(tourficAdminParams.apartment_location_required);
                 return false;
             }
         });
@@ -137,44 +137,27 @@
             var current = $(this);
             var plugin_slug = current.attr("data-plugin-slug");
 
-            current.addClass('updating-message').text(tf_admin_params.installing);
+            current.addClass('updating-message').text(tourficAdminParams.installing);
 
             var data = {
-                action: 'tf_ajax_install_plugin',
-                _ajax_nonce: tf_admin_params.tf_nonce,
+                action: 'tourfic_ajax_install_plugin',
+                _ajax_nonce: tourficAdminParams.tf_nonce,
                 slug: plugin_slug,
             };
 
-            jQuery.post(tf_admin_params.ajax_url, data, function (response) {
+            jQuery.post(tourficAdminParams.ajax_url, data, function (response) {
                 current.removeClass('updating-message');
-                current.addClass('updated-message').text(tf_admin_params.installed);
+                current.addClass('updated-message').text(tourficAdminParams.installed);
                 current.attr("href", response.data.activateUrl);
             })
                 .fail(function () {
-                    current.removeClass('updating-message').text(tf_admin_params.install_failed);
+                    current.removeClass('updating-message').text(tourficAdminParams.install_failed);
                 })
                 .always(function () {
-                    current.removeClass('install-now updated-message').addClass('activate-now button-primary').text(tf_admin_params.activating);
+                    current.removeClass('install-now updated-message').addClass('activate-now button-primary').text(tourficAdminParams.activating);
                     current.unbind(e);
                     current[0].trigger("click");
                 });
-        });
-
-        /**
-         * Pro Feature button link
-         */
-        $(document).on('click', '.tf-pro', function (e) {
-            e.preventDefault();
-            window.open('https://tourfic.com/');
-        });
-
-        $(window).on('load', function () {
-            $('.tf-field-disable').find('input, select, textarea, button, div, span').attr('disabled', 'disabled');
-        });
-
-        $(document).on('click', '.tf-field-pro', function (e) {
-            e.preventDefault();
-            window.open('https://tourfic.com/');
         });
 
         /**
@@ -197,117 +180,7 @@
         $('.tf-go-docs').parent().attr('target', '_blank');
 
         //pricing link open in new tab
-        $('#toplevel_page_tf_settings a[href*="tourfic.com/pricing"]').attr('target', '_blank');
-
-        /*
-        * Author @Jahid
-        * Tour Booking Status
-        */
-
-        $('.tf-ticket-status').on("click", function () {
-            if ($(this).is(':checked')) {
-                var order_unique_id = $(this).val();
-                $("#tf-booking-status-loader").addClass('show');
-                jQuery.ajax({
-                    type: 'post',
-                    url: tf_admin_params.ajax_url,
-                    data: {
-                        action: 'tf_ticket_status_change',
-                        _ajax_nonce: tf_admin_params.tf_nonce,
-                        status: "check in",
-                        order_unique_id: order_unique_id,
-                    },
-                    success: function (data) {
-                        $("#tf-booking-status-loader").removeClass('show');
-                    }
-                });
-            } else {
-                var order_unique_id = $(this).val();
-                $("#tf-booking-status-loader").addClass('show');
-                jQuery.ajax({
-                    type: 'post',
-                    url: tf_admin_params.ajax_url,
-                    data: {
-                        action: 'tf_ticket_status_change',
-                        _ajax_nonce: tf_admin_params.tf_nonce,
-                        status: "",
-                        order_unique_id: order_unique_id,
-                    },
-                    success: function (data) {
-                        $("#tf-booking-status-loader").removeClass('show');
-                    }
-                });
-            }
-        });
-
-        /*
-        * active tourfic affiliate plugin
-        */
-        $(document).on('click', '.tf-affiliate-active', function(e) {
-            e.preventDefault();
-
-            var btn = $(this);
-
-            $.ajax({
-                type: 'post',
-                url: tf_admin_params.ajax_url,
-                data: {
-                    action: 'tf_affiliate_active',
-                    nonce: tf_admin_params.tf_nonce,
-                },
-                beforeSend: function (data) {
-                    btn.addClass('tf-btn-loading').css({'pointer-events': 'none'});
-                },
-                success: function (data) {
-                    let response = JSON.parse(data);
-                    if( response.status === 'success' ) {
-                        notyf.success(response.message);
-
-                        setTimeout(function() {
-                            location.reload();
-                        }, 500);
-                    }
-                    btn.removeClass('tf-btn-loading').css({'pointer-events': 'auto'});
-                },
-                error: function (data) {
-                    btn.removeClass('tf-btn-loading').css({'pointer-events': 'auto'});
-                },
-                complete: function (data) {
-                    btn.removeClass('tf-btn-loading').css({'pointer-events': 'auto'});
-                }
-            })
-        });
-
-        /*
-        * install tourfic affiliate plugin
-        */
-        $(document).on('click', '.tf-affiliate-install', function(e) {
-            e.preventDefault();
-
-            var btn = $(this);
-
-            $.ajax({
-                type: 'post',
-                url: tf_admin_params.ajax_url,
-                data: {
-                    action: 'tf_affiliate_install',
-                    nonce: tf_admin_params.tf_nonce,
-                },
-                beforeSend: function (data) {
-                    btn.addClass('tf-btn-loading').css({'pointer-events': 'none'});
-                },
-                success: function (data) {
-                    let response = JSON.parse(data);
-                    if( response.status === 'success' ) {
-                        location.reload();
-                    }
-                    btn.removeClass('tf-btn-loading').css({'pointer-events': 'auto'});
-                },
-                error: function (data) {
-                    btn.removeClass('tf-btn-loading').css({'pointer-events': 'auto'});
-                }
-            })
-        });
+        $('#toplevel_page_tourfic_settings a[href*="tourfic.com/pricing"]').attr('target', '_blank');
 
         /*
         * Author @Jahid
@@ -317,25 +190,32 @@
         $('.tf-post-data-duplicate').on('click', function(e) {
             e.preventDefault();
             var postID = $(this).data('postid');
-            var postType = $(this).data('posttype');
             var nonce = $(this).data('nonce');
             $('#wpcontent').append('<div class="tf-duplicator-loader"></div>');
             // AJAX request to duplicate post
             $.ajax({
                 type: 'POST',
-                url: tf_admin_params.ajax_url,
+                url: tourficAdminParams.ajax_url,
                 data: {
-                    action: 'tf_duplicate_post_data',
+                    action: 'tourfic_duplicate_post_data',
                     postID: postID,
-                    postType: postType,
                     security: nonce
                 },
                 success: function(response) {
-                    window.location.reload();
+                    if (response.success) {
+                        window.location.reload();
+                        return;
+                    }
+
+                    $('.tf-duplicator-loader').remove();
+                    notyf.error(response.data && response.data.message ? response.data.message : 'Unable to duplicate this post.');
                 },
-                error: function(errorThrown) {
-                    // Handle errors (if any)
-                    console.error('Error duplicating post:', errorThrown);
+                error: function(xhr) {
+                    $('.tf-duplicator-loader').remove();
+                    var message = xhr.responseJSON && xhr.responseJSON.data && xhr.responseJSON.data.message
+                        ? xhr.responseJSON.data.message
+                        : 'Unable to duplicate this post.';
+                    notyf.error(message);
                 }
             });
         });
@@ -343,6 +223,7 @@
     });
 
 })(jQuery);
+
 })();
 
 // This entry needs to be wrapped in an IIFE because it needs to be isolated against other entry modules.
@@ -444,10 +325,10 @@
             if (from.length > 0 && to.length > 0) {
                 jQuery.ajax({
                     type: 'post',
-                    url: tf_admin_params.ajax_url,
+                    url: tourficAdminParams.ajax_url,
                     data: {
-                        action: 'tf_check_available_hotel',
-                        _nonce: tf_admin_params.tf_nonce,
+                        action: 'tourfic_check_available_hotel',
+                        _nonce: tourficAdminParams.tf_nonce,
                         from: from,
                         to: to,
                     },
@@ -460,7 +341,7 @@
                         } else {
                             var select2 = $('[name="tf_available_hotels"]');
                             select2.empty();
-                            select2.append('<option value="">' + tf_admin_params.select_hotel + '</option>');
+                            select2.append('<option value="">' + tourficAdminParams.select_hotel + '</option>');
                             $.each(response.data.hotels, function (key, value) {
                                 select2.append('<option value="' + key + '">' + value + '</option>');
                             });
@@ -495,10 +376,10 @@
             if (hotel_id.length > 0) {
                 jQuery.ajax({
                     type: 'post',
-                    url: tf_admin_params.ajax_url,
+                    url: tourficAdminParams.ajax_url,
                     data: {
-                        action: 'tf_check_available_room',
-                        _nonce: tf_admin_params.tf_nonce,
+                        action: 'tourfic_check_available_room',
+                        _nonce: tourficAdminParams.tf_nonce,
                         hotel_id: hotel_id,
                         from: from,
                         to: to,
@@ -515,7 +396,7 @@
 
                             select2.removeAttr('disabled');
                             select2.empty();
-                            select2.append('<option value="">' + tf_admin_params.select_room + '</option>');
+                            select2.append('<option value="">' + tourficAdminParams.select_room + '</option>');
                             $.each(response.data.rooms, function (key, value) {
                                 select2.append('<option value="' + key + '">' + value + '</option>');
                             });
@@ -557,10 +438,10 @@
             if (room_id.length > 0) {
                 jQuery.ajax({
                     type: 'post',
-                    url: tf_admin_params.ajax_url,
+                    url: tourficAdminParams.ajax_url,
                     data: {
-                        action: 'tf_update_room_fields',
-                        _nonce: tf_admin_params.tf_nonce,
+                        action: 'tourfic_update_room_fields',
+                        _nonce: tourficAdminParams.tf_nonce,
                         hotel_id: hotel_id,
                         room_id: room_id,
                         from: from,
@@ -613,13 +494,13 @@
             let btn = $(this);
             let form = btn.closest('form.tf-backend-hotel-booking');
             let formData = new FormData(form[0]);
-            formData.append('action', 'tf_backend_hotel_booking');
+            formData.append('action', 'tourfic_backend_hotel_booking');
             let requiredFields = [
                 'tf_hotel_booked_by', 'tf_customer_first_name', 'tf_customer_email', 'tf_customer_phone', 'tf_customer_country', 'tf_customer_address', 'tf_customer_city', 'tf_customer_state', 'tf_customer_zip', 'tf_hotel_date[from]', 'tf_hotel_date[to]', 'tf_available_hotels', 'tf_available_rooms', 'tf_hotel_rooms_number', 'tf_hotel_adults_number', 'tf_hotel_children_number'];
 
             $.ajax({
                 type: 'post',
-                url: tf_admin_params.ajax_url,
+                url: tourficAdminParams.ajax_url,
                 data: formData,
                 processData: false,
                 contentType: false,
@@ -627,7 +508,7 @@
                     btn.addClass('tf-btn-loading');
                 },
                 success: function (response) {
-                    const obj = JSON.parse(response);
+							const obj = typeof response === 'string' ? JSON.parse(response) : response;
                     if (!obj.success) {
                         if (obj.message) {
                             alert_popup.error(obj.message);
@@ -700,10 +581,10 @@
             if (tourId) {
                 jQuery.ajax({
                     type: 'post',
-                    url: tf_admin_params.ajax_url,
+                    url: tourficAdminParams.ajax_url,
                     data: {
-                        action: 'tf_tour_date_time_update',
-                        _nonce: tf_admin_params.tf_nonce,
+                        action: 'tourfic_tour_date_time_update',
+                        _nonce: tourficAdminParams.tf_nonce,
                         tour_id: tourId,
                     },
                     beforeSend: function () {
@@ -711,7 +592,7 @@
                     },
                     success: function (response) {
                         if(response){
-                            const obj = JSON.parse(response);
+                            const obj = typeof response === 'string' ? JSON.parse(response) : response;
 
                             let flatpickerObj = {
                                 enableTime: false,
@@ -741,46 +622,9 @@
                                 populatePackageSelect(obj.tour_packages_array);
                             }
 
-                            flatpickerObj.onChange = function (selectedDates, dateStr, instance) {
-                                // Initialize empty object for times
-                                let times = {};
-                                const selectedDate = selectedDates[0];
-                                const timestamp = selectedDate.getTime();
-
-                                const tourAvailability = obj.tour_availability;
-
-                                for (const key in tourAvailability) {
-                                    const availability = tourAvailability[key];
-
-                                    if (availability.status !== 'available') continue;
-
-                                    const from = new Date(availability.check_in.trim()).getTime();
-                                    const to   = new Date(availability.check_out.trim()).getTime();
-
-                                    if (timestamp >= from && timestamp <= to) {
-                                        const allowedTime = availability.allowed_time?.time || [];
-
-                                        if (Array.isArray(allowedTime)) {
-                                            allowedTime.forEach((t) => {
-                                                if (t && t.trim() !== '') {
-                                                    times[t] = t;
-                                                }
-                                            });
-                                        } else if (typeof allowedTime === 'object' && allowedTime !== null) {
-                                            Object.values(allowedTime).forEach((t) => {
-                                                if (t && t.trim() !== '') {
-                                                    times[t] = t;
-                                                }
-                                            });
-                                        }
-
-                                        break; // stop after first match
-                                    }
-                                }
-
-                                populateTimeSelect(times);
-                                
-                                instance.element.value = tfNormalizeDateRange(dateStr);
+							flatpickerObj.onChange = function (selectedDates, dateStr, instance) {
+								$(document).trigger('tourfic:backend-tour-date-change', [obj, selectedDates, dateStr]);
+								instance.element.value = tfNormalizeDateRange(dateStr);
                             }
 
                             $("[name='tf_tour_date']").flatpickr(flatpickerObj);
@@ -826,22 +670,6 @@
 
         }
 
-        function populateTimeSelect(times) {
-            let timeSelect = $('[name="tf_tour_time"]');
-            timeSelect.empty();
-
-            if (Object.keys(times).length > 0) {
-                // Use the keys and values from the object to populate the options
-                $.each(times, function (key, value) {
-                    timeSelect.append(`<option value="${key}">${value}</option>`);
-                });
-            } else {
-                timeSelect.append(`<option value="" selected>No Time Available</option>`);
-                timeSelect.attr('disabled', 'disabled');
-            }
-
-        }
-
         /*
         * Backend Tour Booking
         * Author @Foysal
@@ -852,12 +680,12 @@
             let btn = $(this);
             let form = btn.closest('form.tf-backend-tour-booking');
             let formData = new FormData(form[0]);
-            formData.append('action', 'tf_backend_tour_booking');
+            formData.append('action', 'tourfic_backend_tour_booking');
             let requiredFields = ['tf_tours_booked_by', 'tf_customer_first_name', 'tf_customer_email', 'tf_customer_phone', 'tf_customer_country', 'tf_customer_address', 'tf_customer_city', 'tf_customer_state', 'tf_customer_zip', 'tf_tour_date', 'tf_available_tours', 'tf_tour_adults_number', 'tf_tour_children_number'];
 
             $.ajax({
                 type: 'post',
-                url: tf_admin_params.ajax_url,
+                url: tourficAdminParams.ajax_url,
                 data: formData,
                 processData: false,
                 contentType: false,
@@ -927,10 +755,10 @@
             if (fromValue.length > 0 && toValue.length > 0) {
                 jQuery.ajax({
                     type: 'post',
-                    url: tf_admin_params.ajax_url,
+                    url: tourficAdminParams.ajax_url,
                     data: {
-                        action: 'tf_check_available_apartment',
-                        _nonce: tf_admin_params.tf_nonce,
+                        action: 'tourfic_check_available_apartment',
+                        _nonce: tourficAdminParams.tf_nonce,
                         from: fromValue,
                         to: toValue,
                         apartment_id: apartment_id
@@ -977,10 +805,10 @@
             if (apartment_id.length > 0) {
                 jQuery.ajax({
                     type: 'post',
-                    url: tf_admin_params.ajax_url,
+                    url: tourficAdminParams.ajax_url,
                     data: {
-                        action: 'tf_check_apartment_aditional_fees',
-                        _nonce: tf_admin_params.tf_nonce,
+                        action: 'tourfic_check_apartment_aditional_fees',
+                        _nonce: tourficAdminParams.tf_nonce,
                         apartment_id: apartment_id,
                         from: from,
                         to: to,
@@ -1031,7 +859,7 @@
             let btn = $(this);
             let form = btn.closest('form.tf-backend-apartment-booking');
             let formData = new FormData(form[0]);
-            formData.append('action', 'tf_backend_apartment_booking');
+            formData.append('action', 'tourfic_backend_apartment_booking');
             let requiredFields = [
                 'tf_apartment_booked_by',
                 'tf_customer_first_name',
@@ -1052,7 +880,7 @@
 
             $.ajax({
                 type: 'post',
-                url: tf_admin_params.ajax_url,
+                url: tourficAdminParams.ajax_url,
                 data: formData,
                 processData: false,
                 contentType: false,
@@ -1138,6 +966,17 @@
                 y: 'bottom',
             },
         });
+
+        const getBookingNonce = () => $('[data-booking-nonce]').first().attr('data-booking-nonce') || '';
+        const getFilterNonce = () => $('.tf_booking_details_wrap').attr('data-filter-nonce') || '';
+        const redirectToFilteredBookings = (parameter, value) => {
+            const currentURL = new URL(window.location.href);
+            currentURL.searchParams.delete('paged');
+            currentURL.searchParams.set(parameter, value);
+            currentURL.searchParams.set('nonce', 'list');
+            currentURL.searchParams.set('_wpnonce', getFilterNonce());
+            window.location.href = currentURL.toString();
+        };
 
         // Select Form
         $('.tf-filter-selection').on("click", function() {
@@ -1280,11 +1119,11 @@
             var $this = $(this);
 
             var formData = new FormData(this);
-            formData.append('action', 'tf_visitor_details_edit');
-            formData.append('_ajax_nonce', tf_admin_params.tf_nonce);
+            formData.append('action', 'tourfic_visitor_details_edit');
+            formData.append('_ajax_nonce', getBookingNonce());
             $.ajax({
                 type: 'post',
-                url: tf_admin_params.ajax_url,
+                url: tourficAdminParams.ajax_url,
                 data: formData,
                 processData: false,
                 contentType: false,
@@ -1295,10 +1134,20 @@
                     
                 },
                 success: function (data) {
-                    location.reload();
+                    if (data.success) {
+                        location.reload();
+                        return;
+                    }
+
+					$('.tf-preloader-box').hide();
+					notyf.error(data.data || 'Unable to update traveler details.');
                 },
-                error: function (data) {
-                    console.log(data);
+                error: function (xhr) {
+					$('.tf-preloader-box').hide();
+					let message = xhr.responseJSON && xhr.responseJSON.data
+						? xhr.responseJSON.data
+						: 'Unable to update traveler details.';
+					notyf.error(message);
                 },
 
             });
@@ -1316,12 +1165,12 @@
 
             $.ajax({
                 type: 'post',
-                url: tf_admin_params.ajax_url,
+                url: tourficAdminParams.ajax_url,
                 data: {
-                    action: 'tf_checkinout_details_edit',
+                    action: 'tourfic_checkinout_details_edit',
                     order_id: order_id,
                     checkinout: selected_value,
-                    _ajax_nonce: tf_admin_params.tf_nonce
+                    _ajax_nonce: getBookingNonce()
                 },
                 beforeSend: function (data) {
                     $('.tf-preloader-box').show();
@@ -1351,12 +1200,12 @@
 
             $.ajax({
                 type: 'post',
-                url: tf_admin_params.ajax_url,
+                url: tourficAdminParams.ajax_url,
                 data: {
-                    action: 'tf_order_status_edit',
+                    action: 'tourfic_order_status_edit',
                     order_id: order_id,
                     status: selected_value,
-                    _ajax_nonce: tf_admin_params.tf_nonce
+                    _ajax_nonce: getBookingNonce()
                 },
                 beforeSend: function (data) {
                     $('.tf-preloader-box').show();
@@ -1387,13 +1236,13 @@
 
             $.ajax({
                 type: 'post',
-                url: tf_admin_params.ajax_url,
+                url: tourficAdminParams.ajax_url,
                 data: {
-                    action: 'tf_order_status_email_resend',
+                    action: 'tourfic_order_status_email_resend',
                     order_id: order_id,
                     status: selected_value,
                     id : db_id,
-                    _ajax_nonce: tf_admin_params.tf_nonce
+                    _ajax_nonce: getBookingNonce()
                 },
                 beforeSend: function (data) {
                     $('.tf-preloader-box').show();
@@ -1403,10 +1252,19 @@
                 },
                 success: function (data) {
                     $('.tf-preloader-box').hide();
-                    notyf.success("Email Sucessfully Resend!");
+                    if (data.success) {
+                        notyf.success("Email successfully resent!");
+                        return;
+                    }
+
+                    notyf.error(data.data || "Unable to resend this email.");
                 },
-                error: function (data) {
-                    console.log(data);
+                error: function (xhr) {
+                    $('.tf-preloader-box').hide();
+                    let message = xhr.responseJSON && xhr.responseJSON.data
+                        ? xhr.responseJSON.data
+                        : "Unable to resend this email.";
+                    notyf.error(message);
                 },
 
             });
@@ -1454,12 +1312,12 @@
             if(order_list.length > 0 && bulk_action!==''){
                 $.ajax({
                     type: 'post',
-                    url: tf_admin_params.ajax_url,
+                    url: tourficAdminParams.ajax_url,
                     data: {
-                        action: 'tf_order_bulk_action_edit',
+                        action: 'tourfic_order_bulk_action_edit',
                         orders: order_list,
                         status: bulk_action,
-                        _ajax_nonce: tf_admin_params.tf_nonce
+                        _ajax_nonce: getBookingNonce()
                     },
                     beforeSend: function (data) {
                         $('.tf-preloader-box').show();
@@ -1489,13 +1347,7 @@
             let id = $("#tf-searching-key").val();
             if(id!==""){
                 $('.tf-preloader-box').show();
-                let currentURL = new URL(window.location.href);
-                currentURL.searchParams.delete("paged");
-                currentURL.searchParams.set("order_id", id);
-                if (!currentURL.searchParams.has("nonce")) {
-                    currentURL.searchParams.set("nonce", tf_admin_params.tf_nonce);
-                }
-                window.location.href = currentURL.toString();
+                redirectToFilteredBookings('order_id', id);
             }
         });
 
@@ -1506,59 +1358,17 @@
         $('.tf-tour-checkinout-options').change(function() {
             let changeValue = $(this).val();
             $('.tf-preloader-box').show();
-            let currentURL = window.location.href;
-            let BaseURL = currentURL.split('?')[0];
-            let queryString = currentURL.split('?')[1];
-
-            let currentURLParams= new URLSearchParams(queryString);
-            currentURLParams.delete("paged");
-            if (currentURLParams.has("checkinout")) {
-                currentURLParams.set("checkinout", changeValue);
-                let updatedUrl = BaseURL.split('?')[0] + '?' + currentURLParams.toString();
-                window.location.href = updatedUrl;
-            }else{
-                currentURLParams.set("checkinout", changeValue);
-                let updatedUrl = BaseURL.split('?')[0] + '?' + currentURLParams.toString();
-                window.location.href = updatedUrl;
-            }
-
-            //Nonce
-            if (!currentURLParams.has("nonce")) {
-                currentURLParams.set("nonce", tf_admin_params.tf_nonce);
-                let updatedUrl = BaseURL.split('?')[0] + '?' + currentURLParams.toString();
-                window.location.href = updatedUrl;
-            }
+            redirectToFilteredBookings('checkinout', changeValue);
         });
 
         /**
          * Filter Post Perameter Passing
          *
          */
-        $('.tf-post-id-filter-options, .tf-hotel-id-filter-options, .tf-apartment-id-filter-options').change(function() {
+        $('.tf-post-id-filter-options, .tf-hotel-id-filter-options, .tf-apartment-id-filter-options, .tf-car-id-filter-options').change(function() {
             let changeValue = $(this).val();
             $('.tf-preloader-box').show();
-            let currentURL = window.location.href;
-            let BaseURL = currentURL.split('?')[0];
-            let queryString = currentURL.split('?')[1];
-
-            let currentURLParams= new URLSearchParams(queryString);
-            currentURLParams.delete("paged");
-            if (currentURLParams.has("post")) {
-                currentURLParams.set("post", changeValue);
-                let updatedUrl = BaseURL.split('?')[0] + '?' + currentURLParams.toString();
-                window.location.href = updatedUrl;
-            }else{
-                currentURLParams.set("post", changeValue);
-                let updatedUrl = BaseURL.split('?')[0] + '?' + currentURLParams.toString();
-                window.location.href = updatedUrl;
-            }
-
-            //Nonce
-            if (!currentURLParams.has("nonce")) {
-                currentURLParams.set("nonce", tf_admin_params.tf_nonce);
-                let updatedUrl = BaseURL.split('?')[0] + '?' + currentURLParams.toString();
-                window.location.href = updatedUrl;
-            }
+            redirectToFilteredBookings('post', changeValue);
         });
 
         /**
@@ -1568,28 +1378,7 @@
         $('.tf-order-payment-status').change(function() {
             let changeValue = $(this).val();
             $('.tf-preloader-box').show();
-            let currentURL = window.location.href;
-            let BaseURL = currentURL.split('?')[0];
-            let queryString = currentURL.split('?')[1];
-
-            let currentURLParams= new URLSearchParams(queryString);
-            currentURLParams.delete("paged");
-            if (currentURLParams.has("payment")) {
-                currentURLParams.set("payment", changeValue);
-                let updatedUrl = BaseURL.split('?')[0] + '?' + currentURLParams.toString();
-                window.location.href = updatedUrl;
-            }else{
-                currentURLParams.set("payment", changeValue);
-                let updatedUrl = BaseURL.split('?')[0] + '?' + currentURLParams.toString();
-                window.location.href = updatedUrl;
-            }
-            
-            //Nonce
-            if (!currentURLParams.has("nonce")) {
-                currentURLParams.set("nonce", tf_admin_params.tf_nonce);
-                let updatedUrl = BaseURL.split('?')[0] + '?' + currentURLParams.toString();
-                window.location.href = updatedUrl;
-            }
+            redirectToFilteredBookings('payment', changeValue);
         });
 
         // Booking View Change
@@ -1630,13 +1419,11 @@
             $('.tf-calendar-popup-box').html('');
             $.ajax({
                 type: 'post',
-                url: tf_admin_params.ajax_url,
+                url: tourficAdminParams.ajax_url,
                 data: {
-                    action: 'tf_booking_details_popup',
+                    action: 'tourfic_booking_details_popup',
                     id: $this.attr('data-id'),
-                    type: $this.attr('data-type'),
-                    page: $this.attr('data-page'),
-                    _ajax_nonce: tf_admin_params.tf_nonce
+                    _ajax_nonce: getBookingNonce()
                 },
                 beforeSend: function (data) {
                     $('.tf-preloader-box').show();
@@ -1665,14 +1452,14 @@
             
             $.ajax({
                 type: 'post',
-                url: tf_admin_params.ajax_url,
+                url: tourficAdminParams.ajax_url,
                 data: {
-                    action: 'tf_booking_calendar_filter',
+                    action: 'tourfic_booking_calendar_filter',
                     ostatus: ostatus,
                     checkinout: checkinout,
                     post_id: post_id,
                     post_type: $('#tf_booking_post_type').val(),
-                    _ajax_nonce: tf_admin_params.tf_nonce
+                    _ajax_nonce: getBookingNonce()
                 },
                 beforeSend: function (data) {
                     $('.tf-preloader-box').show();
@@ -1681,9 +1468,10 @@
                     
                 },
                 success: function (response) {
-                    let data = JSON.parse(response);
                     $('.tf-preloader-box').hide();
-                    initializeCalendar(data.events);
+                    if (response.success) {
+                        initializeCalendar(response.data.events);
+                    }
                 },
                 error: function (data) {
                     console.log(data);
@@ -1704,20 +1492,15 @@
 // Booking Calendar
 function initializeCalendar(eventsSource) {
     var calendarEl = document.getElementById('tf-booking-calendar');
-    var currentPageUrl = window.location.href;
+    if (!calendarEl) {
+        return;
+    }
 
-    // Set the events based on the page URL
     if (!eventsSource) {
-        if (currentPageUrl.includes('post_type=tf_tours&page=tf_tours_booking')) {
-            eventsSource = tf_options.tf_tours_orders;
-        } else if (currentPageUrl.includes('post_type=tf_hotel&page=tf_hotel_booking')) {
-            eventsSource = tf_options.tf_hotels_orders;
-        } else if (currentPageUrl.includes('post_type=tf_apartment&page=tf_apartment_booking')) {
-            eventsSource = tf_options.tf_apartments_orders;
-        } else if (currentPageUrl.includes('post_type=tf_carrental&page=tf_carrental_booking')) {
-            eventsSource = tf_options.tf_cars_orders;
-        } else {
-            eventsSource = []; // Fallback option if none of the conditions match
+        try {
+            eventsSource = JSON.parse(calendarEl.dataset.events || '[]');
+        } catch (error) {
+            eventsSource = [];
         }
     }
 
@@ -1733,11 +1516,11 @@ function initializeCalendar(eventsSource) {
         events: eventsSource,
         eventContent: function(info) {
             var customEl = document.createElement('div');
+            var titleEl = document.createElement('span');
             customEl.classList.add('tf-booking-single-popup');
             customEl.setAttribute('data-id', info.event.id);
-            customEl.setAttribute('data-type', info.event.extendedProps.post_type);
-            customEl.setAttribute('data-page', info.event.extendedProps.page);
-            customEl.innerHTML = `<span>${info.event.title}</span>`;
+            titleEl.textContent = info.event.title;
+            customEl.appendChild(titleEl);
             return { domNodes: [customEl] };
         }
     });
@@ -1796,13 +1579,13 @@ document.addEventListener('DOMContentLoaded', function() {
             });
 
             $.ajax({
-                url: tf_admin_params.ajax_url,
+                url: tourficAdminParams.ajax_url,
                 type: 'POST',
                 data: {
-                    action: 'tf_enquiry_bulk_action',
+                    action: 'tourfic_enquiry_bulk_action',
                     selected_items: selected_items,
                     bulk_action: actions,
-                    _ajax_nonce: tf_admin_params.tf_nonce
+                    _ajax_nonce: tourficAdminParams.tf_nonce
                 },
                 beforeSend: function() {
                     $this.addClass("loading");
@@ -1828,14 +1611,14 @@ document.addEventListener('DOMContentLoaded', function() {
             let filter = $(".tf-filter-mail-option-enquiry ").val();
 
             $.ajax({
-                url: tf_admin_params.ajax_url,
+                url: tourficAdminParams.ajax_url,
                 type: 'POST',
                 data: {
-                    action: 'tf_enquiry_filter_post',
+                    action: 'tourfic_enquiry_filter_post',
                     post_id: post_id,
                     post_type: post_type,
                     filter: filter,
-                    _ajax_nonce: tf_admin_params.tf_nonce
+                    _ajax_nonce: tourficAdminParams.tf_nonce
                 },
                 beforeSend: function() {
                     $("#tf-enquiry-status-loader").addClass("show");
@@ -1865,14 +1648,14 @@ document.addEventListener('DOMContentLoaded', function() {
             let post_type = $(".enquiry-post-type").val();
 
             $.ajax({
-                url: tf_admin_params.ajax_url,
+                url: tourficAdminParams.ajax_url,
                 type: 'POST',
                 data: {
-                    action: 'tf_enquiry_filter_mail',
+                    action: 'tourfic_enquiry_filter_mail',
                     filter: filter,
                     post_id : post_id,
                     post_type: post_type,
-                    _ajax_nonce: tf_admin_params.tf_nonce
+                    _ajax_nonce: tourficAdminParams.tf_nonce
                 },
                 beforeSend: function() {
                     $("#tf-enquiry-status-loader").addClass("show");
@@ -1901,17 +1684,17 @@ document.addEventListener('DOMContentLoaded', function() {
             let enquiry_id = $this.find(".tf-enquiry-reply-id").val();
 
             $.ajax({
-                url: tf_admin_params.ajax_url,
+                url: tourficAdminParams.ajax_url,
                 type: 'POST',
                 data: {
-                    action: 'tf_enquiry_reply_email',
+                    action: 'tourfic_enquiry_reply_email',
                     reply_mail: reply_mail,
                     reply_message: reply_message,
                     user_name: userName,
                     subject: subject,
                     post_id: post_id,
                     enquiry_id: enquiry_id,
-                    _ajax_nonce: tf_admin_params.tf_nonce
+                    _ajax_nonce: tourficAdminParams.tf_nonce
                 },
                 beforeSend: function() {
                     $("#tf-enquiry-status-loader").addClass("show");
@@ -1946,7 +1729,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if( $.inArray(post_id, values) !== -1 ) {
                 $('.tf-filter-hotel-name').val(post_id).trigger('change');
             } else {
-                notyf.error(tf_admin_params.no_data_found_with_id);
+                notyf.error(tourficAdminParams.no_data_found_with_id);
             }
             
         })
@@ -1987,19 +1770,19 @@ document.addEventListener('DOMContentLoaded', function() {
 
         $(".tf-enquiry-single-row").on("click", function(e) {
 
-            let currentURL = window.location.href;
-            let id = $(".tf-enquiry-id", this).val();
-
             if( $(e.target)[0].className == 'check-column' || $(e.target)[0].className == 'tf-enquiry-name-checkbox'|| $(e.target)[0].className == 'table-name-column' ) {
                 return;
             }
 
-            let updatedUrl = currentURL + "&enquiry_id=" + id + "&action=preview";
-            window.location.href = updatedUrl;
+            let viewUrl = $(this).data("view-url");
+            if (viewUrl) {
+                window.location.href = viewUrl;
+            }
         });
     });
 
 })(jQuery);
+
 })();
 
 // This entry needs to be wrapped in an IIFE because it needs to be isolated against other entry modules.
@@ -2010,8 +1793,8 @@ const {select, dispatch} = wp.data;
 
 function TfPrePublishCheck() {
     let lockPost = false;
-    tf_admin_params.error = false;
-    tf_admin_params.messages = [];
+    tourficAdminParams.error = false;
+    tourficAdminParams.messages = [];
 
     let tf_post_pre_save = Object.assign({}, select('core/editor').getCurrentPost(), select('core/editor').getPostEdits());
 
@@ -2021,7 +1804,7 @@ function TfPrePublishCheck() {
         });
     }
 
-    jQuery.each(tf_admin_params.taxonomies, function (taxonomy, config) {
+    jQuery.each(tourficAdminParams.taxonomies, function (taxonomy, config) {
         if (tf_post_pre_save.hasOwnProperty(taxonomy) && tf_post_pre_save[taxonomy].length === 0) {
             dispatch('core/notices').createNotice(
                 'error',
@@ -2031,7 +1814,7 @@ function TfPrePublishCheck() {
                     isDismissible: false
                 }
             );
-            tf_admin_params.error = lockPost = true;
+            tourficAdminParams.error = lockPost = true;
         }else{
             dispatch('core/notices').removeNotice('tfNotice_' + taxonomy);
         }
@@ -2068,23 +1851,23 @@ jQuery(function ($) {
 	});
 
     function tf_event_handler(e) {
-        tf_admin_params.error = false;
-        $.each(tf_admin_params.taxonomies, function (taxonomy, config) {
+        tourficAdminParams.error = false;
+        $.each(tourficAdminParams.taxonomies, function (taxonomy, config) {
             if (config.type == 'hierarchical') {
                 if ($('#taxonomy-' + taxonomy + ' input:checked').length == 0) {
                     //alert(config.message);
 					notyf.error(config.message);
-                    tf_admin_params.error = true;
+                    tourficAdminParams.error = true;
                 }
             } else {
                 if ($('#tagsdiv-' + taxonomy + ' .tagchecklist').is(':empty')) {
                     //alert(config.message);
                     notyf.error(config.message);
-                    tf_admin_params.error = true;
+                    tourficAdminParams.error = true;
                 }
             }
         });
-        if (tf_admin_params.error) {
+        if (tourficAdminParams.error) {
             e.stopImmediatePropagation();
             return false;
         } else {
@@ -2137,15 +1920,15 @@ jQuery(function ($) {
             },
         });
 
-        //if body has class .tourfic-settings_page_tf-setup-wizard then add background-color: #ecf5ff; to html
-        if ($('body').hasClass('tourfic-settings_page_tf-setup-wizard')) {
+        //if body has class .tourfic-settings_page_tourfic-setup-wizard then add background-color: #ecf5ff; to html
+        if ($('body').hasClass('tourfic-settings_page_tourfic-setup-wizard')) {
             $('html').css('padding', '0');
         }
 
         $(document).on('click', '.tf-setup-start-btn', function (e) {
             e.preventDefault();
             $('.tf-welcome-step').hide();
-            if(tf_admin_params.is_woo_not_active) {
+            if(tourficAdminParams.is_woo_not_active) {
                 $('.tf-setup-step-1').fadeIn(600);
             } else {
                 $('.tf-setup-step-2').fadeIn(600);
@@ -2164,7 +1947,7 @@ jQuery(function ($) {
                 let services = $('input[name="tf-services[]"]:checked').length;
 
                 if (!services) {
-                    alert(tf_admin_params.i18n.no_services_selected);
+                    alert(tourficAdminParams.i18n.no_services_selected);
                     return false;
                 }
 
@@ -2234,7 +2017,7 @@ jQuery(function ($) {
             e.preventDefault();
             let step = $(this).closest('.tf-setup-step-container').data('step');
             let prevStep = step - 1;
-            if(step === 2 && !tf_admin_params.is_woo_not_active) {
+            if(step === 2 && !tourficAdminParams.is_woo_not_active) {
                 $('.tf-setup-step-2').fadeOut(300, function () {
                     $('.tf-setup-step-0').fadeIn(300);
                 });
@@ -2262,10 +2045,10 @@ jQuery(function ($) {
             }
 
             let formData = new FormData(form[0]);
-            formData.append('action', 'tf_setup_wizard_submit');
+            formData.append('action', 'tourfic_setup_wizard_submit');
 
             $.ajax({
-                url: tf_admin_params.ajax_url,
+                url: tourficAdminParams.ajax_url,
                 type: 'POST',
                 data: formData,
                 processData: false,
@@ -2295,12 +2078,12 @@ jQuery(function ($) {
         * Travelfic Theme Installing
         * @author: Jahid
         */
-        let travelfic_toolkit_active_plugins = tf_admin_params.is_travelfic_toolkit_active;
+        let travelfic_toolkit_active_plugins = tourficAdminParams.is_travelfic_toolkit_active;
 
         $(document).on('click', '.tf-setup-travelfic-theme-btn', function (e) {
             e.preventDefault();
             
-            if(tf_admin_params.current_active_theme && "travelfic"!=tf_admin_params.current_active_theme && "ultimate-hotel-booking"!=tf_admin_params.current_active_theme && "bricks"!=tf_admin_params.current_active_theme){
+            if(tourficAdminParams.current_active_theme && "travelfic"!=tourficAdminParams.current_active_theme && "ultimate-hotel-booking"!=tourficAdminParams.current_active_theme && "bricks"!=tourficAdminParams.current_active_theme){
                 let theme_slug = $('.tf-template-selection input[name="tf_theme_select"]:checked').val();
 
                 // Bricks is a premium theme (already installed), skip wp.org install and activate directly
@@ -2319,12 +2102,12 @@ jQuery(function ($) {
                 }
                 $('.tf-setup-travelfic-theme-btn').addClass('tf-btn-loading');
                 var data = {
-                    action: "tf_theme_installing",
-                    _ajax_nonce: tf_admin_params.tf_nonce,
+                    action: "tourfic_theme_installing",
+                    _ajax_nonce: tourficAdminParams.tf_nonce,
                     slug: theme_slug,
                 };
                 // Installing Function
-                jQuery.post(tf_admin_params.ajax_url, data, function (response) {
+                jQuery.post(tourficAdminParams.ajax_url, data, function (response) {
                     $('.tf-setup-travelfic-theme-active').trigger("click");
                 })
             }else{
@@ -2355,17 +2138,17 @@ jQuery(function ($) {
 
             $.ajax({
                 type: 'post',
-                url: tf_admin_params.ajax_url,
+                url: tourficAdminParams.ajax_url,
                 data: {
-                    action: "tf_setup_travelfic_theme_active",
-                    _ajax_nonce: tf_admin_params.tf_nonce,
+                    action: "tourfic_setup_travelfic_theme_active",
+                    _ajax_nonce: tourficAdminParams.tf_nonce,
                     slug: theme_slug,
                 },
                 success: function(response) {
                     if ($.inArray("travelfic-toolkit", travelfic_toolkit_active_plugins) !== -1) {
                         $('.tf-setup-travelfic-toolkit-btn').trigger("click");
                     }else{
-                        window.location.replace(tf_admin_params.toolkit_page_url);
+                        window.location.replace(tourficAdminParams.toolkit_page_url);
                     }
                 },
                 error: function(error) {
@@ -2389,16 +2172,16 @@ jQuery(function ($) {
                 $this.addClass('tf-btn-loading');
 
                 var data = {
-                    action: "tf_travelfic_toolkit_installing",
-                    _ajax_nonce: tf_admin_params.tf_nonce,
+                    action: "tourfic_travelfic_toolkit_installing",
+                    _ajax_nonce: tourficAdminParams.tf_nonce,
                     slug: plugin_slug,
                 };
                 // Installing Function
-                jQuery.post(tf_admin_params.ajax_url, data, function (response) {
+                jQuery.post(tourficAdminParams.ajax_url, data, function (response) {
                     $('.tf-setup-travelfic-toolkit-active').trigger("click");
                 })
             }else{
-                window.location.replace(tf_admin_params.toolkit_page_url);
+                window.location.replace(tourficAdminParams.toolkit_page_url);
             }
         });
 
@@ -2414,14 +2197,14 @@ jQuery(function ($) {
 
             $.ajax({
                 type: 'post',
-                url: tf_admin_params.ajax_url,
+                url: tourficAdminParams.ajax_url,
                 data: {
-                    action: "tf_travelfic_toolkit_activate",
-                    _ajax_nonce: tf_admin_params.tf_nonce,
+                    action: "tourfic_travelfic_toolkit_activate",
+                    _ajax_nonce: tourficAdminParams.tf_nonce,
                     slug: plugin_slug,
                 },
                 success: function(response) {
-                    window.location.replace(tf_admin_params.toolkit_page_url);
+                    window.location.replace(tourficAdminParams.toolkit_page_url);
                 },
                 error: function(error) {
                     
@@ -2439,18 +2222,18 @@ jQuery(function ($) {
 
             $.ajax({
                 type: 'post',
-                url: tf_admin_params.ajax_url,
+                url: tourficAdminParams.ajax_url,
                 data: {
-                    action: "tf_ajax_install_woo",
-                    _ajax_nonce: tf_admin_params.tf_nonce,
+                    action: "tourfic_ajax_install_woo",
+                    _ajax_nonce: tourficAdminParams.tf_nonce,
                     slug: 'woocommerce',
                 },
                 beforeSend: function () {
-                    btn.text(tf_admin_params.installing)
+                    btn.text(tourficAdminParams.installing)
                     btn.addClass('tf-btn-loading');
                 },
                 success: function(response) {
-                    btn.text(tf_admin_params.activating);
+                    btn.text(tourficAdminParams.activating);
                     $('.tf-active-woo-btn').trigger("click");
                 },
                 error: function(error) {
@@ -2469,14 +2252,14 @@ jQuery(function ($) {
 
             $.ajax({
                 type: 'post',
-                url: tf_admin_params.ajax_url,
+                url: tourficAdminParams.ajax_url,
                 data: {
-                    action: "tf_ajax_activate_woo",
-                    _ajax_nonce: tf_admin_params.tf_nonce,
+                    action: "tourfic_ajax_activate_woo",
+                    _ajax_nonce: tourficAdminParams.tf_nonce,
                     slug: 'woocommerce',
                 },
                 beforeSend: function () {
-                    btn.text(tf_admin_params.activating)
+                    btn.text(tourficAdminParams.activating)
                     btn.addClass('tf-btn-loading');
                 },
                 success: function(response) {
@@ -2502,7 +2285,7 @@ jQuery(function ($) {
 // This entry needs to be wrapped in an IIFE because it needs to be isolated against other entry modules.
 (() => {
 jQuery(function($) {
-	const config = window.tfApiDocs || {};
+	const config = window.tourficApiDocs || {};
 	const i18n = config.i18n || {};
 	const $list = $('#tf-api-keys-container');
 
@@ -2545,7 +2328,7 @@ jQuery(function($) {
 
 	function loadKeys() {
 		$.post(config.ajaxUrl, {
-			action: 'tf_get_api_keys',
+			action: 'tourfic_get_api_keys',
 			nonce: config.nonce
 		}).done(function(response) {
 			if (response && response.success) {
@@ -2554,11 +2337,24 @@ jQuery(function($) {
 		});
 	}
 
+	function showGeneratedKey(key) {
+		if (!key || !key.api_key) {
+			return;
+		}
+
+		$('#tf-api-generated-credentials')
+			.html(
+				'<p><strong>' + esc(t('apiKey', 'API Key:')) + '</strong> <code>' + esc(key.api_key) + '</code></p>' +
+				'<p class="description">' + esc(t('saveApiKey', 'Copy this key now. It will not be shown again.')) + '</p>'
+			)
+			.show();
+	}
+
 	$('#tf-generate-api-key-form').on('submit', function(event) {
 		event.preventDefault();
 
 		const data = $(this).serializeArray();
-		data.push({ name: 'action', value: 'tf_generate_api_key' });
+		data.push({ name: 'action', value: 'tourfic_generate_api_key' });
 		data.push({ name: 'nonce', value: config.nonce });
 
 		$.post(config.ajaxUrl, $.param(data)).done(function(response) {
@@ -2571,6 +2367,7 @@ jQuery(function($) {
 				return;
 			}
 
+			showGeneratedKey(response.data);
 			$('#tf-generate-api-key-form')[0].reset();
 			loadKeys();
 		});
@@ -2587,7 +2384,7 @@ jQuery(function($) {
 		}
 
 		$.post(config.ajaxUrl, {
-			action: 'tf_revoke_api_key',
+			action: 'tourfic_revoke_api_key',
 			nonce: config.nonce,
 			key_id: keyId
 		}).done(function(response) {
@@ -2740,6 +2537,7 @@ jQuery(function($) {
 
 	loadKeys();
 });
+
 })();
 
 // This entry needs to be wrapped in an IIFE because it needs to be isolated against other entry modules.
@@ -2768,13 +2566,13 @@ jQuery(function($) {
             if (!hash) {
                 hash = window.location.hash;
             }
-    
+
             let slug = hash.replace('#tab=', '').split('&')[0];
-    
+
             if (slug) {
                 let selectedTab = $('.tf-tablinks[data-tab="' + slug + '"]');
                 let selectedContent = $('#' + slug);
-    
+
                 if (selectedTab.length && selectedContent.length) {
                     $('.tf-admin-tab .tf-tablinks').removeClass('active');
                     $('.tf-tab-wrapper .tf-tab-content').removeClass('active');
@@ -2783,12 +2581,12 @@ jQuery(function($) {
                 }
             }
         }
-    
+
         // Save current tab hash before post update
         $('.post-type-tf_tours #post, .post-type-tf_hotel #post, .post-type-tf_room #post, .post-type-tf_apartment #post, .post-type-tf_carrental #post, .post-type-tf_email_templates #post').on('submit', function () {
             localStorage.setItem('tf_saved_tab_hash', window.location.hash);
         });
-    
+
         // Restore saved hash and activate tab
         let savedHash = localStorage.getItem('tf_saved_tab_hash');
         if (savedHash) {
@@ -2800,14 +2598,14 @@ jQuery(function($) {
             activateTabFromHash();
         }
 
-        
-        
+
+
         $(window).on('hashchange load', function () {
             let hash = window.location.hash;
             let query = window.location.search;
 
             if (query.indexOf('dashboard') > -1) {
-                let submenu = $("#toplevel_page_tf_settings").find(".wp-submenu");
+                let submenu = $("#toplevel_page_tourfic_settings").find(".wp-submenu");
                 submenu.find("a").filter(function (a, e) {
                     return e.href.indexOf(query) > -1;
                 }).parent().addClass("current");
@@ -2851,13 +2649,11 @@ jQuery(function($) {
 
             $(".tf-admin-tab").removeClass('active');
 
-            let submenu = $("#toplevel_page_tf_settings").find(".wp-submenu");
+            let submenu = $("#toplevel_page_tourfic_settings").find(".wp-submenu");
             submenu.find("a").filter(function (a, e) {
                 let slug = e.hash.replace('#tab=', '');
                 return tabId === slug || parentTabId === slug;
             }).parent().addClass("current").siblings().removeClass("current")
-
-            roomOptionsArr();
         });
 
         /*
@@ -2893,7 +2689,7 @@ jQuery(function($) {
                         dateFormat: format,
                         minDate: minDate,
                         altInput: true,
-                        altFormat: tf_options.tf_admin_date_format,
+                        altFormat: tourficOptions.tf_admin_date_format,
                         onChange: function (selectedDates, dateStr, instance) {
                             endDate.set('minDate', dateStr);
                         }
@@ -2902,7 +2698,7 @@ jQuery(function($) {
                         dateFormat: format,
                         minDate: minDate,
                         altInput: true,
-                        altFormat: tf_options.tf_admin_date_format,
+                        altFormat: tourficOptions.tf_admin_date_format,
                         onChange: function (selectedDates, dateStr, instance) {
                             startDate.set('maxDate', dateStr);
                         }
@@ -2912,7 +2708,7 @@ jQuery(function($) {
                         dateFormat: format,
                         minDate: minDate,
                         altInput: true,
-                        altFormat: tf_options.tf_admin_date_format,
+                        altFormat: tourficOptions.tf_admin_date_format,
                         mode: multiple ? 'multiple' : 'single',
                     });
                 }
@@ -3037,7 +2833,7 @@ jQuery(function($) {
             $('body').removeClass('tf-modal-open');
         });
         $(document).on('click', function (event) {
-            if(!$('.tf-map-modal').length) {
+            if (!$('.tf-map-modal').length) {
                 if (!$(event.target).closest(".tf-modal-content,.tf-modal-btn").length) {
                     $("body").removeClass("tf-modal-open");
                     $(".tf-modal").removeClass("tf-modal-show");
@@ -3158,11 +2954,11 @@ jQuery(function($) {
             let iconList = $('.tf-icon-tab-pane.active .tf-icon-list');
 
             $.ajax({
-                url: tf_options.ajax_url,
+                url: tourficOptions.ajax_url,
                 type: 'POST',
                 data: {
-                    action: 'tf_icon_search',
-                    _nonce: tf_admin_params.tf_nonce,
+                    action: 'tourfic_icon_search',
+                    _nonce: tourficAdminParams.tf_nonce,
                     search: searchVal,
                     type: type,
                 },
@@ -3170,7 +2966,7 @@ jQuery(function($) {
                     iconList.html('<div class="tf-icon-loading">Loading...</div>');
                 },
                 success: function (response) {
-                    if(!response.success){
+                    if (!response.success) {
                         notyf.error(response.data)
                     } else {
                         iconList.html(response.data.html);
@@ -3202,11 +2998,11 @@ jQuery(function($) {
                 if (iconList.scrollTop() >= iconListBottom && !loading && startIndex < max) {
                     loading = true;
                     $.ajax({
-                        url: tf_options.ajax_url,
+                        url: tourficOptions.ajax_url,
                         type: 'POST',
                         data: {
-                            action: 'tf_load_more_icons',
-                            _nonce: tf_admin_params.tf_nonce,
+                            action: 'tourfic_load_more_icons',
+                            _nonce: tourficAdminParams.tf_nonce,
                             start_index: startIndex,
                             type: type,
                             search: searchVal,
@@ -3215,12 +3011,12 @@ jQuery(function($) {
                             $('.tf-icon-list').append('<div class="tf-icon-loading">Loading...</div>');
                         },
                         success: function (response) {
-                            if(!response.success){
+                            if (!response.success) {
                                 $('.tf-icon-loading').remove();
                                 notyf.error(response.data)
                             } else {
                                 loading = false;
-                                $('#tf-icon-tab-'+type+' .tf-icon-list').append(response.data);
+                                $('#tf-icon-tab-' + type + ' .tf-icon-list').append(response.data);
                                 $('.tf-icon-loading').remove();
                                 startIndex += 100;
                             }
@@ -3252,8 +3048,8 @@ jQuery(function($) {
 
             $.confirm({
                 icon: 'fa fa-warning',
-                title: tf_options.swal_reset_title_text,
-                content: tf_options.swal_reset_other_text,
+                title: tourficOptions.swal_reset_title_text,
+                content: tourficOptions.swal_reset_other_text,
                 type: 'red',
                 typeAnimated: false,
                 boxWidth: '500px',
@@ -3265,15 +3061,15 @@ jQuery(function($) {
                 theme: 'modern',
                 buttons: {
                     confirm: {
-                        text: tf_options.swal_reset_btn_text,
+                        text: tourficOptions.swal_reset_btn_text,
                         btnClass: 'btn-blue',
                         action: function () {
                             $.ajax({
-                                url: tf_options.ajax_url,
+                                url: tourficOptions.ajax_url,
                                 type: 'POST',
                                 data: {
-                                    action: 'tf_options_reset',
-                                    tf_option_nonce: tf_admin_params.tf_nonce,
+                                    action: 'tourfic_options_reset',
+                                    tf_option_nonce: tourficAdminParams.tf_nonce,
                                 },
                                 beforeSend: function () {
                                     $('.tf-setting-save-btn .tf-reset-btn').addClass('tf-btn-loading');
@@ -3281,14 +3077,14 @@ jQuery(function($) {
                                 success: function (response) {
 
                                     let data = JSON.parse(response)
-                                    
+
                                     if (data.status === 'success') {
                                         notyf.success(data.message);
                                         window.location.reload();
                                     } else {
                                         notyf.error(data.message);
                                     }
-                                    
+
                                     $('.tf-setting-save-btn .tf-reset-btn').removeClass('tf-btn-loading');
                                 },
                                 error: function (xhr, status, error) {
@@ -3300,26 +3096,26 @@ jQuery(function($) {
                         }
                     },
                     cancel: {
-                        text: tf_options.swal_reset_cancel_btn_text,
+                        text: tourficOptions.swal_reset_cancel_btn_text,
                         btnClass: 'btn-red',
                     }
                 }
             })
 
-            });
+        });
 
         $(document).find("#tf-settings-header-search-filed").on("keyup", debounce(
             function () {
                 var value = $(this).val().toLowerCase();
                 let div = document.createElement('div');
                 div.classList.add('tf-search-results');
-                if( value.length >= 3 ) {
+                if (value.length >= 3) {
                     $.ajax({
-                        url: tf_options.ajax_url,
+                        url: tourficOptions.ajax_url,
                         type: 'POST',
                         data: {
-                            action: 'tf_search_settings_autocomplete',
-                            tf_option_nonce: tf_admin_params.tf_nonce,
+                            action: 'tourfic_search_settings_autocomplete',
+                            tf_option_nonce: tourficAdminParams.tf_nonce,
                             search: value,
                         },
                         success: function (response) {
@@ -3327,8 +3123,8 @@ jQuery(function($) {
                             let notfound = 0;
                             let resultDiv = document.createElement('ul');
                             if (data.status === 'success') {
-                                $.each( data.message, function( key, obj ) {
-                                    if( obj.field_title.toLowerCase().indexOf(value) != -1 ) {
+                                $.each(data.message, function (key, obj) {
+                                    if (obj.field_title.toLowerCase().indexOf(value) != -1) {
                                         let textDiv = document.createElement('li');
                                         let titleDiv = document.createElement('div');
                                         titleDiv.classList.add('tf-search-result-title');
@@ -3352,17 +3148,17 @@ jQuery(function($) {
                                     } else {
                                         notfound = 1;
                                     }
-                                    if( $('.tf-search-results').length || value < 3 ) {
+                                    if ($('.tf-search-results').length || value < 3) {
                                         $('.tf-search-results').remove();
                                     } else {
                                         div.append(resultDiv);
                                     }
                                 });
 
-                                if( notfound == 1 ) {
+                                if (notfound == 1) {
                                     let not_found = document.createElement("p");
                                     not_found.classList.add('tf-search-not-found');
-                                    not_found.innerHTML = tf_admin_params.setting_search_no_result;
+                                    not_found.innerHTML = tourficAdminParams.setting_search_no_result;
                                     resultDiv.append(not_found);
                                 }
                                 $(".tf-setting-search").append(div);
@@ -3371,22 +3167,22 @@ jQuery(function($) {
                             }
                         }
                     })
-                    
+
                 } else {
                     $(".tf-search-results").hide();
                 }
-            }, 700 
+            }, 700
         ));
 
         $(document).on('click', function (e) {
-            if( e.target.id !== 'tf-settings-header-search-filed' && $('.tf-search-results').length ) {
+            if (e.target.id !== 'tf-settings-header-search-filed' && $('.tf-search-results').length) {
                 $('.tf-search-results').hide();
             }
         });
 
 
         $("#tf-settings-header-search-filed").on('focus', function (e) {
-            if( $('.tf-search-results').length ) {
+            if ($('.tf-search-results').length) {
                 $('.tf-search-results').show();
             }
         });
@@ -3395,13 +3191,13 @@ jQuery(function($) {
             let id = $(this).data('id');
             let selector = `label[for='tf_settings\\[${id}\\]']`;
             let tabId = $(this).closest('li').data('tab-id');
-            if( tabId ) {
-                $('.tf-tab-item[data-tab-id="'+tabId+'"]').trigger('click');
+            if (tabId) {
+                $('.tf-tab-item[data-tab-id="' + tabId + '"]').trigger('click');
             }
             $('html, body').animate({
                 scrollTop: $(document).find(selector).closest('.tf-field').offset().top
             }, 100);
-        
+
         });
 
         $(document).on('submit', '.tf-option-form.tf-ajax-save', function (e) {
@@ -3416,26 +3212,26 @@ jQuery(function($) {
                 }
             }
             // get tf_import_option from data
-            let tf_import_option =  false
+            let tf_import_option = false
             if (typeof data.get('tf_import_option') !== "undefined" && data.get('tf_import_option').trim() != '') {
 
                 //  confirm data before send
-                if (!confirm(tf_options.tf_export_import_msg.import_confirm)) {
+                if (!confirm(tourficOptions.tf_export_import_msg.import_confirm)) {
                     return;
                 }
 
                 tf_import_option = true;
             }
-            data.append('action', 'tf_options_save');
+            data.append('action', 'tourfic_options_save');
 
             $.ajax({
-                url: tf_options.ajax_url,
+                url: tourficOptions.ajax_url,
                 type: 'POST',
                 data: data,
                 processData: false,
                 contentType: false,
                 beforeSend: function () {
-                    if(tf_import_option == true ){
+                    if (tf_import_option == true) {
                         $this.find('.tf-import-btn').addClass('tf-btn-loading');
                     }
                     submitBtn.addClass('tf-btn-loading');
@@ -3444,10 +3240,10 @@ jQuery(function($) {
                 success: function (response) {
                     let obj = JSON.parse(response);
                     if (obj.status === 'success') {
-                        
+
                         notyf.success(obj.message);
 
-                        if(tf_import_option == true ){
+                        if (tf_import_option == true) {
                             window.location.reload();;
                         }
                     } else {
@@ -3455,7 +3251,7 @@ jQuery(function($) {
                     }
                     submitBtn.removeClass('tf-btn-loading');
                     $(".tf-setting-save-btn .tf-submit-btn").removeClass('tf-btn-loading');
-                    if(tf_import_option == true ){
+                    if (tf_import_option == true) {
                         $this.find('.tf-import-btn').removeClass('tf-btn-loading');
                     }
                 },
@@ -3463,9 +3259,9 @@ jQuery(function($) {
                     submitBtn.removeClass('tf-btn-loading');
                     console.log(error['responseText']);
                     //if error msg contain max_input_vars then show a proper msg
-                    if(error['responseText'].includes('max_input_vars')) {
+                    if (error['responseText'].includes('max_input_vars')) {
                         notyf.error({
-                            message: tf_admin_params.max_input_vars_notice,
+                            message: tourficAdminParams.max_input_vars_notice,
                             duration: 15000,
                             dismissible: true
                         });
@@ -3489,7 +3285,7 @@ jQuery(function($) {
                 placeholder = $this.data('placeholder'),
                 deleteData = $this.data('delete');
 
-            if(deleteData === 'yes'){
+            if (deleteData === 'yes') {
                 $('#' + id + '').select2({
                     placeholder: placeholder,
                     allowClear: true,
@@ -3498,20 +3294,20 @@ jQuery(function($) {
                         if (!state.id) {
                             return state.text;
                         }
-                
+
                         // Get the edit URL from the option's data attribute
                         var editUrl = $(state.element).data('edit-url');
-                        if(editUrl){
+                        if (editUrl) {
                             var $state = $(
-                                '<span>' + state.text + ' <a target="_blank" href="'+editUrl+'" class="tf-edit-room"><i class="fa-regular fa-pen-to-square"></i></a></span>'
+                                '<span>' + state.text + ' <a target="_blank" href="' + editUrl + '" class="tf-edit-room"><i class="fa-regular fa-pen-to-square"></i></a></span>'
                             );
                             return $state;
                         }
-                
+
                         return state.text;
                     }
                 });
-            }else{
+            } else {
                 $('#' + id + '').select2({
                     placeholder: placeholder,
                     allowClear: true,
@@ -3519,21 +3315,21 @@ jQuery(function($) {
                         if (!state.id) {
                             return state.text;
                         }
-                
+
                         // Get the edit URL from the option's data attribute
                         var editUrl = $(state.element).data('edit-url');
-                        if(editUrl){
+                        if (editUrl) {
                             var $state = $(
-                                '<span>' + state.text + ' <a target="_blank" href="'+editUrl+'" class="tf-edit-room"><i class="fa-regular fa-pen-to-square"></i></a></span>'
+                                '<span>' + state.text + ' <a target="_blank" href="' + editUrl + '" class="tf-edit-room"><i class="fa-regular fa-pen-to-square"></i></a></span>'
                             );
                             return $state;
                         }
-                
+
                         return state.text;
                     }
                 });
             }
-        
+
         }
         $('select.tf-select2').each(function () {
             var $this = $(this);
@@ -3545,13 +3341,13 @@ jQuery(function($) {
 
         function TfFormatOption(option) {
             if (!option.id) {
-              return option.text;
+                return option.text;
             }
 
-           var $option = $(
-              '<span style="display: flex; justify-content: space-between;">' + option.text + '<span class="tf-remove-button" data-id="' + option.id + '">Remove</span></span>'
+            var $option = $(
+                '<span style="display: flex; justify-content: space-between;">' + option.text + '<span class="tf-remove-button" data-id="' + option.id + '">Remove</span></span>'
             );
-    
+
             return $option;
         }
         $(document).on('select2:selecting', '.tf-select2', function (e) {
@@ -3564,20 +3360,19 @@ jQuery(function($) {
                 let parentDiv = $this.closest('.tf-fieldset');
                 let categoryName = parentDiv.find('#category_name').val();
                 let categorySelect = parentDiv.find('#category_select_field_name').val();
-                var termId=$(e.params.args.originalEvent.target).data("id");
+                var termId = $(e.params.args.originalEvent.target).data("id");
 
                 $.ajax({
-                    url: tf_options.ajax_url,
+                    url: tourficOptions.ajax_url,
                     method: 'POST',
                     data: {
-                        action: 'tf_delete_category_data',
-                        _nonce: tf_admin_params.tf_nonce,
+                        action: 'tourfic_delete_category_data',
+                        _nonce: tourficAdminParams.delete_category_nonce,
                         term_id: termId,
                         categoryName: categoryName
                     },
                     success: function (response) {
-                        var data = JSON.parse(response);
-                        if (data.success) {
+                        if (response.success) {
                             // Remove the option and trigger the change event
                             let $selectField = $('#' + categorySelect);
 
@@ -3587,105 +3382,31 @@ jQuery(function($) {
                             // Close the Select2 dropdown
                             $selectField.select2('close');
 
-                        } else {
-                            
                         }
+                    },
+                    error: function (xhr) {
+                        var message = xhr.responseJSON && xhr.responseJSON.data && xhr.responseJSON.data.message
+                            ? xhr.responseJSON.data.message
+                            : 'Unable to delete this term.';
+                        notyf.error(message);
                     }
                 });
             }
         });
 
 
-        $('select.tf-shortcode-select2').each(function(e) {
+        $('select.tf-shortcode-select2').each(function (e) {
             let $this = $(this);
             let id = $this.attr("id");
             tfSelect2Int($this);
 
-            $(this).on("select2:select", function (e) { 
+            $(this).on("select2:select", function (e) {
                 var select_val = $(e.currentTarget).val();
-                if(select_val && select_val.includes("'all'")) {
+                if (select_val && select_val.includes("'all'")) {
                     $(this).val(["'all'"]).trigger('change.select2');
                 }
             });
         })
-
-        /*
-        * Room options count
-        */
-        function roomOptionsArr(){
-            var optionsArr = [];
-            $('.tf-repeater-wrap-room-options .tf-single-repeater-room-options').each(function(i){
-                // Get the dynamic index from the tf_repeater_count field
-                let index = $(this).find('[name="tf_repeater_count"]').val();
-                // Extract the option title and type using the dynamic index
-                let optionType = $(this).find(`[name="tf_room_opt[room-options][${index}][option_pricing_type]"]`).val();
-                let optionTitle = $(this).find(`[name="tf_room_opt[room-options][${index}][option_title]"]`).val();
-                if (index !== undefined) {
-                    optionsArr[index] = {
-                        index: index,
-                        title: optionTitle,
-                        type: optionType
-                    };
-                }
-            })
-            return optionsArr;
-        }
-
-        /*
-        * Tour options count
-        */
-        function tourPackageArr(){
-            var optionsArr = [];
-            $('.tf-repeater-wrap-package_pricing .tf-single-repeater-package_pricing').each(function(i){
-                // Get the dynamic index from the tf_repeater_count field
-                let index = $(this).find('[name="tf_repeater_count"]').val();
-                // Extract the option title and type using the dynamic index
-                let optionType = $(this).find(`[name="tf_tours_opt[package_pricing][${index}][pricing_type]"]`).val();
-                let optionTitle = $(this).find(`[name="tf_tours_opt[package_pricing][${index}][pack_title]"]`).val();
-                if (optionTitle !== undefined) {
-                    optionsArr[index] = {
-                        index: index,
-                        title: optionTitle,
-                        type: optionType
-                    };
-                }
-            })
-            return optionsArr;
-        }
-
-
-        $(window).on('load', function () {
-            roomOptionsArr();
-            tourPackageArr();
-        });
-
-        function syncTourPackageSelection(tourCalData) {
-            const $scope = tourCalData ? $(tourCalData) : $('.tf-tour-cal-field');
-
-            $scope.each(function () {
-                const $context = $(this);
-                const $checkboxes = $context.find('.tf-availability-package-checkbox');
-
-                if (!$checkboxes.length) {
-                    return;
-                }
-
-                const selectedIndexes = $checkboxes
-                    .filter(':checked')
-                    .map(function () {
-                        return String($(this).val());
-                    })
-                    .get();
-
-                $context.find('.tf-package-field-repeater .tf-single-repeater').each(function () {
-                    const $repeater = $(this);
-                    const packageIndex = String($repeater.data('packageIndex'));
-                    const shouldShow = selectedIndexes.includes(packageIndex);
-
-                    $repeater.toggle(shouldShow);
-                });
-            });
-        }
 
         /*
         * Room Availability Calendar
@@ -3709,7 +3430,7 @@ jQuery(function($) {
                 },
                 displayEventTime: true,
                 selectable: true,
-                select: function ({start, end, startStr, endStr, allDay, jsEvent, view, resource}) {
+                select: function ({ start, end, startStr, endStr, allDay, jsEvent, view, resource }) {
                     if (moment(start).isBefore(moment(), 'day') || moment(end).isBefore(moment(), 'day')) {
                         self.fullCalendar.unselect();
                         setRoomCheckInOut("", "", self.roomCalData);
@@ -3717,26 +3438,28 @@ jQuery(function($) {
                         var zone = moment(start).format("Z");
                         zone = zone.split(":");
                         zone = "" + parseInt(zone[0]) + ":00";
-                        var check_in = moment(start).utcOffset(zone).format(String(tf_options.tf_admin_date_format || "MM/DD/YYYY").toUpperCase());
-                        var check_out = moment(end).utcOffset(zone).subtract(1, 'day').format(String(tf_options.tf_admin_date_format || "MM/DD/YYYY").toUpperCase());
+                        var check_in = moment(start).utcOffset(zone).format(String(tourficOptions.tf_admin_date_format || "MM/DD/YYYY").toUpperCase());
+                        var check_out = moment(end).utcOffset(zone).subtract(1, 'day').format(String(tourficOptions.tf_admin_date_format || "MM/DD/YYYY").toUpperCase());
                         setRoomCheckInOut(check_in, check_out, self.roomCalData);
                     }
                 },
-                events: function ({start, end, startStr, endStr, timeZone}, successCallback, failureCallback) {
+                events: function ({ start, end, startStr, endStr, timeZone }, successCallback, failureCallback) {
+                    let requestData = {
+                        action: "tourfic_get_hotel_room_availability",
+                        _nonce: tourficAdminParams.tf_nonce,
+                        new_post: $(self.container).find('[name="new_post"]').val(),
+                        room_id: $(self.container).find('[name="room_id"]').val(),
+                        avail_date: $(self.container).find('.avail_date').val(),
+                    };
+                    $(document).trigger('tourfic:room-availability:prepare-fetch', [requestData, self.roomCalData]);
+
                     $.ajax({
-                        url: tf_options.ajax_url,
+                        url: tourficOptions.ajax_url,
                         dataType: "json",
                         type: "POST",
-                        data: {
-                            action: "tf_get_hotel_room_availability",
-                            _nonce: tf_admin_params.tf_nonce,
-                            new_post: $(self.container).find('[name="new_post"]').val(),
-                            room_id: $(self.container).find('[name="room_id"]').val(),
-                            avail_date: $(self.container).find('.avail_date').val(),
-                            option_arr: roomOptionsArr(),
-                        },
+                        data: requestData,
                         beforeSend: function () {
-                            $(self.container).css({'pointer-events': 'none', 'opacity': '0.5'});
+                            $(self.container).css({ 'pointer-events': 'none', 'opacity': '0.5' });
                             $(self.calendar).addClass('tf-content-loading');
                         },
                         success: function (doc) {
@@ -3744,9 +3467,10 @@ jQuery(function($) {
                                 successCallback(doc?.avail_data);
                             }
 
-                            $('.tf-single-options').html(doc?.options_html);
+                            $(self.container).find('.tf-room-availability-extension-fields').html(doc?.options_html || '');
+                            $(document).trigger('tourfic:room-availability:editor-updated', [self.roomCalData, doc]);
 
-                            $(self.container).css({'pointer-events': 'auto', 'opacity': '1'});
+                            $(self.container).css({ 'pointer-events': 'auto', 'opacity': '1' });
                             $(self.calendar).removeClass('tf-content-loading');
                         },
                         error: function (e) {
@@ -3759,42 +3483,23 @@ jQuery(function($) {
                     const eventTitleElement = document.createElement('div');
                     eventTitleElement.classList.add('fc-event-title');
                     eventTitleElement.innerHTML = title;
-                    return {domNodes: [eventTitleElement]};
+                    return { domNodes: [eventTitleElement] };
                 },
-                eventClick: function ({event, el, jsEvent, view}) {
-                    let startTime = moment(event.start, String(tf_options.tf_admin_date_format || "MM/DD/YYYY").toUpperCase())
-                        .format(String(tf_options.tf_admin_date_format || 'MM/DD/YYYY').toUpperCase());
+                eventClick: function ({ event, el, jsEvent, view }) {
+                    let startTime = moment(event.start, String(tourficOptions.tf_admin_date_format || "MM/DD/YYYY").toUpperCase())
+                        .format(String(tourficOptions.tf_admin_date_format || 'MM/DD/YYYY').toUpperCase());
                     let endTime;
                     if (event.end) {
-                        endTime = moment(event.end, String(tf_options.tf_admin_date_format || "MM/DD/YYYY").toUpperCase())
-                            .format(String(tf_options.tf_admin_date_format || 'MM/DD/YYYY').toUpperCase());
+                        endTime = moment(event.end, String(tourficOptions.tf_admin_date_format || "MM/DD/YYYY").toUpperCase())
+                            .format(String(tourficOptions.tf_admin_date_format || 'MM/DD/YYYY').toUpperCase());
                     } else {
                         endTime = startTime;
                     }
                     setRoomCheckInOut(startTime, endTime, self.roomCalData);
-                    let priceBy = $('.tf_room_pricing_by').val();
-                    if (priceBy === '1') {
-                        if (typeof event.extendedProps.price != 'undefined') {
-                            $("[name='tf_room_price']", self.roomCalData).val(event.extendedProps.price);
-                        }
-                    } else if(priceBy === '2'){
-                        if (typeof event.extendedProps.adult_price != 'undefined') {
-                            $("[name='tf_room_adult_price']", self.roomCalData).val(event.extendedProps.adult_price);
-                        }
-                        if (typeof event.extendedProps.child_price != 'undefined') {
-                            $("[name='tf_room_child_price']", self.roomCalData).val(event.extendedProps.child_price);
-                        }
-                    } else {
-                        if(event.extendedProps.options_count != 0) {
-                            for (var i = 0; i <= event.extendedProps.options_count - 1; i++) {
-                                $("[name='tf_room_option_" + i + "']", self.roomCalData).prop('checked', event.extendedProps["tf_room_option_" + i] == 1);
-
-                                $("[name='tf_option_room_price_" + i + "']", self.roomCalData).val(event.extendedProps["tf_option_room_price_" + i]);
-                                $("[name='tf_option_adult_price_" + i + "']", self.roomCalData).val(event.extendedProps["tf_option_adult_price_" + i]);
-                                $("[name='tf_option_child_price_" + i + "']", self.roomCalData).val(event.extendedProps["tf_option_child_price_" + i]);
-                            }
-                        }
+                    if (typeof event.extendedProps.price != 'undefined') {
+                        $("[name='tf_room_price']", self.roomCalData).val(event.extendedProps.price);
                     }
+                    $(document).trigger('tourfic:room-availability:event-click', [event, self.roomCalData]);
                     if (event.extendedProps.status) {
                         $("[name='tf_room_status'] option[value=" + event.extendedProps.status + "]", self.roomCalData).prop("selected", true);
                     }
@@ -3824,8 +3529,7 @@ jQuery(function($) {
             $('.tf_room_check_in', roomCalData).val('');
             $('.tf_room_check_out', roomCalData).val('');
             $('[name="tf_room_price"]', roomCalData).val('');
-            $('[name="tf_room_adult_price"]', roomCalData).val('');
-            $('[name="tf_room_child_price"]', roomCalData).val('');
+            $(document).trigger('tourfic:room-availability:reset', [roomCalData]);
 
             // Destroy old flatpickr instances to avoid conflicts
             $(roomCalData).find('[name="tf_room_check_in"]').each(function () {
@@ -3841,20 +3545,20 @@ jQuery(function($) {
 
             // Re-initialize flatpickr instances
             let checkIn = $(roomCalData).find('[name="tf_room_check_in"]').flatpickr({
-                dateFormat: tf_options.tf_admin_date_format || 'MM/DD/YYYY',
+                dateFormat: tourficOptions.tf_admin_date_format || 'MM/DD/YYYY',
                 minDate: 'today',
                 altInput: true,
-                altFormat: tf_options.tf_admin_date_format,
+                altFormat: tourficOptions.tf_admin_date_format,
                 onChange: function (selectedDates, dateStr, instance) {
                     if (checkOut) checkOut.set('minDate', dateStr);
                 }
             });
 
             let checkOut = $(roomCalData).find('[name="tf_room_check_out"]').flatpickr({
-                dateFormat: tf_options.tf_admin_date_format || 'MM/DD/YYYY',
+                dateFormat: tourficOptions.tf_admin_date_format || 'MM/DD/YYYY',
                 minDate: 'today',
                 altInput: true,
-                altFormat: tf_options.tf_admin_date_format,
+                altFormat: tourficOptions.tf_admin_date_format,
                 onChange: function (selectedDates, dateStr, instance) {
                     if (checkIn) checkIn.set('maxDate', dateStr);
                 }
@@ -3879,20 +3583,20 @@ jQuery(function($) {
 
         $('.tf-room-cal-wrap').each(function (index, el) {
             let checkIn = $(el).find('[name="tf_room_check_in"]').flatpickr({
-                dateFormat: tf_options.tf_admin_date_format || 'MM/DD/YYYY',
+                dateFormat: tourficOptions.tf_admin_date_format || 'MM/DD/YYYY',
                 minDate: 'today',
                 altInput: true,
-                altFormat: tf_options.tf_admin_date_format,
+                altFormat: tourficOptions.tf_admin_date_format,
                 onChange: function (selectedDates, dateStr, instance) {
                     checkOut.set('minDate', dateStr);
                 }
             });
 
             let checkOut = $(el).find('[name="tf_room_check_out"]').flatpickr({
-                dateFormat: tf_options.tf_admin_date_format || 'MM/DD/YYYY',
+                dateFormat: tourficOptions.tf_admin_date_format || 'MM/DD/YYYY',
                 minDate: 'today',
                 altInput: true,
-                altFormat: tf_options.tf_admin_date_format,
+                altFormat: tourficOptions.tf_admin_date_format,
                 onChange: function (selectedDates, dateStr, instance) {
                     checkIn.set('maxDate', dateStr);
                 }
@@ -3906,20 +3610,18 @@ jQuery(function($) {
             let container = btn.closest('.tf-room-cal-wrap');
             let cal = container.find('.tf-room-cal');
             let data = $('input, select', container.find('.tf-room-cal-field')).serializeArray();
-            let priceBy = $('.tf_room_pricing_by').val();
             let avail_date = container.find('.avail_date');
-            data.push({name: 'action', value: 'tf_add_hotel_room_availability'});
-            data.push({name: '_nonce', value: tf_admin_params.tf_nonce});
-            data.push({name: 'price_by', value: priceBy});
-            data.push({name: 'avail_date', value: avail_date.val()});
-            data.push({name: 'options_count', value: roomOptionsArr().length});
+            data.push({ name: 'action', value: 'tourfic_add_hotel_room_availability' });
+            data.push({ name: '_nonce', value: tourficAdminParams.tf_nonce });
+            data.push({ name: 'avail_date', value: avail_date.val() });
+            $(document).trigger('tourfic:room-availability:prepare-request', [data, container]);
 
             $.ajax({
-                url: tf_options.ajax_url,
+                url: tourficOptions.ajax_url,
                 type: 'POST',
                 data: data,
                 beforeSend: function () {
-                    container.css({'pointer-events': 'none', 'opacity': '0.5'})
+                    container.css({ 'pointer-events': 'none', 'opacity': '0.5' })
                     cal.addClass('tf-content-loading');
                     btn.addClass('tf-btn-loading');
                 },
@@ -3935,41 +3637,23 @@ jQuery(function($) {
                             notyf.error(response.data.message);
                         }
 
-                        container.css({'pointer-events': 'auto', 'opacity': '1'})
+                        container.css({ 'pointer-events': 'auto', 'opacity': '1' })
                         cal.removeClass('tf-content-loading');
                         btn.removeClass('tf-btn-loading');
                     }
                 },
                 error: function (e) {
                     console.log(e);
-                    container.css({'pointer-events': 'auto', 'opacity': '1'})
+                    container.css({ 'pointer-events': 'auto', 'opacity': '1' })
                     cal.removeClass('tf-content-loading');
                     btn.removeClass('tf-btn-loading');
                 },
                 complete: function () {
-                    container.css({'pointer-events': 'auto', 'opacity': '1'});
+                    container.css({ 'pointer-events': 'auto', 'opacity': '1' });
                     cal.removeClass('tf-content-loading');
                     btn.removeClass('tf-btn-loading');
                 },
             });
-        });
-
-        $(document).on('change', '.tf_room_pricing_by', function (e) {
-            let pricing_by = $(this).val();
-
-            if (pricing_by === '1') {
-                $('.tf-price-by-room').show();
-                $('.tf-price-by-person').hide();
-                $('.tf-room-cal-field .tf-single-option').hide();
-            } else if (pricing_by === '2') {
-                $('.tf-price-by-person').show();
-                $('.tf-price-by-room').hide();
-                $('.tf-room-cal-field .tf-single-option').hide();
-            } else if(pricing_by === '3') {
-                $('.tf-price-by-room').hide();
-                $('.tf-price-by-person').hide();
-                $('.tf-room-cal-field .tf-single-option').show();
-            }
         });
 
         // Switcher Value Changed
@@ -3984,10 +3668,10 @@ jQuery(function($) {
             if ($this.hasClass('tf_room_availability_by_date')) {
                 tfHotelCalendar();
             }
-            if ($this.hasClass('tf_apartment_availability_by_date')){
+            if ($this.hasClass('tf_apartment_availability_by_date')) {
                 tfApartmentCalendar();
             }
-            if ($this.hasClass('tf_tour_availability_by_date')){
+            if ($this.hasClass('tf_tour_availability_by_date')) {
                 tfTourCalendar();
             }
         });
@@ -4014,7 +3698,7 @@ jQuery(function($) {
                 },
                 displayEventTime: true,
                 selectable: true,
-                select: function ({start, end, startStr, endStr, allDay, jsEvent, view, resource}) {
+                select: function ({ start, end, startStr, endStr, allDay, jsEvent, view, resource }) {
                     if (moment(start).isBefore(moment(), 'day') || moment(end).isBefore(moment(), 'day')) {
                         self.fullCalendar.unselect();
                         setAptCheckInOut("", "", self.apartmentCalData);
@@ -4022,25 +3706,28 @@ jQuery(function($) {
                         var zone = moment(start).format("Z");
                         zone = zone.split(":");
                         zone = "" + parseInt(zone[0]) + ":00";
-                        var check_in = moment(start).utcOffset(zone).format(String(tf_options.tf_admin_date_format || "MM/DD/YYYY").toUpperCase());
-                        var check_out = moment(end).utcOffset(zone).subtract(1, 'day').format(String(tf_options.tf_admin_date_format || "MM/DD/YYYY").toUpperCase());
+                        var check_in = moment(start).utcOffset(zone).format(String(tourficOptions.tf_admin_date_format || "MM/DD/YYYY").toUpperCase());
+                        var check_out = moment(end).utcOffset(zone).subtract(1, 'day').format(String(tourficOptions.tf_admin_date_format || "MM/DD/YYYY").toUpperCase());
                         setAptCheckInOut(check_in, check_out, self.apartmentCalData);
                     }
                 },
-                events: function ({start, end, startStr, endStr, timeZone}, successCallback, failureCallback) {
+                events: function ({ start, end, startStr, endStr, timeZone }, successCallback, failureCallback) {
+                    let requestData = {
+                        action: "tourfic_get_apartment_availability",
+                        _nonce: tourficAdminParams.tf_nonce,
+                        new_post: $(self.container).find('[name="new_post"]').val(),
+                        apartment_id: $(self.container).find('[name="apartment_id"]').val(),
+                        apt_availability: $(self.container).find('.apt_availability').val(),
+                    };
+                    $(document).trigger('tourfic:apartment-availability:prepare-fetch', [requestData, self.apartmentCalData]);
+
                     $.ajax({
-                        url: tf_options.ajax_url,
+                        url: tourficOptions.ajax_url,
                         dataType: "json",
                         type: "POST",
-                        data: {
-                            action: "tf_get_apartment_availability",
-                            _nonce: tf_admin_params.tf_nonce,
-                            new_post: $('[name="new_post"]').val(),
-                            apartment_id: $('[name="apartment_id"]').val(),
-                            apt_availability: $('.apt_availability').val(),
-                        },
+                        data: requestData,
                         beforeSend: function () {
-                            $(self.container).css({'pointer-events': 'none', 'opacity': '0.5'});
+                            $(self.container).css({ 'pointer-events': 'none', 'opacity': '0.5' });
                             $(self.calendar).addClass('tf-content-loading');
                         },
                         success: function (doc) {
@@ -4048,7 +3735,7 @@ jQuery(function($) {
                                 successCallback(doc);
                             }
 
-                            $(self.container).css({'pointer-events': 'auto', 'opacity': '1'});
+                            $(self.container).css({ 'pointer-events': 'auto', 'opacity': '1' });
                             $(self.calendar).removeClass('tf-content-loading');
                         },
                         error: function (e) {
@@ -4061,35 +3748,23 @@ jQuery(function($) {
                     const eventTitleElement = document.createElement('div');
                     eventTitleElement.classList.add('fc-event-title');
                     eventTitleElement.innerHTML = title;
-                    return {domNodes: [eventTitleElement]};
+                    return { domNodes: [eventTitleElement] };
                 },
-                eventClick: function ({event, el, jsEvent, view}) {
-                    let startTime = moment(event.start, String(tf_options.tf_admin_date_format || "MM/DD/YYYY").toUpperCase())
-                        .format(String(tf_options.tf_admin_date_format || 'MM/DD/YYYY').toUpperCase());
+                eventClick: function ({ event, el, jsEvent, view }) {
+                    let startTime = moment(event.start, String(tourficOptions.tf_admin_date_format || "MM/DD/YYYY").toUpperCase())
+                        .format(String(tourficOptions.tf_admin_date_format || 'MM/DD/YYYY').toUpperCase());
                     let endTime;
                     if (event.end) {
-                        endTime = moment(event.end, String(tf_options.tf_admin_date_format || "MM/DD/YYYY").toUpperCase())
-                            .format(String(tf_options.tf_admin_date_format || 'MM/DD/YYYY').toUpperCase());
+                        endTime = moment(event.end, String(tourficOptions.tf_admin_date_format || "MM/DD/YYYY").toUpperCase())
+                            .format(String(tourficOptions.tf_admin_date_format || 'MM/DD/YYYY').toUpperCase());
                     } else {
                         endTime = startTime;
                     }
                     setAptCheckInOut(startTime, endTime, self.apartmentCalData);
-                    let pricingType = $('.tf_apt_pricing_type').val();
-                    if (pricingType === 'per_night') {
-                        if (typeof event.extendedProps.price != 'undefined') {
-                            $("[name='tf_apt_price']", self.apartmentCalData).val(event.extendedProps.price);
-                        }
-                    } else {
-                        if (typeof event.extendedProps.adult_price != 'undefined') {
-                            $("[name='tf_apt_adult_price']", self.apartmentCalData).val(event.extendedProps.adult_price);
-                        }
-                        if (typeof event.extendedProps.child_price != 'undefined') {
-                            $("[name='tf_apt_child_price']", self.apartmentCalData).val(event.extendedProps.child_price);
-                        }
-                        if (typeof event.extendedProps.infant_price != 'undefined') {
-                            $("[name='tf_apt_infant_price']", self.apartmentCalData).val(event.extendedProps.infant_price);
-                        }
+                    if (typeof event.extendedProps.price != 'undefined') {
+                        $("[name='tf_apt_price']", self.apartmentCalData).val(event.extendedProps.price);
                     }
+                    $(document).trigger('tourfic:apartment-availability:event-click', [event, self.apartmentCalData]);
                     if (event.extendedProps.status) {
                         $("[name='tf_apt_status'] option[value=" + event.extendedProps.status + "]", self.apartmentCalData).prop("selected", true);
                     }
@@ -4119,9 +3794,7 @@ jQuery(function($) {
             $('.tf_apt_check_in', apartmentCalData).val('');
             $('.tf_apt_check_out', apartmentCalData).val('');
             $('[name="tf_apt_price"]', apartmentCalData).val('');
-            $('[name="tf_apt_adult_price"]', apartmentCalData).val('');
-            $('[name="tf_apt_child_price"]', apartmentCalData).val('');
-            $('[name="tf_apt_infant_price"]', apartmentCalData).val('');
+            $(document).trigger('tourfic:apartment-availability:reset', [apartmentCalData]);
 
             // Destroy old flatpickr instances to avoid conflicts
             $(apartmentCalData).find('[name="tf_apt_check_in"]').each(function () {
@@ -4137,20 +3810,20 @@ jQuery(function($) {
 
             // Re-initialize flatpickr instances
             let checkIn = $(apartmentCalData).find('[name="tf_apt_check_in"]').flatpickr({
-                dateFormat: tf_options.tf_admin_date_format || 'MM/DD/YYYY',
+                dateFormat: tourficOptions.tf_admin_date_format || 'MM/DD/YYYY',
                 minDate: 'today',
                 altInput: true,
-                altFormat: tf_options.tf_admin_date_format,
+                altFormat: tourficOptions.tf_admin_date_format,
                 onChange: function (selectedDates, dateStr, instance) {
                     if (checkOut) checkOut.set('minDate', dateStr);
                 }
             });
 
             let checkOut = $(apartmentCalData).find('[name="tf_apt_check_out"]').flatpickr({
-                dateFormat: tf_options.tf_admin_date_format || 'MM/DD/YYYY',
+                dateFormat: tourficOptions.tf_admin_date_format || 'MM/DD/YYYY',
                 minDate: 'today',
                 altInput: true,
-                altFormat: tf_options.tf_admin_date_format,
+                altFormat: tourficOptions.tf_admin_date_format,
                 onChange: function (selectedDates, dateStr, instance) {
                     if (checkIn) checkIn.set('maxDate', dateStr);
                 }
@@ -4163,20 +3836,20 @@ jQuery(function($) {
                 apt.init();
 
                 let checkIn = $(el).find('[name="tf_apt_check_in"]').flatpickr({
-                    dateFormat: tf_options.tf_admin_date_format || 'MM/DD/YYYY',
+                    dateFormat: tourficOptions.tf_admin_date_format || 'MM/DD/YYYY',
                     minDate: 'today',
                     altInput: true,
-                    altFormat: tf_options.tf_admin_date_format,
+                    altFormat: tourficOptions.tf_admin_date_format,
                     onChange: function (selectedDates, dateStr, instance) {
                         checkOut.set('minDate', dateStr);
                     }
                 });
 
                 let checkOut = $(el).find('[name="tf_apt_check_out"]').flatpickr({
-                    dateFormat: tf_options.tf_admin_date_format || 'MM/DD/YYYY',
+                    dateFormat: tourficOptions.tf_admin_date_format || 'MM/DD/YYYY',
                     minDate: 'today',
                     altInput: true,
-                    altFormat: tf_options.tf_admin_date_format,
+                    altFormat: tourficOptions.tf_admin_date_format,
                     onChange: function (selectedDates, dateStr, instance) {
                         checkIn.set('maxDate', dateStr);
                     }
@@ -4193,19 +3866,18 @@ jQuery(function($) {
             let containerEl = btn.closest('.tf-apt-cal-wrap')[0];
             let cal = container.find('.tf-apt-cal');
             let data = $('input, select', container.find('.tf-apt-cal-field')).serializeArray();
-            let pricingType = $('.tf_apt_pricing_type').val();
             let aptAvailability = container.find('.apt_availability');
-            data.push({name: 'action', value: 'tf_add_apartment_availability'});
-            data.push({name: '_nonce', value: tf_admin_params.tf_nonce});
-            data.push({name: 'pricing_type', value: pricingType});
-            data.push({name: 'apt_availability', value: aptAvailability.val()});
+            data.push({ name: 'action', value: 'tourfic_add_apartment_availability' });
+            data.push({ name: '_nonce', value: tourficAdminParams.tf_nonce });
+            data.push({ name: 'apt_availability', value: aptAvailability.val() });
+            $(document).trigger('tourfic:apartment-availability:prepare-request', [data, container]);
 
             $.ajax({
-                url: tf_options.ajax_url,
+                url: tourficOptions.ajax_url,
                 type: 'POST',
                 data: data,
                 beforeSend: function () {
-                    container.css({'pointer-events': 'none', 'opacity': '0.5'})
+                    container.css({ 'pointer-events': 'none', 'opacity': '0.5' })
                     cal.addClass('tf-content-loading');
                     btn.addClass('tf-btn-loading');
                 },
@@ -4225,43 +3897,31 @@ jQuery(function($) {
                             notyf.error(response.data.message);
                         }
 
-                        container.css({'pointer-events': 'auto', 'opacity': '1'})
+                        container.css({ 'pointer-events': 'auto', 'opacity': '1' })
                         cal.removeClass('tf-content-loading');
                         btn.removeClass('tf-btn-loading');
                     }
                 },
                 error: function (e) {
                     console.log(e);
-                    container.css({'pointer-events': 'auto', 'opacity': '1'})
+                    container.css({ 'pointer-events': 'auto', 'opacity': '1' })
                     cal.removeClass('tf-content-loading');
                     btn.removeClass('tf-btn-loading');
                 },
                 complete: function () {
-                    container.css({'pointer-events': 'auto', 'opacity': '1'});
+                    container.css({ 'pointer-events': 'auto', 'opacity': '1' });
                     cal.removeClass('tf-content-loading');
                     btn.removeClass('tf-btn-loading');
                 },
             });
         });
 
-        $(document).on('change', '.tf_apt_pricing_type', function (e) {
-            let pricingType = $(this).val();
-
-            if (pricingType === 'per_night') {
-                $('.tf-price-by-night').show();
-                $('.tf-price-by-person').hide();
-            } else if (pricingType === '2') {
-                $('.tf-price-by-person').show();
-                $('.tf-price-by-night').hide();
-            }
-        });
-
-         /*
-        * Tour Availability Calendar
-        * @since 2.10.2
-        * @auther: Foysal
-        */
-         var tourCal = function (container) {
+        /*
+       * Tour Availability Calendar
+       * @since 2.10.2
+       * @auther: Foysal
+       */
+        var tourCal = function (container) {
             var self = this;
             this.container = container;
             this.calendar = null
@@ -4278,8 +3938,8 @@ jQuery(function($) {
                 },
                 displayEventTime: true,
                 selectable: true,
-                select: function ({start, end, startStr, endStr, allDay, jsEvent, view, resource}) {
-                    tourResetForm('');
+                select: function ({ start, end, startStr, endStr, allDay, jsEvent, view, resource }) {
+                    tourResetForm(self.tourCalData);
                     if (moment(start).isBefore(moment(), 'day') || moment(end).isBefore(moment(), 'day')) {
                         self.fullCalendar.unselect();
                         setTourCheckInOut("", "", self.tourCalData);
@@ -4287,35 +3947,37 @@ jQuery(function($) {
                         var zone = moment(start).format("Z");
                         zone = zone.split(":");
                         zone = "" + parseInt(zone[0]) + ":00";
-                        var check_in = moment(start).utcOffset(zone).format(String(tf_options.tf_admin_date_format || "MM/DD/YYYY").toUpperCase());
-                        var check_out = moment(end).utcOffset(zone).subtract(1, 'day').format(String(tf_options.tf_admin_date_format || "MM/DD/YYYY").toUpperCase());
+                        var check_in = moment(start).utcOffset(zone).format(String(tourficOptions.tf_admin_date_format || "MM/DD/YYYY").toUpperCase());
+                        var check_out = moment(end).utcOffset(zone).subtract(1, 'day').format(String(tourficOptions.tf_admin_date_format || "MM/DD/YYYY").toUpperCase());
                         setTourCheckInOut(check_in, check_out, self.tourCalData);
                     }
                 },
-                events: function ({start, end, startStr, endStr, timeZone}, successCallback, failureCallback) {
+                events: function ({ start, end, startStr, endStr, timeZone }, successCallback, failureCallback) {
+                    let requestData = {
+                        action: "tourfic_get_tour_availability",
+                        _nonce: tourficAdminParams.tf_nonce,
+                        new_post: $(self.container).find('[name="new_post"]').val(),
+                        tour_id: $(self.container).find('[name="tour_id"]').val(),
+                        tour_availability: $(self.container).find('.tour_availability').val(),
+                    };
+                    $(document).trigger('tourfic:tour-availability:prepare-fetch', [requestData, self.tourCalData]);
+
                     $.ajax({
-                        url: tf_options.ajax_url,
+                        url: tourficOptions.ajax_url,
                         dataType: "json",
                         type: "POST",
-                        data: {
-                            action: "tf_get_tour_availability",
-                            _nonce: tf_admin_params.tf_nonce,
-                            new_post: $('[name="new_post"]').val(),
-                            tour_id: $('[name="tour_id"]').val(),
-                            tour_availability: $('.tour_availability').val(),
-                            option_arr: tourPackageArr(),
-                        },
+                        data: requestData,
                         beforeSend: function () {
-                            $(self.container).css({'pointer-events': 'none', 'opacity': '0.5'});
+                            $(self.container).css({ 'pointer-events': 'none', 'opacity': '0.5' });
                             $(self.calendar).addClass('tf-content-loading');
                         },
                         success: function (doc) {
                             if (typeof doc == "object") {
                                 successCallback(doc?.avail_data);
                             }
-                            $('.tf-package-field-repeater').html(doc?.options_html);
-                            syncTourPackageSelection(self.tourCalData);
-                            $(self.container).css({'pointer-events': 'auto', 'opacity': '1'});
+                            $(self.container).find('.tf-tour-availability-extension-fields').html(doc?.options_html || '');
+                            $(document).trigger('tourfic:tour-availability:editor-updated', [self.tourCalData, doc]);
+                            $(self.container).css({ 'pointer-events': 'auto', 'opacity': '1' });
                             $(self.calendar).removeClass('tf-content-loading');
                         },
                         error: function (e) {
@@ -4328,268 +3990,34 @@ jQuery(function($) {
                     const eventTitleElement = document.createElement('div');
                     eventTitleElement.classList.add('fc-event-title');
                     eventTitleElement.innerHTML = title;
-                    return {domNodes: [eventTitleElement]};
+                    return { domNodes: [eventTitleElement] };
                 },
                 eventDidMount: function (arg) {
                     const customClass = arg.event.extendedProps.customClass || '';
-                    if(customClass){
+                    if (customClass) {
                         arg.el.classList.add(customClass);
                     }
                 },
-                eventClick: function ({event, el, jsEvent, view}) {
-                    let startTime = moment(event.start, String(tf_options.tf_admin_date_format || "MM/DD/YYYY").toUpperCase())
-                        .format(String(tf_options.tf_admin_date_format || 'MM/DD/YYYY').toUpperCase());
-                    let endTime;
-                    if (event.end) {
-                        endTime = moment(event.end, String(tf_options.tf_admin_date_format || "MM/DD/YYYY").toUpperCase()).subtract(1, 'days')
-                            .format(String(tf_options.tf_admin_date_format || 'MM/DD/YYYY').toUpperCase());
-                    } else {
-                        endTime = startTime;
-                    }
+                eventClick: function ({ event }) {
+                    let startTime = moment(event.start, String(tourficOptions.tf_admin_date_format || "MM/DD/YYYY").toUpperCase())
+                        .format(String(tourficOptions.tf_admin_date_format || 'MM/DD/YYYY').toUpperCase());
+                    let endTime = event.end
+                        ? moment(event.end, String(tourficOptions.tf_admin_date_format || "MM/DD/YYYY").toUpperCase()).subtract(1, 'days')
+                            .format(String(tourficOptions.tf_admin_date_format || 'MM/DD/YYYY').toUpperCase())
+                        : startTime;
+
                     setTourCheckInOut(startTime, endTime, self.tourCalData);
-                    let pricingType = $('.tf_tour_pricing_type').val();
-                    let allow_package_pricing = $('[name="tf_tours_opt[allow_package_pricing]"]').val();
 
-                    if (typeof event.extendedProps.min_person != 'undefined') {
-                        $("[name='tf_tour_min_person']", self.tourCalData).val(event.extendedProps.min_person);
-                    }
-                    if (typeof event.extendedProps.max_person != 'undefined') {
-                        $("[name='tf_tour_max_person']", self.tourCalData).val(event.extendedProps.max_person);
-                    }
-                    if (typeof event.extendedProps.max_capacity != 'undefined') {
-                        $("[name='tf_tour_max_capacity']", self.tourCalData).val(event.extendedProps.max_capacity);
-                    }
-
-                    const $packageCheckboxes = $(self.tourCalData).find('.tf-availability-package-checkbox');
-                    if ($packageCheckboxes.length) {
-                        $packageCheckboxes.prop('checked', false);
-                        const selectedPackages = Array.isArray(event.extendedProps.selected_packages)
-                            ? event.extendedProps.selected_packages.map((index) => String(index))
-                            : [];
-
-                        if (selectedPackages.length) {
-                            selectedPackages.forEach((index) => {
-                                $packageCheckboxes.filter(`[value="${index}"]`).prop('checked', true);
-                            });
-                        } else {
-                            $packageCheckboxes.prop('checked', true);
+                    ['min_person', 'max_person', 'max_capacity', 'adult_price', 'child_price', 'infant_price'].forEach(function (field) {
+                        if (typeof event.extendedProps[field] !== 'undefined') {
+                            $("[name='tf_tour_" + field + "']", self.tourCalData).val(event.extendedProps[field]);
                         }
+                    });
 
-                        syncTourPackageSelection(self.tourCalData);
-                    }
+					$(document).trigger('tourfic:tour-availability:event-click', [event, self.tourCalData]);
 
-                    // Selected Time
-                    let allRepeaterHTML = '';
-                    if (typeof event.extendedProps.allowed_time != 'undefined') {
-                        const allowedTime = event.extendedProps.allowed_time;
-                        const times = Array.isArray(allowedTime.time)
-                            ? allowedTime.time
-                            : (typeof allowedTime.time === 'object' && allowedTime.time !== null)
-                                ? Object.values(allowedTime.time)
-                                : [];
-
-                        const capacities = Array.isArray(allowedTime.cont_max_capacity)
-                            ? allowedTime.cont_max_capacity
-                            : (typeof allowedTime.cont_max_capacity === 'object' && allowedTime.cont_max_capacity !== null)
-                                ? Object.values(allowedTime.cont_max_capacity)
-                                : [];
-                        // More specific selector with error handling
-                        const container = document.querySelector('.tf_tour_allowed_times');
-
-                        if (!container) {
-                            console.error('Container element not found!');
-                            return;
-                        }
-
-                        // Clear old content safely
-                        while (container.firstChild) {
-                            container.removeChild(container.firstChild);
-                        }
-
-                        
-                        if(times.length > 0){
-                            times.forEach((time, index) => {
-                                if (!time) return;
-                                const capacity = capacities[index] || '';
-
-                                allRepeaterHTML += `
-                                <div class="tf-single-repeater tf-single-repeater-allowed_time">
-                                    <input type="hidden" name="tf_parent_field" value="">
-                                    <input type="hidden" name="tf_repeater_count" value="${index + 1}">
-                                    <input type="hidden" name="tf_current_field" value="allowed_time">
-                                    <div class="tf-repeater-content-wrap">
-                                        <div class="tf-field tf-field-time" style="width: calc(50% - 6px);">
-                                            <div class="tf-fieldset">
-                                                <input type="text" name="allowed_time[time][]" placeholder="Select Time" value="${time}" class="flatpickr flatpickr-input" data-format="h:i K" readonly="readonly">
-                                                <i class="fa-regular fa-clock"></i>
-                                            </div>
-                                        </div>
-                                        <div class="tf-field tf-field-number" style="width: calc(50% - 6px);">
-                                            <div class="tf-fieldset">
-                                                <input type="number" name="allowed_time[cont_max_capacity][]" id="allowed_time[cont_max_capacity]" value="${capacity}" placeholder="Maximum Capacity">
-                                            </div>
-                                        </div>
-                                        <span class="tf-repeater-icon tf-repeater-icon-delete">
-                                            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                                <path d="M15 5L5 15" stroke="#566676" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                                                <path d="M5 5L15 15" stroke="#566676" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                                            </svg>
-                                        </span>
-                                    </div>
-                                </div>
-                            `;
-
-                            });
-                        }
-                    }
-                    // Append only if there's valid time
-                    if (pricingType!='package' && allRepeaterHTML) {
-                        $('.tf_tour_saved_allowed_times').append(allRepeaterHTML);
-                        // Re-initialize flatpickr on the newly added inputs
-                        $('.tf_tour_allowed_times .flatpickr-input').flatpickr({
-                            enableTime: true,
-                            noCalendar: true,
-                            dateFormat: "h:i K"
-                        });
-                    }
-
-                    if (pricingType === 'group' && allow_package_pricing!=1) {
-                        if (typeof event.extendedProps.price != 'undefined') {
-                            $("[name='tf_tour_price']", self.tourCalData).val(event.extendedProps.price);
-                        }
-                    } else if (pricingType === 'person') {
-                        if (typeof event.extendedProps.adult_price != 'undefined') {
-                            $("[name='tf_tour_adult_price']", self.tourCalData).val(event.extendedProps.adult_price);
-                        }
-                        if (typeof event.extendedProps.child_price != 'undefined') {
-                            $("[name='tf_tour_child_price']", self.tourCalData).val(event.extendedProps.child_price);
-                        }
-                        if (typeof event.extendedProps.infant_price != 'undefined') {
-                            $("[name='tf_tour_infant_price']", self.tourCalData).val(event.extendedProps.infant_price);
-                        }
-                    } else {
-                        if(event.extendedProps.options_count != 0) {
-                            for (var i = 0; i <= event.extendedProps.options_count - 1; i++) {
-                                $("[name='tf_option_min_person_" + i + "']", self.tourCalData).val(event.extendedProps["tf_option_min_person_" + i]);
-                                $("[name='tf_option_max_person_" + i + "']", self.tourCalData).val(event.extendedProps["tf_option_max_person_" + i]);
-                                $("[name='tf_option_group_price_" + i + "']", self.tourCalData).val(event.extendedProps["tf_option_group_price_" + i]);
-                                $("[name='tf_option_adult_price_" + i + "']", self.tourCalData).val(event.extendedProps["tf_option_adult_price_" + i]);
-                                $("[name='tf_option_child_price_" + i + "']", self.tourCalData).val(event.extendedProps["tf_option_child_price_" + i]);
-                                $("[name='tf_option_infant_price_" + i + "']", self.tourCalData).val(event.extendedProps["tf_option_infant_price_" + i]);
-
-                                const discountData = event.extendedProps["tf_option_group_discount_" + i];
-                                let allGroupDiscountRepeaterHTML = '';
-
-                                if (discountData && Array.isArray(discountData.min_person)) {
-                                    discountData.min_person.forEach((min, index) => {
-                                        if (!min) return;
-                                        const max = discountData.max_person[index] || '';
-                                        const price = discountData.price[index] || '';
-
-                                        allGroupDiscountRepeaterHTML += `
-                                            <div class="tf-single-repeater tf-single-repeater-group_discount_package">
-                                                <input type="hidden" name="tf_parent_field" value="[group_tabs]">
-                                                <input type="hidden" name="tf_repeater_count" value="${index + 1}">
-                                                <input type="hidden" name="tf_current_field" value="group_discount_package">
-                                                
-                                                <div class="tf-repeater-content-wrap">
-                                                    <div class="tf-field tf-field-number" style="width:calc(66% - 10px);">
-                                                        <div class="tf-fieldset">
-                                                            <div class="tf-number-range">
-                                                                <div class="tf-number-field-box">
-                                                                    <i class="fa-regular fa-user"></i>
-                                                                    <input type="number" name="tf_option_${i}_group_discount[min_person][]" value="${min}" min="0" placeholder="Min Person">
-                                                                </div>
-                                                                <svg width="21" height="20" viewBox="0 0 21 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                                                    <path d="M15.5 6.66797L18.8333 10.0013L15.5 13.3346" stroke="#95A3B2" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
-                                                                    <path d="M2.1665 10H18.8332" stroke="#95A3B2" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
-                                                                </svg>
-                                                                <div class="tf-number-field-box">
-                                                                    <i class="fa-regular fa-user"></i>
-                                                                    <input type="number" name="tf_option_${i}_group_discount[max_person][]" value="${max}" min="0" placeholder="Max Person">
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                    <div class="tf-field tf-field-number" style="width:calc(33% - 10px);">
-                                                        <div class="tf-fieldset">
-                                                            <input type="number" name="tf_option_${i}_group_discount[price][]" value="${price}" min="0" placeholder="Price">
-                                                        </div>
-                                                    </div>
-
-                                                    <span class="tf-repeater-icon tf-repeater-icon-delete">
-                                                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                                            <path d="M15 5L5 15" stroke="#566676" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
-                                                            <path d="M5 5L15 15" stroke="#566676" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
-                                                        </svg>
-                                                    </span>
-                                                </div>
-                                            </div>
-                                        `;
-                                    });
-                                }
-                                if (allGroupDiscountRepeaterHTML) {
-                                    $('.tf-group-discount-package_'+i).append(allGroupDiscountRepeaterHTML);
-                                }
-
-                                // package times
-                                const packageTimesData = event.extendedProps["tf_option_times_" + i];
-                                let allPackageRepeaterHTML = '';
-
-                                if (packageTimesData && Array.isArray(packageTimesData.time)) {
-                                    packageTimesData.time.forEach((time, index) => {
-                                        if (!time) return;
-                                        const capacity = packageTimesData.cont_max_capacity[index] || '';
-
-                                        allPackageRepeaterHTML += `
-                                            <div class="tf-single-repeater tf-single-repeater-allowed_time">
-                                                <input type="hidden" name="tf_parent_field" value="">
-                                                <input type="hidden" name="tf_repeater_count" value="${index + 1}">
-                                                <input type="hidden" name="tf_current_field" value="allowed_time">
-                                                <div class="tf-repeater-content-wrap">
-                                                    <div class="tf-field tf-field-time" style="width: calc(50% - 6px);">
-                                                        <div class="tf-fieldset">
-                                                            <input type="text" name="tf_option_${i}_allowed_time[time][]" placeholder="Select Time" value="${time}" class="flatpickr flatpickr-input" data-format="h:i K" readonly="readonly">
-                                                            <i class="fa-regular fa-clock"></i>
-                                                        </div>
-                                                    </div>
-                                                    <div class="tf-field tf-field-number" style="width: calc(50% - 6px);">
-                                                        <div class="tf-fieldset">
-                                                            <input type="number" name="tf_option_${i}_allowed_time[cont_max_capacity][]" value="${capacity}" placeholder="Maximum Capacity">
-                                                        </div>
-                                                    </div>
-                                                    <span class="tf-repeater-icon tf-repeater-icon-delete">
-                                                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                                            <path d="M15 5L5 15" stroke="#566676" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                                                            <path d="M5 5L15 15" stroke="#566676" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                                                        </svg>
-                                                    </span>
-                                                </div>
-                                            </div>
-                                        `;
-                                    });
-                                }
-
-                                if (allPackageRepeaterHTML) {
-                                    $('.tf-tour-package-allowed-time_'+i).html(allPackageRepeaterHTML);
-
-                                    // Re-initialize flatpickr on the newly added inputs
-                                    $('.tf_tour_allowed_times .flatpickr-input').flatpickr({
-                                        enableTime: true,
-                                        noCalendar: true,
-                                        dateFormat: "h:i K"
-                                    });
-                                }
-
-                            }
-                        }
-                        if(typeof event.extendedProps.options_count == 'undefined'){
-                            $(".tf_option_pricing_type_person input").val('');
-                            $(".tf_option_pricing_type_group input").val('');
-                        }
-                    }
                     if (event.extendedProps.status) {
-                        $("[name='tf_tour_status'] option[value=" + event.extendedProps.status + "]", self.tourCalData).prop("selected", true);
+                        $("[name='tf_tour_status']", self.tourCalData).val(event.extendedProps.status);
                     }
                 },
             };
@@ -4598,7 +4026,6 @@ jQuery(function($) {
                 self.calendar = container.querySelector('.tf-tour-cal');
                 self.tourCalData = $('.tf-tour-cal-field', self.container);
                 setTourCurrentAvailabilityState(self.tourCalData);
-                syncTourPackageSelection(self.tourCalData);
                 self.initCalendar();
             }
             this.initCalendar = function () {
@@ -4683,7 +4110,6 @@ jQuery(function($) {
         function tourResetForm(tourCalData) {
             $('.tf_tour_check_in', tourCalData).val('');
             $('.tf_tour_check_out', tourCalData).val('');
-            $('[name="tf_tour_price"]', tourCalData).val('');
             $('[name="tf_tour_adult_price"]', tourCalData).val('');
             $('[name="tf_tour_child_price"]', tourCalData).val('');
             $('[name="tf_tour_infant_price"]', tourCalData).val('');
@@ -4692,21 +4118,7 @@ jQuery(function($) {
             $('[name="tf_tour_max_capacity"]', tourCalData).val('');
             $('[name="tf_tour_repeat_day[]"], [name="tf_tour_repeat_month[]"], [name="tf_tour_repeat_year[]"], [name="tf_tour_repeat_week[]"]')
             .prop('checked', false);
-            const $packageCheckboxes = $(tourCalData).find('.tf-availability-package-checkbox');
-            if ($packageCheckboxes.length) {
-                $packageCheckboxes.prop('checked', true);
-            }
-            $('.bulk-popup-content-box #adult_tabs input, .bulk-popup-content-box #child_tabs input, .bulk-popup-content-box #infant_tabs input, .bulk-popup-content-box #group_tabs input').val('');
-
-            $('.tf-tour-cal-field .tf_tour_allowed_times').html('');
-
-            // More specific selector with error handling
-            if($('.tf_tour_allowed_times').length > 0){
-                const container = document.querySelector('.tf_tour_allowed_times');
-                while (container.firstChild) {
-                    container.removeChild(container.firstChild);
-                }
-            }
+			$(document).trigger('tourfic:tour-availability:reset', [tourCalData]);
 
             // Destroy old flatpickr instances to avoid conflicts
             $(tourCalData).find('[name="tf_tour_check_in"]').each(function () {
@@ -4722,26 +4134,25 @@ jQuery(function($) {
 
             // Re-initialize flatpickr instances
             let checkIn = $(tourCalData).find('[name="tf_tour_check_in"]').flatpickr({
-                dateFormat: tf_options.tf_admin_date_format || 'MM/DD/YYYY',
+                dateFormat: tourficOptions.tf_admin_date_format || 'MM/DD/YYYY',
                 minDate: 'today',
                 altInput: true,
-                altFormat: tf_options.tf_admin_date_format,
+                altFormat: tourficOptions.tf_admin_date_format,
                 onChange: function (selectedDates, dateStr, instance) {
                     if (checkOut) checkOut.set('minDate', dateStr);
                 }
             });
 
             let checkOut = $(tourCalData).find('[name="tf_tour_check_out"]').flatpickr({
-                dateFormat: tf_options.tf_admin_date_format || 'MM/DD/YYYY',
+                dateFormat: tourficOptions.tf_admin_date_format || 'MM/DD/YYYY',
                 minDate: 'today',
                 altInput: true,
-                altFormat: tf_options.tf_admin_date_format,
+                altFormat: tourficOptions.tf_admin_date_format,
                 onChange: function (selectedDates, dateStr, instance) {
                     if (checkIn) checkIn.set('maxDate', dateStr);
                 }
             });
 
-            syncTourPackageSelection(tourCalData);
         }
 
         const tfTourCalendar = () => {
@@ -4750,20 +4161,20 @@ jQuery(function($) {
                 tour.init();
 
                 let checkIn = $(el).find('[name="tf_tour_check_in"]').flatpickr({
-                    dateFormat: tf_options.tf_admin_date_format || 'MM/DD/YYYY',
+                    dateFormat: tourficOptions.tf_admin_date_format || 'MM/DD/YYYY',
                     minDate: 'today',
                     altInput: true,
-                    altFormat: tf_options.tf_admin_date_format,
+                    altFormat: tourficOptions.tf_admin_date_format,
                     onChange: function (selectedDates, dateStr, instance) {
                         checkOut.set('minDate', dateStr);
                     }
                 });
 
                 let checkOut = $(el).find('[name="tf_tour_check_out"]').flatpickr({
-                    dateFormat: tf_options.tf_admin_date_format || 'MM/DD/YYYY',
+                    dateFormat: tourficOptions.tf_admin_date_format || 'MM/DD/YYYY',
                     minDate: 'today',
                     altInput: true,
-                    altFormat: tf_options.tf_admin_date_format,
+                    altFormat: tourficOptions.tf_admin_date_format,
                     onChange: function (selectedDates, dateStr, instance) {
                         checkIn.set('maxDate', dateStr);
                     }
@@ -4771,11 +4182,6 @@ jQuery(function($) {
             });
         }
         tfTourCalendar();
-
-        $(document).on('change', '.tf-availability-package-checkbox', function () {
-            const tourCalData = $(this).closest('.tf-tour-cal-field');
-            syncTourPackageSelection(tourCalData);
-        });
 
         $(document).on('click', '.tf_tour_cal_update', function (e) {
             e.preventDefault();
@@ -4787,26 +4193,18 @@ jQuery(function($) {
             const $tourField = container.find('.tf-tour-cal-field').first();
             let data = $('input, select', $tourField).serializeArray();
 
-            // Serialize selected package checkboxes explicitly so hidden/default
-            // clones cannot override the active Bulk Add selection.
-            data = data.filter((item) => item.name !== 'selected_packages[]');
-            $tourField.find('.tf-availability-package-selector:visible .tf-availability-package-checkbox:checked').each(function () {
-                data.push({name: 'selected_packages[]', value: String($(this).val())});
-            });
-            let pricingType = $('.tf_tour_pricing_type').val();
             let tourAvailability = container.find('.tour_availability');
-            data.push({name: 'action', value: 'tf_add_tour_availability'});
-            data.push({name: '_nonce', value: tf_admin_params.tf_nonce});
-            data.push({name: 'pricing_type', value: pricingType});
-            data.push({name: 'tour_availability', value: tourAvailability.val()});
-            data.push({name: 'options_count', value: tourPackageArr().length});
+            data.push({ name: 'action', value: 'tourfic_add_tour_availability' });
+            data.push({ name: '_nonce', value: tourficAdminParams.tf_nonce });
+            data.push({ name: 'tour_availability', value: tourAvailability.val() });
+            $(document).trigger('tourfic:tour-availability:prepare-request', [data, container]);
 
             $.ajax({
-                url: tf_options.ajax_url,
+                url: tourficOptions.ajax_url,
                 type: 'POST',
                 data: data,
                 beforeSend: function () {
-                    container.css({'pointer-events': 'none', 'opacity': '0.5'})
+                    container.css({ 'pointer-events': 'none', 'opacity': '0.5' })
                     cal.addClass('tf-content-loading');
                     btn.addClass('tf-btn-loading');
                 },
@@ -4826,7 +4224,7 @@ jQuery(function($) {
                             notyf.error(response.data.message);
                         }
 
-                        container.css({'pointer-events': 'auto', 'opacity': '1'})
+                        container.css({ 'pointer-events': 'auto', 'opacity': '1' })
                         cal.removeClass('tf-content-loading');
                         btn.removeClass('tf-btn-loading');
                     }
@@ -4841,12 +4239,12 @@ jQuery(function($) {
                 },
                 error: function (e) {
                     console.log(e);
-                    container.css({'pointer-events': 'auto', 'opacity': '1'})
+                    container.css({ 'pointer-events': 'auto', 'opacity': '1' })
                     cal.removeClass('tf-content-loading');
                     btn.removeClass('tf-btn-loading');
                 },
                 complete: function () {
-                    container.css({'pointer-events': 'auto', 'opacity': '1'});
+                    container.css({ 'pointer-events': 'auto', 'opacity': '1' });
                     cal.removeClass('tf-content-loading');
                     btn.removeClass('tf-btn-loading');
 
@@ -4882,15 +4280,15 @@ jQuery(function($) {
             let cal = container.find('.tf-tour-cal');
             let tourAvailability = container.find('.tour_availability');
             $.ajax({
-                url: tf_options.ajax_url,
+                url: tourficOptions.ajax_url,
                 type: 'POST',
                 data: {
-                    'action': 'tf_reset_tour_availability',
-                    '_nonce': tf_admin_params.tf_nonce,
+                    'action': 'tourfic_reset_tour_availability',
+                    '_nonce': tourficAdminParams.tf_nonce,
                     'tour_id': $('#post_ID').val()
                 },
                 beforeSend: function () {
-                    container.css({'pointer-events': 'none', 'opacity': '0.5'})
+                    container.css({ 'pointer-events': 'none', 'opacity': '0.5' })
                     cal.addClass('tf-content-loading');
                     btn.addClass('tf-btn-loading');
                 },
@@ -4910,18 +4308,18 @@ jQuery(function($) {
                     }
 
                     $('.tf-reset-confirmation-box').hide();
-                    container.css({'pointer-events': 'auto', 'opacity': '1'})
+                    container.css({ 'pointer-events': 'auto', 'opacity': '1' })
                     cal.removeClass('tf-content-loading');
                     btn.removeClass('tf-btn-loading');
 
                 },
                 error: function (e) {
-                    container.css({'pointer-events': 'auto', 'opacity': '1'})
+                    container.css({ 'pointer-events': 'auto', 'opacity': '1' })
                     cal.removeClass('tf-content-loading');
                     btn.removeClass('tf-btn-loading');
                 },
                 complete: function () {
-                    container.css({'pointer-events': 'auto', 'opacity': '1'});
+                    container.css({ 'pointer-events': 'auto', 'opacity': '1' });
                     cal.removeClass('tf-content-loading');
                     btn.removeClass('tf-btn-loading');
                     $('.tf-tour-cal-field').removeClass('tf-bulk-popup');
@@ -4937,15 +4335,15 @@ jQuery(function($) {
             let cal = container.find('.tf-room-cal');
             let roomAvailability = container.find('avail_date');
             $.ajax({
-                url: tf_options.ajax_url,
+                url: tourficOptions.ajax_url,
                 type: 'POST',
                 data: {
-                    'action': 'tf_reset_room_availability',
-                    '_nonce': tf_admin_params.tf_nonce,
+                    'action': 'tourfic_reset_room_availability',
+                    '_nonce': tourficAdminParams.tf_nonce,
                     'room_id': $('#post_ID').val()
                 },
                 beforeSend: function () {
-                    container.css({'pointer-events': 'none', 'opacity': '0.5'})
+                    container.css({ 'pointer-events': 'none', 'opacity': '0.5' })
                     cal.addClass('tf-content-loading');
                     btn.addClass('tf-btn-loading');
                 },
@@ -4959,19 +4357,19 @@ jQuery(function($) {
                     } else {
                         notyf.error(response.data.message);
                     }
-                    
+
                     $('.tf-reset-confirmation-box').hide();
-                    container.css({'pointer-events': 'auto', 'opacity': '1'})
+                    container.css({ 'pointer-events': 'auto', 'opacity': '1' })
                     cal.removeClass('tf-content-loading');
                     btn.removeClass('tf-btn-loading');
                 },
                 error: function (e) {
-                    container.css({'pointer-events': 'auto', 'opacity': '1'})
+                    container.css({ 'pointer-events': 'auto', 'opacity': '1' })
                     cal.removeClass('tf-content-loading');
                     btn.removeClass('tf-btn-loading');
                 },
                 complete: function () {
-                    container.css({'pointer-events': 'auto', 'opacity': '1'});
+                    container.css({ 'pointer-events': 'auto', 'opacity': '1' });
                     cal.removeClass('tf-content-loading');
                     btn.removeClass('tf-btn-loading');
                 },
@@ -4987,15 +4385,15 @@ jQuery(function($) {
             let cal = container.find('.tf-apt-cal');
             let aptAvailability = container.find('.apt_availability');
             $.ajax({
-                url: tf_options.ajax_url,
+                url: tourficOptions.ajax_url,
                 type: 'POST',
                 data: {
-                    'action': 'tf_reset_apt_availability',
-                    '_nonce': tf_admin_params.tf_nonce,
+                    'action': 'tourfic_reset_apt_availability',
+                    '_nonce': tourficAdminParams.tf_nonce,
                     'apartment_id': $('#post_ID').val()
                 },
                 beforeSend: function () {
-                    container.css({'pointer-events': 'none', 'opacity': '0.5'})
+                    container.css({ 'pointer-events': 'none', 'opacity': '0.5' })
                     cal.addClass('tf-content-loading');
                     btn.addClass('tf-btn-loading');
                 },
@@ -5013,20 +4411,20 @@ jQuery(function($) {
                     } else {
                         notyf.error(response.data.message);
                     }
-                    
+
                     $('.tf-reset-confirmation-box').hide();
-                    container.css({'pointer-events': 'auto', 'opacity': '1'})
+                    container.css({ 'pointer-events': 'auto', 'opacity': '1' })
                     cal.removeClass('tf-content-loading');
                     btn.removeClass('tf-btn-loading');
 
                 },
                 error: function (e) {
-                    container.css({'pointer-events': 'auto', 'opacity': '1'})
+                    container.css({ 'pointer-events': 'auto', 'opacity': '1' })
                     cal.removeClass('tf-content-loading');
                     btn.removeClass('tf-btn-loading');
                 },
                 complete: function () {
-                    container.css({'pointer-events': 'auto', 'opacity': '1'});
+                    container.css({ 'pointer-events': 'auto', 'opacity': '1' });
                     cal.removeClass('tf-content-loading');
                     btn.removeClass('tf-btn-loading');
                     $('.tf-tour-cal-field').removeClass('tf-bulk-popup');
@@ -5045,255 +4443,34 @@ jQuery(function($) {
             }
         });
 
-        // add pacakge
-        // $(document).on("click", ".tf-repeater-add-package_pricing", function (e) {
-        //     $(this).hide(); // Hide the popup
-        // });
-        // Save Package
-        $(document).on('click', ".tf_tour_package_save", function(e) {
-            e.preventDefault();
-            
-            var $repeater = $(this).closest('.tf-single-repeater-package_pricing');
-            var data = {};
-            var packageIndex = null;
-
-            // First pass: Find the package index
-            $repeater.find('[name^="tf_tours_opt[package_pricing]"]').each(function() {
-                var name = $(this).attr('name');
-                var matches = name.match(/tf_tours_opt\[package_pricing\]\[(\d+)\]/);
-                if (matches && matches[1]) {
-                    packageIndex = matches[1];
-                    return false; // Exit loop once we find the index
-                }
-            });
-
-            if (packageIndex === null) {
-                alert('Could not determine package index');
-                return;
-            }
-
-            // Second pass: Collect all data with proper structure
-            var packageData = {
-                pack_status: '',
-                pack_title: '',
-                pricing_type: 'person',
-                desc: '',
-                adult_tabs: [{}, {}, {}, {}],
-                child_tabs: [{}, {}, {}, {}],
-                infant_tabs: [{}, {}, {}, {}],
-                group_tabs: [{}, {}, {}, {}, {}, {}]
-            };
-
-            // Collect all form data
-            $repeater.find('input, select, textarea').each(function() {
-                var $el = $(this);
-                var name = $el.attr('name');
-                
-                // Skip system fields
-                if (name === 'tf_parent_field' || name === 'tf_repeater_count' || name === 'tf_current_field') {
-                    return;
-                }
-
-                // Extract the field path
-                var path = name.replace(/^tf_tours_opt\[package_pricing\]\[\d+\]/, '')
-                            .replace(/^\[|\]$/g, '')
-                            .split('][');
-                
-                // Build the nested structure
-                var current = packageData;
-                for (var i = 0; i < path.length; i++) {
-                    var key = path[i];
-                    
-                    // Handle numeric array indexes
-                    if (!isNaN(key) && i > 0) {
-                        key = parseInt(key);
-                    }
-                    
-                    if (i === path.length - 1) {
-                        // Set the value
-                        if ($el.attr('type') === 'checkbox') {
-                            current[key] = $el.is(':checked') ? ($el.val() || '1') : '';
-                        } else {
-                            current[key] = $el.val();
-                        }
-                    } else {
-                        // Create nested objects if they don't exist
-                        if (current[key] === undefined) {
-                            current[key] = isNaN(path[i+1]) ? {} : [];
-                        }
-                        current = current[key];
-                    }
-                }
-            });
-
-            // Handle group discount repeater fields - filter out empty discounts
-            var discountRepeaters = [];
-            $repeater.find('.tf-single-repeater-group_discount_package').each(function() {
-                var $repeaterItem = $(this);
-                var discountData = {};
-                var hasValidDiscount = false;
-                
-                $repeaterItem.find('input[type="number"]').each(function() {
-                    var name = $(this).attr('name').match(/\[group_discount_package\]\[(\d+)\]\[([^\]]+)\]/);
-                    if (name && name[1] && name[2]) {
-                        var val = $(this).val();
-                        discountData[name[2]] = val;
-                        
-                        // Check if this is a discount_price with a valid value
-                        if (name[2] === 'discount_price' && val && parseFloat(val) > 0) {
-                            hasValidDiscount = true;
-                        }
-                    }
-                });
-                
-                // Only include discounts with valid discount_price
-                if (hasValidDiscount && Object.keys(discountData).length > 0) {
-                    discountRepeaters.push(discountData);
-                }
-            });
-
-            // Add discount repeater data to package if we have valid discounts
-            if (discountRepeaters.length > 0) {
-                packageData.group_tabs[5] = {
-                    group_discount_package: discountRepeaters
-                };
-            } else {
-                // Remove discount data if no valid discounts
-                packageData.group_tabs[5] = [];
-            }
-
-    
-            // Prepare AJAX data
-            var ajaxData = {
-                action: 'save_tour_package_pricing',
-                post_id: $('#post_ID').val(),
-                pricing_type: $('.tf_tour_pricing_type').val(),
-                package_index: packageIndex,
-                package_data: packageData,
-                nonce: tf_admin_params.tf_nonce
-            };
-    
-            // UI feedback
-            var $button = $(this);
-            $button.text('Saving...').prop('disabled', true);
-    
-            $.post(tf_options.ajax_url, ajaxData, function(response) {
-                if (response.success) {
-                    if(packageData.pack_title){
-                        $repeater.find(' > .tf-repeater-header .tf-repeater-title').html(packageData.pack_title);
-                    }else{
-                        $repeater.find(' > .tf-repeater-header .tf-repeater-title').html('Create your Tour Packages');
-                    }
-                    $repeater.find('.tf-repeater-content-wrap').hide();
-                    $repeater.find('.tf-repeater-header').removeClass('active-repeater');
-
-                    $repeater.find('.tf-repeater-header .package-action-hide').addClass('show');
-                    // $('.tf-repeater-add-package_pricing').show();
-                    notyf.success('Package saved successfully!');
-                } else {
-                    notyf.error('There is an error!');
-                }
-                $button.text('Save').prop('disabled', false);
-            }).fail(function(xhr, status, error) {
-                notyf.error('There is an error!');
-                $button.text('Save').prop('disabled', false);
-            });
-        });
-
-        // Package Dependancy
-        $(".group_discount_switcher").each(function() {
-            let $switcher = $(this);
-            let $checkbox = $switcher.find('input[type="checkbox"]');
-            let $box = $switcher.next(".group_discount_package_box");
-
-            $box.toggle($checkbox.is(":checked"));
-        });
-
-        $(document).on("change", ".group_discount_switcher input[type='checkbox']", function() {
-            let $switcher = $(this).closest(".group_discount_switcher");
-            let $box = $switcher.next(".group_discount_package_box");
-
-            $box.toggle($(this).is(":checked"));
-        });
-
-        // pricing type update when change
-        $(document).on('change', '#tf_tours_opt .tf_tour_pricing_type', function (e) {
-            let pricingType = $(this).val();
-            if(pricingType=='person'){
-                $('.tf-show-for-group').hide();
-                $('.tf-show-for-package').hide();
-                $('.tf-show-for-person').show();
-            }else if(pricingType=='group'){
-                $('.tf-show-for-package').hide();
-                $('.tf-show-for-person').hide();
-                $('.tf-show-for-group').show();
-            }else if(pricingType=='package'){
-                $('.tf-show-for-person').hide();
-                $('.tf-show-for-group').hide();
-                $('.tf-show-for-package').show();
-            }
-            // Prepare AJAX data
-            var ajaxData = {
-                action: 'save_tour_pricing_type',
-                post_id: $('#post_ID').val(),
-                pricing_type: pricingType,
-                nonce: tf_admin_params.tf_nonce
-            };
-
-            $.post(tf_options.ajax_url, ajaxData, function(response) {
-                if (response.success) {
-                    
-                } 
-            }).fail(function(xhr, status, error) {
-            });
-        });
-
-
-        $(document).on('change', '.tf_tour_pricing_type', function (e) {
-            let pricingType = $(this).val();
-
-            if (pricingType === 'per_night') {
-                $('.tf-price-by-night').show();
-                $('.tf-price-by-person').hide();
-            } else if (pricingType === '2') {
-                $('.tf-price-by-person').show();
-                $('.tf-price-by-night').hide();
-            }
-        });
-
         // Tour Map Initialize based on Tab
         $(document).on("click", "#tf_tours_opt .tf-tablinks", function (e) {
             var $this = $(this);
-            if ($this.attr('data-tab')=='availability'){
+            if ($this.attr('data-tab') == 'availability') {
                 tfTourCalendar();
             }
         });
 
         // Bulk Popup Open
         $(document).on("click", ".tf_tour_cal_bulk_edit", function (e) {
-            tourResetForm('');
-            $('.tf-tour-cal-field').addClass('tf-bulk-popup');
-            $('.tf-bulk-repeater-section').show();
-            $('.tf-check-dates').hide();
-            $('.tf_tour_cal_bulk_edit').hide();
-            $('.tf_tour_cal_reset').hide();
-            $('.bulk-popup-content .tf-repeater-wrap-group_discount_package').html('');
-            $('.bulk-popup-content .tf_tour_allowed_times').html('');
-            $('.tf-bulk-edit-header').css('display', 'flex');
-            $('.tf_bulk_edit_option').val('1');
+            const $field = $(this).closest('.tf-tour-cal-wrap').find('.tf-tour-cal-field').first();
+            tourResetForm($field);
+            $field.addClass('tf-bulk-popup');
+            $field.find('.tf-bulk-repeater-section').show();
+            $field.find('.tf-check-dates').hide();
+            $field.find('.tf_tour_cal_bulk_edit, .tf_tour_cal_reset').hide();
+            $field.find('.tf-bulk-edit-header').css('display', 'flex');
+            $field.find('.tf_bulk_edit_option').val('1');
         });
 
         // Bulk Popup Close
         $(document).on("click", ".tf_tour_bulk_close", function (e) {
-            $('.tf-tour-cal-field').removeClass('tf-bulk-popup');
-            $('.tf-bulk-repeater-section').hide();
-            $('.tf-check-dates').show();
-            $('.tf_tour_cal_reset').show();
-            $('.bulk-popup-content .tf-repeater-wrap-group_discount_package').html('');
-            $('.bulk-popup-content .tf_tour_allowed_times').html('');
-            $('.tf_tour_cal_bulk_edit').show();
-            $('.tf-bulk-edit-header').hide();
-            $('.tf_bulk_edit_option').val('');
+            const $field = $(this).closest('.tf-tour-cal-wrap').find('.tf-tour-cal-field').first();
+            $field.removeClass('tf-bulk-popup');
+            $field.find('.tf-bulk-repeater-section').hide();
+            $field.find('.tf-check-dates, .tf_tour_cal_reset, .tf_tour_cal_bulk_edit').show();
+            $field.find('.tf-bulk-edit-header').hide();
+            $field.find('.tf_bulk_edit_option').val('');
         });
 
         /*
@@ -5309,7 +4486,7 @@ jQuery(function($) {
                     toolbar2: 'styleselect,strikethrough,hr,forecolor,pastetext,removeformat,charmap,outdent,indent,undo,redo,wp_help',
                     //   textarea_rows : 20
                 },
-                quicktags: {buttons: 'strong,em,link,block,del,ins,img,ul,ol,li,code,more,close'},
+                quicktags: { buttons: 'strong,em,link,block,del,ins,img,ul,ol,li,code,more,close' },
                 mediaButtons: false,
             });
         }
@@ -5317,10 +4494,10 @@ jQuery(function($) {
         $('textarea.wp_editor, textarea.tf_wp_editor').each(function () {
             let $id = $(this).attr('id');
 
-            setTimeout(function() { 
+            setTimeout(function () {
                 TF_wp_editor($id);
             }, 1000);
-            
+
         });
 
         /*
@@ -5374,20 +4551,11 @@ jQuery(function($) {
             var $this = $(this);
             var $this_parent = $this.parent().parent();
             var id = $(this).attr("data-repeater-id");
-            var max = $(this).attr("data-repeater-max");
             var add_value = $this_parent.find('.tf-single-repeater-clone-' + id + ' .tf-single-repeater-' + id + '').clone();
-            var count = $this_parent.find('.tf-repeater-wrap-' + id + ' .tf-single-repeater-' + id + '').length;
             var parent_field = add_value.find(':input[name="tf_parent_field"]').val();
             var current_field = add_value.find(':input[name="tf_current_field"]').val();
             var maxIndex = parseInt($(this).closest('.tf-repeater').attr("data-max-index")) + 1;
             $(this).closest('.tf-repeater').attr("data-max-index", maxIndex);
-
-            $this_parent.find('.tf-repeater-wrap .tf-field-notice-inner').remove();
-            // Chacked maximum repeater
-            if (!tf_admin_params.is_pro && max != '' && count >= max) {
-                $this_parent.find('.tf-repeater-wrap').append('<div class="tf-field-notice-inner tf-notice-danger" style="display: block;">You have reached limit in free version. Please subscribe to Pro for unlimited access</div>');
-                return false;
-            }
 
             // Repeater Count Add Value
             add_value.find(':input[name="tf_repeater_count"]').val(maxIndex);
@@ -5411,14 +4579,14 @@ jQuery(function($) {
             let repeatColorField = add_value.find('.tf-field-color');
             if (repeatColorField.length > 0) {
                 repeatColorField.find('input.tf-color').each(function () {
-                    var color_field =  $(this).clone(); 
-                    if($(this).closest('li').length > 0){
+                    var color_field = $(this).clone();
+                    if ($(this).closest('li').length > 0) {
                         $(this).closest('li').append(color_field);
-                    }else{
+                    } else {
                         $(this).closest('.tf-fieldset').append(color_field);
                     }
                     $(this).closest('.wp-picker-container').remove();
-                 });
+                });
                 tfColorInt(repeatColorField);
             }
 
@@ -5523,7 +4691,6 @@ jQuery(function($) {
 
         // Repeater Delete Value
         $(document).on('click', '.tf-repeater-icon-delete', function () {
-            var max = $(this).attr("data-repeater-max");
             var $this_parent = $(this).closest('.tf-repeater-wrap');
             var count = $this_parent.find('.tf-single-repeater').length;
             // Chacked maximum repeater
@@ -5546,16 +4713,8 @@ jQuery(function($) {
             var parent_field = clone_value.find('input[name="tf_parent_field"]').val();
             var current_field = clone_value.find('input[name="tf_current_field"]').val();
             var repeater_count = clone_value.find('input[name="tf_repeater_count"]').val();
-            var count = $this_parent.find('.tf-single-repeater-' + current_field + '').length;
             var maxIndex = parseInt($(this).closest('.tf-repeater').attr("data-max-index")) + 1;
             $(this).closest('.tf-repeater').attr("data-max-index", maxIndex);
-
-            $this_parent.find('.tf-field-notice-inner').remove();
-            // Chacked maximum repeater
-            if (!tf_admin_params.is_pro && max != '' && count >= max) {
-                $this_parent.append('<div class="tf-field-notice-inner tf-notice-danger" style="display: block;">You have reached limit in free version. Please subscribe to Pro for unlimited access</div>');
-                return false;
-            }
 
             let repeatDateField = clone_value.find('.tf-field-date');
 
@@ -5576,14 +4735,14 @@ jQuery(function($) {
             let repeatColorField = clone_value.find('.tf-field-color');
             if (repeatColorField.length > 0) {
                 repeatColorField.find('input.tf-color').each(function () {
-                    var color_field =  $(this).clone(); 
-                    if($(this).closest('li').length > 0){
+                    var color_field = $(this).clone();
+                    if ($(this).closest('li').length > 0) {
                         $(this).closest('li').append(color_field);
-                    }else{
+                    } else {
                         $(this).closest('.tf-fieldset').append(color_field);
                     }
                     $(this).closest('.wp-picker-container').remove();
-                 });
+                });
                 tfColorInt(repeatColorField);
             }
 
@@ -5742,28 +4901,6 @@ jQuery(function($) {
             placeholder: "tf-switch-drag-highlight"
         });
 
-        // Discount Repeater Add
-        $(document).on('click', '.tf-repeater-add-group_discount_package', function (e) {
-            e.preventDefault();
-        
-            // Find the closest repeater container
-            var $repeater = $(this).closest('.tf-repeater');
-            
-            // Find the clone template
-            var $clone = $repeater.find('.tf-repeater-wrap-group_discount_package .tf-single-repeater .tf-repeater-content-wrap').show();
-        });
-
-        // Package Time Repeater Add
-        $(document).on('click', '.tf-package-add-allowed-time', function (e) {
-            e.preventDefault();
-        
-            // Find the closest repeater container
-            var $repeater = $(this).closest('.tf-repeater');
-            
-            // Find the clone template
-            var $clone = $repeater.find('.tf_tour_allowed_times .tf-single-repeater .tf-repeater-content-wrap').show();
-        });
-
         // Repeater show hide
         $(document).on('click', '.tf-field-accordion .tf-tab-field-header .tf-field-collapas', function () {
             $(this).toggleClass('rotated');
@@ -5773,24 +4910,7 @@ jQuery(function($) {
                     $(this).css('display', 'flex');
                 }
             });
-            
-        });
 
-        // Repeater Pacakge Cancel
-        $(document).on('click', '.tf-action-button-group .tf_tour_package_cancel', function () {
-            $(this).closest('.tf-repeater-content-wrap').hide();
-            $(this).closest('.tf-single-repeater').find('.tf-repeater-header').removeClass('active-repeater');
-            // $('.tf-repeater-add-package_pricing').show();
-        });
-
-        $(document).on('click', '.tf-action-button-group .tf_tour_package_deleted', function () {
-            $(this).closest('.tf-single-repeater').empty();
-            // $('.tf-repeater-add-package_pricing').show();
-        });
-
-        // Repeater show hide
-        $(document).on('click', '.tf-avail-repeater-collapse, .tf-avail-repeater-title', function () {
-            $(this).closest('.tf-single-repeater').find('.tf-repeater-content-wrap').first().slideToggle(200);
         });
 
         // TAB jquery
@@ -5812,7 +4932,7 @@ jQuery(function($) {
         });
 
         // Select 2 add new category
-        $(document).on('click', '.tf-add-category span', function (event) { 
+        $(document).on('click', '.tf-add-category span', function (event) {
             event.preventDefault();
             var $this = $(this);
             var parentDiv = $this.closest('.tf-fieldset');
@@ -5820,13 +4940,13 @@ jQuery(function($) {
         });
 
         // Close Popup
-        $(document).on('click', '.tf-add-category-box-close', function (event) { 
+        $(document).on('click', '.tf-add-category-box-close', function (event) {
             event.preventDefault();
             $('.tf-popup-box').hide();
         });
 
         // Create Category
-        $(document).on('click', '.tf-category-button', function (event) { 
+        $(document).on('click', '.tf-category-button', function (event) {
             event.preventDefault();
             var $this = $(this);
             var parentDiv = $this.closest('.tf-add-category-box');
@@ -5836,36 +4956,41 @@ jQuery(function($) {
             let categorySelect = parentDiv.find('#category_select_field_name').val();
 
             $.ajax({
-                url: tf_options.ajax_url,
+                url: tourficOptions.ajax_url,
                 method: 'POST',
                 data: {
-                    action: 'tf_insert_category_data',
-                    _nonce: tf_admin_params.tf_nonce,
+                    action: 'tourfic_insert_category_data',
+                    _nonce: tourficAdminParams.insert_category_nonce,
                     categoryName: categoryName,
                     categoryTitle: categoryTitle,
                     parentCategory: parentCategory
                 },
                 success: function (response) {
-                    var data = JSON.parse(response);
-                    if (data.insert_category) {
+                    if (response.success && response.data.insert_category) {
                         // Store to List and Selected
-                        var newOption = new Option(data.insert_category.title, data.insert_category.id, true, true);
-                        $('#'+categorySelect).append(newOption).trigger('change');
+                        var newOption = new Option(response.data.insert_category.title, response.data.insert_category.id, true, true);
+                        $('#' + categorySelect).append(newOption).trigger('change');
 
                         // Store to Popup List
-                        var newPopuOption = new Option(data.insert_category.title, data.insert_category.id, false, false);
+                        var newPopuOption = new Option(response.data.insert_category.title, response.data.insert_category.id, false, false);
                         parentDiv.find('#parent_category').append(newPopuOption).trigger('change');
                     }
                     $('.tf-popup-box').hide();
                     parentDiv.find('#category_title').val('');
                     parentDiv.find('#parent_category').val('');
+                },
+                error: function (xhr) {
+                    var message = xhr.responseJSON && xhr.responseJSON.data && xhr.responseJSON.data.message
+                        ? xhr.responseJSON.data.message
+                        : 'Unable to add this term.';
+                    notyf.error(message);
                 }
             });
 
         });
 
         // Create Post
-        $(document).on('click', '.tf-add-new-post-button', function (event) { 
+        $(document).on('click', '.tf-add-new-post-button', function (event) {
             event.preventDefault();
             var $this = $(this);
             var parentDiv = $this.closest('.tf-add-category-box');
@@ -5875,36 +5000,42 @@ jQuery(function($) {
             let fieldId = parentDiv.find('.field_id').val();
             let postId = parentDiv.find('.post_id').val();
 
-            if(postTitle){
+            if (postTitle) {
                 $.ajax({
-                    url: tf_options.ajax_url,
+                    url: tourficOptions.ajax_url,
                     method: 'POST',
                     data: {
-                        action: 'tf_insert_post_data',
-                        _nonce: tf_admin_params.tf_nonce,
+                        action: 'tourfic_insert_post_data',
+                        _nonce: tourficAdminParams.insert_post_nonce,
                         postType: postType,
                         postTitle: postTitle,
                         fieldId: fieldId,
                         postId: postId
                     },
-                    beforeSend: function(){
+                    beforeSend: function () {
                         $this.addClass('tf-btn-loading');
                     },
                     success: function (response) {
-                        var data = JSON.parse(response);
-                        if (data.insert_post) {
+                        if (response.success && response.data.insert_post) {
                             // Store to List and Selected
-                            var newOption = new Option(data.insert_post.title, data.insert_post.id, true, true);
-                            
-                            if(fieldId == 'tf_rooms'){
-                                $(newOption).attr('data-edit-url', data.insert_post.edit_url);
+                            var newOption = new Option(response.data.insert_post.title, response.data.insert_post.id, true, true);
+
+                            if (fieldId == 'tf_rooms') {
+                                $(newOption).attr('data-edit-url', response.data.insert_post.edit_url);
                             }
-                            
-                            $('#'+postSelect).append(newOption).trigger('change');
+
+                            $('#' + postSelect).append(newOption).trigger('change');
                         }
                         $this.removeClass('tf-btn-loading');
                         $('.tf-popup-box').hide();
                         parentDiv.find('.post_title').val('');
+                    },
+                    error: function (xhr) {
+                        $this.removeClass('tf-btn-loading');
+                        var message = xhr.responseJSON && xhr.responseJSON.data && xhr.responseJSON.data.message
+                            ? xhr.responseJSON.data.message
+                            : 'Unable to create this room.';
+                        notyf.error(message);
                     }
                 });
             } else {
@@ -6040,7 +5171,7 @@ var frame, gframe;
             $(".tf-fieldset-media-preview").html("");
         });
 
-        if (tf_options.gmaps != "googlemap") {
+        if (tourficOptions.gmaps != "googlemap") {
             $(".tf-field-map").each(function () {
                 var $this = $(this),
                     $map = $this.find('.tf--map-osm'),
@@ -6057,7 +5188,7 @@ var frame, gframe;
                     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                 }).addTo(mapInit);
 
-                var mapMarker = L.marker(map_data.center, {draggable: true}).addTo(mapInit);
+                var mapMarker = L.marker(map_data.center, { draggable: true }).addTo(mapInit);
 
                 var update_latlng = function (data) {
                     $latitude.val(data.lat);
@@ -6477,7 +5608,7 @@ const legendSpacingPlugin = {
 (function ($) {
     let tfChart = null;
     $(document).ready(function () {
-        if (tf_options.tf_chart_enable == 1) {
+        if (tourficOptions.tf_chart_enable == 1) {
             var ctx = document.getElementById('tf_months'); // node
             var ctx = document.getElementById('tf_months').getContext('2d'); // 2d context
             var ctx = $('#tf_months'); // jQuery instance
@@ -6490,30 +5621,30 @@ const legendSpacingPlugin = {
             tfChart = new Chart(ctx, {
                 type: 'line',
                 data: {
-                    labels: tf_options.months,
+                    labels: tourficOptions.months,
                     // Information about the dataset
                     datasets: [{
                         label: "Complete Booking",
                         backgroundColor: '#0185FF',
                         borderColor: '#0185FF',
                         tension: 0.1,
-                        data: tf_options.tf_complete_order,
+                        data: tourficOptions.tf_complete_order,
                         fill: false
                     },
-                        {
-                            label: "Cancel Booking",
-                            borderColor: '#E7000B',
-                            backgroundColor: '#E7000B',
-                            tension: 0.1,
-                            data: tf_options.tf_cancel_orders,
-                            fill: false
-                        }
+                    {
+                        label: "Cancel Booking",
+                        borderColor: '#E7000B',
+                        backgroundColor: '#E7000B',
+                        tension: 0.1,
+                        data: tourficOptions.tf_cancel_orders,
+                        fill: false
+                    }
                     ]
                 },
 
                 // Configuration options
                 options: {
-                    plugins:{
+                    plugins: {
                         legend: {
                             display: true,
                             position: 'top',
@@ -6521,7 +5652,7 @@ const legendSpacingPlugin = {
                             labels: {
                                 usePointStyle: true,
                                 pointStyle: 'circle',
-                                fontSize: 10,    
+                                fontSize: 10,
                                 fontStyle: '400',
                                 fontColor: '#242B31',
                             },
@@ -6544,10 +5675,10 @@ const legendSpacingPlugin = {
                 var yearTarget = $("#tf-year-report").val();
                 jQuery.ajax({
                     type: 'post',
-                    url: tf_options.ajax_url,
+                    url: tourficOptions.ajax_url,
                     data: {
-                        action: 'tf_month_reports',
-                        _nonce: tf_admin_params.tf_nonce,
+                        action: 'tourfic_month_reports',
+                        _nonce: tourficAdminParams.tf_nonce,
                         month: monthTarget,
                         year: yearTarget,
                     },
@@ -6575,20 +5706,20 @@ const legendSpacingPlugin = {
                                     data: response.tf_complete_orders,
                                     fill: false
                                 },
-                                    {
-                                        label: "Cancel Booking",
-                                        borderColor: '#E7000B',
-                                        backgroundColor: '#E7000B',
-                                        tension: 0.1,
-                                        data: response.tf_cancel_orders,
-                                        fill: false
-                                    }
+                                {
+                                    label: "Cancel Booking",
+                                    borderColor: '#E7000B',
+                                    backgroundColor: '#E7000B',
+                                    tension: 0.1,
+                                    data: response.tf_cancel_orders,
+                                    fill: false
+                                }
                                 ]
                             },
 
                             // Configuration options
                             options: {
-                                plugins:{
+                                plugins: {
                                     legend: {
                                         display: true,
                                         position: 'top',
@@ -6596,7 +5727,7 @@ const legendSpacingPlugin = {
                                         labels: {
                                             usePointStyle: true,
                                             pointStyle: 'circle',
-                                            fontSize: 10,    
+                                            fontSize: 10,
                                             fontStyle: '400',
                                             fontColor: '#242B31',
                                         },
@@ -6626,10 +5757,10 @@ const legendSpacingPlugin = {
                 $('.tf-order-report').find('iframe').remove();
                 jQuery.ajax({
                     type: 'post',
-                    url: tf_options.ajax_url,
+                    url: tourficOptions.ajax_url,
                     data: {
-                        action: 'tf_month_reports',
-                        _nonce: tf_admin_params.tf_nonce,
+                        action: 'tourfic_month_reports',
+                        _nonce: tourficAdminParams.tf_nonce,
                         month: monthTarget,
                         year: yearTarget,
                     },
@@ -6657,20 +5788,20 @@ const legendSpacingPlugin = {
                                     data: response.tf_complete_orders,
                                     fill: false
                                 },
-                                    {
-                                        label: "Cancel Booking",
-                                        borderColor: '#E7000B',
-                                        backgroundColor: '#E7000B',
-                                        tension: 0.1,
-                                        data: response.tf_cancel_orders,
-                                        fill: false
-                                    }
+                                {
+                                    label: "Cancel Booking",
+                                    borderColor: '#E7000B',
+                                    backgroundColor: '#E7000B',
+                                    tension: 0.1,
+                                    data: response.tf_cancel_orders,
+                                    fill: false
+                                }
                                 ]
                             },
 
                             // Configuration options
                             options: {
-                                plugins:{
+                                plugins: {
                                     legend: {
                                         display: true,
                                         position: 'top',
@@ -6678,7 +5809,7 @@ const legendSpacingPlugin = {
                                         labels: {
                                             usePointStyle: true,
                                             pointStyle: 'circle',
-                                            fontSize: 10,    
+                                            fontSize: 10,
                                             fontStyle: '400',
                                             fontColor: '#242B31',
                                         },
@@ -6736,22 +5867,22 @@ const legendSpacingPlugin = {
             if (section_title != undefined && section_title != '' && data.length) {
                 data = section_title + '=' + (data.length ? `"${data}"` : '""');
             }
-            if (section_subtitle != undefined && section_subtitle != '' && data.length ) {
+            if (section_subtitle != undefined && section_subtitle != '' && data.length) {
                 data = section_subtitle + '=' + (data.length ? `"${data}"` : '""');
             }
             if (tour_tab_title != undefined && tour_tab_title != '' && data.length) {
                 data = tour_tab_title + '=' + (data.length ? `"${data}"` : '""');
             }
-            if (hotel_tab_title != undefined && hotel_tab_title != '' && data.length ) {
+            if (hotel_tab_title != undefined && hotel_tab_title != '' && data.length) {
                 data = hotel_tab_title + '=' + (data.length ? `"${data}"` : '""');
             }
-            if (room_tab_title != undefined && room_tab_title != '' && data.length ) {
+            if (room_tab_title != undefined && room_tab_title != '' && data.length) {
                 data = room_tab_title + '=' + (data.length ? `"${data}"` : '""');
             }
-            if (apartment_tab_title != undefined && apartment_tab_title != '' && data.length ) {
+            if (apartment_tab_title != undefined && apartment_tab_title != '' && data.length) {
                 data = apartment_tab_title + '=' + (data.length ? `"${data}"` : '""');
             }
-            if (car_tab_title != undefined && car_tab_title != '' && data.length ) {
+            if (car_tab_title != undefined && car_tab_title != '' && data.length) {
                 data = car_tab_title + '=' + (data.length ? `"${data}"` : '""');
             }
             arr.push(data);
@@ -6791,13 +5922,13 @@ const legendSpacingPlugin = {
         }
         //show the copied message
         $(this).parents('.tf-copy-item').append('<div><span class="tf-copied-msg">Copied<span></div>');
-        $("span.tf-copied-msg").animate({opacity: 0}, 1000, function () {
+        $("span.tf-copied-msg").animate({ opacity: 0 }, 1000, function () {
             $(this).slideUp('slow', function () {
                 $(this).remove();
             });
         });
     });
-    
+
     $(document).ready(function () {
         // $('.tf-import-btn').on('click', function (event) {
         //     event.preventDefault();
@@ -6806,14 +5937,14 @@ const legendSpacingPlugin = {
         //     // Get the import data from the textarea
         //     var importData = $('textarea[name="tf_import_option"]').val().trim();
         //     if (importData == '') {
-        //         alert(tf_options.tf_export_import_msg.import_empty);
+        //         alert(tourficOptions.tf_export_import_msg.import_empty);
         //         let importField = $('textarea[name="tf_import_option"]');
         //         importField.focus();
         //         importField.css('border', '1px solid red');
         //         return;
         //     } else {
         //         //confirm data before send
-        //         if (!confirm(tf_options.tf_export_import_msg.import_confirm)) {
+        //         if (!confirm(tourficOptions.tf_export_import_msg.import_confirm)) {
         //             return;
         //         }
         //         $.ajax({
@@ -6821,7 +5952,7 @@ const legendSpacingPlugin = {
         //             method: 'POST',
         //             data: {
         //                 action: 'tf_import',
-        //                 nonce: tf_admin_params.tf_nonce,
+        //                 nonce: tourficAdminParams.tf_nonce,
         //                 tf_import_option: importData,
         //             },
         //             beforeSend: function () {
@@ -6830,7 +5961,7 @@ const legendSpacingPlugin = {
         //             },
         //             success: function (response) {
         //                 if (response.success) {
-        //                     alert(tf_options.tf_export_import_msg.imported);
+        //                     alert(tourficOptions.tf_export_import_msg.imported);
         //                     $('.tf-import-btn').html('Imported');
         //                     window.location.reload();
         //                 } else {
@@ -6840,33 +5971,33 @@ const legendSpacingPlugin = {
         //         });
         //     }
         // })
-        $(document).on('click', '.tf-import-btn', function (event) { 
+        $(document).on('click', '.tf-import-btn', function (event) {
             event.preventDefault();
-            var textarea = $('textarea[name="tf_import_option"]'); 
+            var textarea = $('textarea[name="tf_import_option"]');
             var importData = textarea.val().trim();
             if (importData == '') {
-                alert(tf_options.tf_export_import_msg.import_empty);
+                alert(tourficOptions.tf_export_import_msg.import_empty);
                 let importField = $('textarea[name="tf_import_option"]');
                 importField.focus();
                 importField.css('border', '1px solid red');
                 return;
-            } 
+            }
             // Triger the form submit
-            $(".tf-option-form").submit(); 
+            $(".tf-option-form").submit();
         });
 
         $(document).on('click', '.tf-export-btn', function (event) {
             event.preventDefault();
 
             $.ajax({
-                url: tf_options.ajax_url,
+                url: tourficOptions.ajax_url,
                 method: 'POST',
                 data: {
-                    action: 'tf_export_data',
-                    _nonce: tf_admin_params.tf_nonce,
+                    action: 'tourfic_export_data',
+                    _nonce: tourficAdminParams.tf_nonce,
                 },
                 beforeSend: function () {
-                    $('.tf-export-btn').html(tf_admin_params.setting_exporting_text);
+                    $('.tf-export-btn').html(tourficAdminParams.setting_exporting_text);
                     $('.tf-export-btn').attr('disabled', 'disabled');
                 },
                 success: function (response) {
@@ -6874,7 +6005,7 @@ const legendSpacingPlugin = {
 
                     if (obj.status === 'success') {
                         // Create a blob with the response value
-                        var blob = new Blob([obj.data], {type: 'text/plain'});
+                        var blob = new Blob([obj.data], { type: 'text/plain' });
 
                         // Create a temporary URL for the blob
                         var url = window.URL.createObjectURL(blob);
@@ -6892,12 +6023,12 @@ const legendSpacingPlugin = {
                     } else {
                         notyf.error(obj.message);
                     }
-                    $('.tf-export-btn').html(tf_admin_params.setting_export_text);
+                    $('.tf-export-btn').html(tourficAdminParams.setting_export_text);
                     $('.tf-export-btn').removeAttr('disabled');
                 },
                 error: function (response) {
                     console.log(response);
-                    $('.tf-export-btn').html(tf_admin_params.setting_export_text);
+                    $('.tf-export-btn').html(tourficAdminParams.setting_export_text);
                     $('.tf-export-btn').removeAttr('disabled');
                 }
             });
@@ -6906,7 +6037,7 @@ const legendSpacingPlugin = {
         });
 
         // Select 2 add new category
-        $(document).on('click', '.tf-add-category i', function (event) { 
+        $(document).on('click', '.tf-add-category i', function (event) {
             event.preventDefault();
             $this = $(this);
             parentDiv = $this.closest('.tf-fieldset');
@@ -6914,7 +6045,7 @@ const legendSpacingPlugin = {
         });
 
         // Close Popup
-        $(document).on('click', '.tf-add-category-box-close', function (event) { 
+        $(document).on('click', '.tf-add-category-box-close', function (event) {
             event.preventDefault();
             $('#tf-popup-box').hide();
         });
@@ -6930,9 +6061,9 @@ const legendSpacingPlugin = {
 
         // Function to get the selected design
         function getSelectedDesign() {
-            return $('input[name="tf_settings\\[color-palette-template\\]"]:checked').val();
+            return $('input[name="tourfic_settings\\[color-palette-template\\]"]:checked').val();
         }
-        
+
         const designDefault = {
             'd1': {
                 brand: {
@@ -7015,37 +6146,37 @@ const legendSpacingPlugin = {
                 },
             },
         };
-    
+
         // Function to update custom colors based on the selected design
         function updateCustomColors(selectedDesign) {
             if (!selectedDesign) return;
-    
+
             const colorPalettes = {
                 'design-1': 'tf-d1',
                 'design-2': 'tf-d2',
                 'design-3': 'tf-d3',
                 'design-4': 'tf-d4'
             };
-    
+
             const selectedPalette = colorPalettes[selectedDesign];
             if (!selectedPalette) return;
-    
+
             // Define the fields to be updated
             const fields = ['brand', 'text', 'border', 'filling'];
-    
+
             fields.forEach(field => {
                 $(`input[name^="tf_settings[${selectedPalette}-${field}]"]`).each(function () {
                     let fieldName = $(this).attr('name').split('[')[2].replace(']', ''); // Extract the sub-field (e.g., 'default', 'dark', 'lite')
                     let fieldValue = $(this).val();
-                    let $customField = $(`input[name="tf_settings[tf-custom-${field}][${fieldName}]"]`);
+                    let $customField = $(`input[name="tourfic_settings[tf-custom-${field}][${fieldName}]"]`);
 
                     if ($customField.length) {
                         $customField.val(fieldValue).trigger('change');
                     }
                 });
             });
-        }     
-    
+        }
+
         // Initialize wpColorPicker for all relevant inputs
         $('input[name^="tf_settings[tf-d"]').wpColorPicker({
             change: function (event, ui) {
@@ -7054,94 +6185,36 @@ const legendSpacingPlugin = {
                 let newValue = ui.color.toString();
 
                 updateCustomColors(getSelectedDesign());
-    
+
                 if (newValue !== originalValue) {
                     // Switch to custom palette
                     $('#tf_settings\\[color-palette-template\\]\\[custom\\]').prop("checked", true);
                     $('.tf-field.tf-field-color.tf-depend-hidden').addClass('tf-depend-on');
                     $('.tf-field.tf-field-color.tf-depend-hidden[data-value="custom"]').removeClass('tf-depend-on');
-    
+
                     // Extract the field type and sub-field name
                     let nameAttr = $colorField.attr('name');
                     let match = nameAttr.match(/\[tf-(d\d+)-(brand|text|border|filling)]\[(.*?)\]/);
                     if (!match) return;
-    
+
                     let design = match[1]; // e.g., 'd1', 'd2', etc.
                     let fieldType = match[2]; // e.g., 'brand', 'text', etc.
                     let fieldName = match[3]; // e.g., 'default', 'dark', 'lite', etc.
-    
+
                     // Update the corresponding custom field
-                    let $customColorField = $(`input[name="tf_settings[tf-custom-${fieldType}][${fieldName}]"]`);
+                    let $customColorField = $(`input[name="tourfic_settings[tf-custom-${fieldType}][${fieldName}]"]`);
                     if ($customColorField.length) {
-                        
-                        let value = $(`input[name="tf_settings[tf-${design}-${fieldType}][${fieldName}]"]`).val();
-                        $(`input[name="tf_settings[tf-custom-${fieldType}][${fieldName}]"]`).val(value).trigger('change');
-                        $(`input[name="tf_settings[tf-${design}-${fieldType}][${fieldName}]"]`).val(designDefault[design][fieldType][fieldName]).trigger('change');
+
+                        let value = $(`input[name="tourfic_settings[tf-${design}-${fieldType}][${fieldName}]"]`).val();
+                        $(`input[name="tourfic_settings[tf-custom-${fieldType}][${fieldName}]"]`).val(value).trigger('change');
+                        $(`input[name="tourfic_settings[tf-${design}-${fieldType}][${fieldName}]"]`).val(designDefault[design][fieldType][fieldName]).trigger('change');
                         $customColorField.val(newValue).trigger('change');
                     }
                 }
             }
         });
     });
-    
-    /* Plugin insatall from dashboard sidebar */
-    jQuery(document).ready(function($) {
-        $('.tf-plugin-button').not('.pro').on('click', function(e) {
-            e.preventDefault();
 
-            let button = $(this);
-            let action = button.data('action');
-            let pluginSlug = button.data('plugin');
-            let pluginFileName = button.data('plugin_filename');
-
-            if (!action || !pluginSlug) return;
-
-            let loader = button.find('.loader');
-            let originalText = button.clone().children().remove().end().text().trim();
-
-            if (action === 'install') {
-                button.contents().first().replaceWith('Installing..');
-            } else if (action === 'activate') {
-                button.contents().first().replaceWith('Activating..');
-            }
-
-            button.addClass('loading').prop('disabled', true);
-            loader.show();
-
-            $.ajax({
-                url: ajaxurl,
-                type: 'POST',
-                data: {
-                    action: 'themefic_manage_plugin',
-                    security: tf_admin_params.tf_nonce,
-                    plugin_slug: pluginSlug,
-                    plugin_filename: pluginFileName,
-                    plugin_action: action
-                },
-                success: function(response) {
-                    button.removeClass('loading').prop('disabled', false);
-                    loader.hide();
-
-                    if (response.success) {
-                        if (action === 'install') {
-                            button.contents().first().replaceWith('Activate');
-                            button.data('action', 'activate').removeClass('install').addClass('activate');
-                        } else if (action === 'activate') {
-                            button.replaceWith('<span class="tf-plugin-button tf-plugin-status active">Activated</span>');
-                        }
-                    } else {
-                        button.contents().first().replaceWith(originalText);
-                        alert('Error: ' + response.data);
-                    }
-                },
-                error: function() {
-                    button.contents().first().replaceWith(originalText).removeClass('loading').prop('disabled', false);
-                    loader.hide();
-                    alert('An error occurred. Please try again.');
-                }
-            });
-        });
-    });
 })(jQuery);
 
 })();

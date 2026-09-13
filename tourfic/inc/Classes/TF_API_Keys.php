@@ -6,7 +6,7 @@ defined( 'ABSPATH' ) || exit;
 class TF_API_Keys {
 	use \Tourfic\Traits\Singleton;
 
-	const TABLE_VERSION = '1.0.1';
+	const TABLE_VERSION = '1.0.2';
 
 	private $last_auth_error = null;
 	private $headers_present = false;
@@ -15,17 +15,16 @@ class TF_API_Keys {
 	public function __construct() {
 		add_action( 'init', array( $this, 'maybe_create_tables' ) );
 		add_action( 'rest_api_init', array( $this, 'register_rest_routes' ) );
-		add_filter( 'determine_current_user', array( $this, 'authenticate_current_user' ), 30 );
 		add_filter( 'rest_authentication_errors', array( $this, 'rest_authentication_errors' ) );
 		add_filter( 'rest_request_before_callbacks', array( $this, 'enforce_request_permissions' ), 10, 3 );
 
-		add_action( 'wp_ajax_tf_generate_api_key', array( $this, 'ajax_generate_api_key' ) );
-		add_action( 'wp_ajax_tf_revoke_api_key', array( $this, 'ajax_revoke_api_key' ) );
-		add_action( 'wp_ajax_tf_get_api_keys', array( $this, 'ajax_get_api_keys' ) );
+		add_action( 'wp_ajax_tourfic_generate_api_key', array( $this, 'ajax_generate_api_key' ) );
+		add_action( 'wp_ajax_tourfic_revoke_api_key', array( $this, 'ajax_revoke_api_key' ) );
+		add_action( 'wp_ajax_tourfic_get_api_keys', array( $this, 'ajax_get_api_keys' ) );
 	}
 
 	public function maybe_create_tables() {
-		if ( get_option( 'tf_api_keys_table_version' ) === self::TABLE_VERSION ) {
+		if ( get_option( 'tourfic_api_keys_table_version' ) === self::TABLE_VERSION ) {
 			return;
 		}
 
@@ -56,7 +55,8 @@ class TF_API_Keys {
 		) {$charset_collate};";
 
 		dbDelta( $sql );
-		update_option( 'tf_api_keys_table_version', self::TABLE_VERSION, false );
+		$this->redact_legacy_key_previews();
+		update_option( 'tourfic_api_keys_table_version', self::TABLE_VERSION, false );
 	}
 
 	public function register_rest_routes() {
@@ -76,7 +76,7 @@ class TF_API_Keys {
 			array(
 				'methods'             => 'POST',
 				'callback'            => array( $this, 'validate_api_key_endpoint' ),
-				'permission_callback' => '__return_true',
+				'permission_callback' => array( $this, 'validate_key_permission_callback' ),
 			)
 		);
 
@@ -150,8 +150,14 @@ class TF_API_Keys {
 			return $result;
 		}
 
+		$user_id = $this->authenticate_current_user( get_current_user_id() );
+
 		if ( $this->headers_present && is_wp_error( $this->last_auth_error ) ) {
 			return $this->last_auth_error;
+		}
+
+		if ( ! empty( $user_id ) && get_current_user_id() !== $user_id ) {
+			wp_set_current_user( $user_id );
 		}
 
 		return $result;
@@ -185,6 +191,10 @@ class TF_API_Keys {
 		return current_user_can( 'manage_options' );
 	}
 
+	public function validate_key_permission_callback() {
+		return ! empty( $this->authenticated_key_record );
+	}
+
 	public function generate_api_key_endpoint( $request ) {
 		$name        = sanitize_text_field( (string) $request->get_param( 'name' ) );
 		$permissions = $this->sanitize_permissions( $request->get_param( 'permissions' ) );
@@ -196,28 +206,15 @@ class TF_API_Keys {
 		return rest_ensure_response( $this->create_api_key( get_current_user_id(), $name, $permissions ) );
 	}
 
-	public function validate_api_key_endpoint( $request ) {
-		$api_key = sanitize_text_field( (string) $request->get_param( 'api_key' ) );
-
-		if ( empty( $api_key ) ) {
-			return new \WP_Error( 'tf_api_key_required', esc_html__( 'API key is required.', 'tourfic' ), array( 'status' => 400 ) );
-		}
-
-		$record = $this->get_key_record_by_key( $api_key );
-		if ( empty( $record ) ) {
-			return rest_ensure_response( array( 'success' => true, 'valid' => false ) );
-		}
-
+	public function validate_api_key_endpoint() {
+		$record = $this->authenticated_key_record;
 		return rest_ensure_response(
 			array(
 				'success' => true,
-				'valid'   => 'active' === $record->status,
+				'valid'   => true,
 				'data'    => array(
-					'user_id'     => (int) $record->user_id,
-					'name'        => $record->name,
 					'permissions' => $this->decode_permissions( $record->permissions ),
 					'status'      => $record->status,
-					'last_used'   => $record->last_used,
 					'expires_at'  => $record->expires_at,
 				),
 			)
@@ -243,8 +240,13 @@ class TF_API_Keys {
 	public function ajax_generate_api_key() {
 		$this->verify_ajax_request();
 
-		$name        = isset( $_POST['name'] ) ? sanitize_text_field( wp_unslash( $_POST['name'] ) ) : '';
-		$permissions = isset( $_POST['permissions'] ) ? $this->sanitize_permissions( wp_unslash( $_POST['permissions'] ) ) : array( 'read' );
+		$name        = sanitize_text_field( (string) filter_input( INPUT_POST, 'name' ) );
+		$permissions = array( 'read' );
+		$permission_input = filter_input( INPUT_POST, 'permissions', FILTER_DEFAULT, FILTER_REQUIRE_ARRAY );
+		if ( is_array( $permission_input ) ) {
+			$permission_input = array_map( 'sanitize_key', $permission_input );
+			$permissions = $this->sanitize_permissions( $permission_input );
+		}
 
 		if ( empty( $name ) ) {
 			wp_send_json_error( esc_html__( 'API key name is required.', 'tourfic' ), 400 );
@@ -256,7 +258,7 @@ class TF_API_Keys {
 	public function ajax_revoke_api_key() {
 		$this->verify_ajax_request();
 
-		$key_id = isset( $_POST['key_id'] ) ? absint( $_POST['key_id'] ) : 0;
+		$key_id = absint( filter_input( INPUT_POST, 'key_id', FILTER_VALIDATE_INT ) );
 		if ( empty( $key_id ) ) {
 			wp_send_json_error( esc_html__( 'API key ID is required.', 'tourfic' ), 400 );
 		}
@@ -275,19 +277,18 @@ class TF_API_Keys {
 
 		$user_id     = absint( $user_id );
 		$created_at  = current_time( 'mysql', true );
-		$api_key     = 'tf_' . strtolower( wp_generate_password( 32, false, false ) );
-		$api_secret  = wp_generate_password( 40, false, false );
-		$key_preview = $api_key;
+		$api_key     = 'tourfic_' . strtolower( wp_generate_password( 40, false, false ) );
+		$key_preview = $this->format_key_preview( $api_key );
 		$table_name  = $this->get_table_name();
 
-		$wpdb->insert(
+		$wpdb->insert( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
 			$table_name,
 			array(
 				'user_id'         => $user_id,
 				'name'            => $name,
 				'api_key_hash'    => $this->hash_value( $api_key ),
 				'api_key_preview' => $key_preview,
-				'api_secret_hash' => $this->hash_value( $api_secret ),
+				'api_secret_hash' => '',
 				'permissions'     => wp_json_encode( $permissions ),
 				'status'          => 'active',
 				'created_at'      => $created_at,
@@ -300,7 +301,6 @@ class TF_API_Keys {
 			'id'          => (int) $wpdb->insert_id,
 			'name'        => $name,
 			'api_key'     => $api_key,
-			'api_secret'  => $api_secret,
 			'permissions' => $permissions,
 			'status'      => 'active',
 			'created_at'  => $created_at,
@@ -310,7 +310,7 @@ class TF_API_Keys {
 	private function revoke_api_key( $key_id, $user_id ) {
 		global $wpdb;
 
-		$wpdb->update(
+		$wpdb->update( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 			$this->get_table_name(),
 			array( 'status' => 'revoked', 'updated_at' => current_time( 'mysql', true ) ),
 			array( 'id' => absint( $key_id ), 'user_id' => absint( $user_id ) ),
@@ -322,10 +322,10 @@ class TF_API_Keys {
 	private function get_api_keys_for_user( $user_id ) {
 		global $wpdb;
 
-		$results = $wpdb->get_results(
+		$results = $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 			$wpdb->prepare(
 				"SELECT id, name, api_key_preview, permissions, status, last_used, expires_at, created_at
-				 FROM {$this->get_table_name()}
+					 FROM {$wpdb->prefix}tf_api_keys
 				 WHERE user_id = %d
 				 ORDER BY created_at DESC",
 				absint( $user_id )
@@ -339,6 +339,7 @@ class TF_API_Keys {
 
 		foreach ( $results as &$result ) {
 			$result['id']          = (int) $result['id'];
+			$result['api_key_preview'] = $this->format_key_preview( $result['api_key_preview'] );
 			$result['permissions'] = $this->decode_permissions( $result['permissions'] );
 		}
 
@@ -348,9 +349,9 @@ class TF_API_Keys {
 	private function get_key_record_by_key( $api_key ) {
 		global $wpdb;
 
-		return $wpdb->get_row(
+		return $wpdb->get_row( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 			$wpdb->prepare(
-				"SELECT * FROM {$this->get_table_name()} WHERE api_key_hash = %s LIMIT 1",
+				"SELECT * FROM {$wpdb->prefix}tf_api_keys WHERE api_key_hash = %s LIMIT 1",
 				$this->hash_value( $api_key )
 			)
 		);
@@ -359,7 +360,7 @@ class TF_API_Keys {
 	private function touch_key_last_used( $key_id ) {
 		global $wpdb;
 
-		$wpdb->update(
+		$wpdb->update( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 			$this->get_table_name(),
 			array( 'last_used' => current_time( 'mysql', true ), 'updated_at' => current_time( 'mysql', true ) ),
 			array( 'id' => absint( $key_id ) ),
@@ -393,7 +394,7 @@ class TF_API_Keys {
 	}
 
 	private function is_write_permission_available() {
-		return function_exists( 'is_tf_pro' ) && is_tf_pro();
+		return true;
 	}
 
 	private function decode_permissions( $permissions ) {
@@ -408,6 +409,38 @@ class TF_API_Keys {
 
 	private function hash_value( $value ) {
 		return hash_hmac( 'sha256', (string) $value, wp_salt( 'auth' ) );
+	}
+
+	private function format_key_preview( $api_key ) {
+		$api_key = sanitize_text_field( (string) $api_key );
+		if ( strlen( $api_key ) <= 18 ) {
+			return $api_key;
+		}
+
+		return substr( $api_key, 0, 10 ) . '...' . substr( $api_key, -4 );
+	}
+
+	private function redact_legacy_key_previews() {
+		global $wpdb;
+
+		$rows = $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			"SELECT id, api_key_preview FROM {$wpdb->prefix}tf_api_keys",
+			ARRAY_A
+		);
+		foreach ( $rows as $row ) {
+			$preview = $this->format_key_preview( $row['api_key_preview'] );
+			if ( $preview === $row['api_key_preview'] ) {
+				continue;
+			}
+
+			$wpdb->update( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+				$this->get_table_name(),
+				array( 'api_key_preview' => $preview ),
+				array( 'id' => absint( $row['id'] ) ),
+				array( '%s' ),
+				array( '%d' )
+			);
+		}
 	}
 
 	private function get_api_credentials_from_request() {
@@ -432,25 +465,34 @@ class TF_API_Keys {
 	private function get_request_header( $header_name ) {
 		$server_key = 'HTTP_' . strtoupper( str_replace( '-', '_', $header_name ) );
 		if ( isset( $_SERVER[ $server_key ] ) ) {
-			return wp_unslash( $_SERVER[ $server_key ] );
+			return sanitize_text_field( wp_unslash( $_SERVER[ $server_key ] ) );
 		}
 
 		if ( 'Authorization' === $header_name && isset( $_SERVER['REDIRECT_HTTP_AUTHORIZATION'] ) ) {
-			return wp_unslash( $_SERVER['REDIRECT_HTTP_AUTHORIZATION'] );
+			return sanitize_text_field( wp_unslash( $_SERVER['REDIRECT_HTTP_AUTHORIZATION'] ) );
 		}
 
 		return '';
 	}
 
 	private function is_tf_rest_request() {
-		$rest_route = isset( $_GET['rest_route'] ) ? sanitize_text_field( wp_unslash( $_GET['rest_route'] ) ) : '';
+		if ( ! defined( 'REST_REQUEST' ) || ! REST_REQUEST ) {
+			return false;
+		}
+
+		$rest_route = get_query_var( 'rest_route' );
+		$rest_route = is_string( $rest_route ) ? '/' . ltrim( $rest_route, '/' ) : '';
 		if ( 0 === strpos( $rest_route, '/tf/v1/' ) ) {
 			return true;
 		}
 
-		$request_uri = isset( $_SERVER['REQUEST_URI'] ) ? wp_unslash( $_SERVER['REQUEST_URI'] ) : '';
+		$request_uri  = isset( $_SERVER['REQUEST_URI'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) ) : '';
+		$request_path = wp_parse_url( $request_uri, PHP_URL_PATH );
+		if ( ! is_string( $request_path ) ) {
+			return false;
+		}
 
-		return false !== strpos( $request_uri, '/' . rest_get_url_prefix() . '/tf/v1/' );
+		return false !== strpos( $request_path, '/' . rest_get_url_prefix() . '/tf/v1/' );
 	}
 
 	private function get_table_name() {

@@ -1,5 +1,8 @@
 <?php
-function fontawesome_five_icons() {
+
+defined( 'ABSPATH' ) || exit;
+
+function tourfic_fontawesome_five_icons() {
 	$icons = array(
 		'fab fa-500px',
 		'fab fa-accessible-icon',

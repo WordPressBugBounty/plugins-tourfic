@@ -10,7 +10,6 @@ use Tourfic\Admin\Booking_Details\Apartment_Booking_Details;
 use Tourfic\Admin\Booking_Details\Hotel_Booking_Details;
 use Tourfic\Admin\Booking_Details\Tour_Booking_Details;
 use Tourfic\Admin\Booking_Details\Car_Booking_Details;
-use Tourfic\Admin\TF_Promo_Notice;
 use Tourfic\Admin\TF_Dashboard_Widget;
 use Tourfic\App\Widgets\TF_Widget_Base;
 use Tourfic\Admin\Notice\Room_Notice;
@@ -26,25 +25,22 @@ class Base {
 	}
 
 	public function init() {
-		add_action( 'admin_init', array($this, 'create_enquiry_database_table') );
-		add_action('admin_init', array($this, 'tf_order_table_create'));
-		add_action( 'admin_init', array($this, 'tf_admin_table_alter_order_data') );
+		$this->tourfic_maybe_upgrade_database();
 
 		if ( Helper::tf_is_woo_active() ) {
 			\Tourfic\Classes\Woocommerce\Woocommerce::instance();
 		}
 
-		if ( file_exists( TF_INC_PATH . 'functions.php' ) ) {
-			require_once TF_INC_PATH . 'functions.php';
+		if ( file_exists( TOURFIC_INC_PATH . 'functions.php' ) ) {
+			require_once TOURFIC_INC_PATH . 'functions.php';
 		} else {
-			tf_file_missing( TF_INC_PATH . 'functions.php' );
+			tourfic_file_missing( TOURFIC_INC_PATH . 'functions.php' );
 		}
 
 		\Tourfic\Classes\Migrator::instance();
 		\Tourfic\Classes\Helper::instance();
 		\Tourfic\Classes\Enqueue::instance();
 		\Tourfic\Classes\Activator::instance();
-		\Tourfic\Classes\Deactivator::instance();
 		\Tourfic\Classes\TF_API_Keys::instance();
 		\Tourfic\Classes\TF_API_Bootstrap::instance();
 
@@ -77,13 +73,8 @@ class Base {
 			// Room_Notice::instance();
 			Plugin_Page_Notice::instance();
 
-			// AI Submenu (shows upsell for free users; skips when Pro is active)
-			\Tourfic\Admin\TF_AI_Submenu::instance();
 		}
 
-		// Promo Notice
-		TF_Promo_Notice::instance();
-		
 		// Dashboard Widget
 		TF_Dashboard_Widget::instance();
 
@@ -116,17 +107,12 @@ class Base {
 		// Without Payment Booking
 		// \Tourfic\Classes\Without_Payment_Booking\Hotel_WP_Booking::instance();
 
-		//Template Builder
-		if(function_exists( 'is_tf_pro' ) && is_tf_pro()){
-			\Tourfic\App\Templates\Template_Builder::instance();
-		}
 	}
 
 	function load_shortcodes() {
 		\Tourfic\App\Shortcodes\Hotels::instance();
 		\Tourfic\App\Shortcodes\Hotel_Locations::instance();
 		\Tourfic\App\Shortcodes\Recent_Hotel::instance();
-		\Tourfic\App\Shortcodes\Hotel_External_Listings::instance();
 
 		\Tourfic\App\Shortcodes\Rooms::instance();
 		\Tourfic\App\Shortcodes\Room_Types::instance();
@@ -135,12 +121,10 @@ class Base {
 		\Tourfic\App\Shortcodes\Tours::instance();
 		\Tourfic\App\Shortcodes\Tour_Destinations::instance();
 		\Tourfic\App\Shortcodes\Recent_Tour::instance();
-		\Tourfic\App\Shortcodes\Tour_External_Listings::instance();
 
 		\Tourfic\App\Shortcodes\Apartments::instance();
 		\Tourfic\App\Shortcodes\Apartment_Locations::instance();
 		\Tourfic\App\Shortcodes\Recent_Apartment::instance();
-		\Tourfic\App\Shortcodes\Apartment_External_Listings::instance();
 
 		\Tourfic\App\Shortcodes\Recent_Blog::instance();
 		\Tourfic\App\Shortcodes\Reviews::instance();
@@ -155,4 +139,3 @@ class Base {
 		\Tourfic\App\Shortcodes\Carrental_Brand::instance();
 	}
 }
-

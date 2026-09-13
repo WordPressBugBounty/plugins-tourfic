@@ -11,13 +11,15 @@
 
 use \Tourfic\Classes\Helper;
 
+defined( 'ABSPATH' ) || exit;
+
 get_header();
 
-$tf_room_arc_selected_template = ! empty( Helper::tf_data_types(Helper::tfopt( 'tf-template' ))['room-archive'] ) ?  Helper::tf_data_types(Helper::tfopt( 'tf-template' ))['room-archive'] : 'design-1';
+$tourfic_room_arc_selected_template = ! empty( Helper::tf_data_types(Helper::tfopt( 'tf-template' ))['room-archive'] ) ?  Helper::tf_data_types(Helper::tfopt( 'tf-template' ))['room-archive'] : 'design-1';
 
 if (Helper::tf_is_woo_active()) {
-    if ( $tf_room_arc_selected_template == "design-1" ) {
-		include TF_TEMPLATE_PATH . 'room/archive/design-1.php';
+    if ( $tourfic_room_arc_selected_template == "design-1" ) {
+		include TOURFIC_TEMPLATE_PATH . 'room/archive/design-1.php';
 	}
 } else {
 ?>
@@ -29,9 +31,9 @@ if (Helper::tf_is_woo_active()) {
 <?php
 }
 
-if(wp_is_block_theme()){
+if(tourfic_is_block_theme()){
     wp_footer();
-    block_footer_area();
+    tourfic_render_block_footer_area();
  }else{
 	get_footer('tourfic');
  }

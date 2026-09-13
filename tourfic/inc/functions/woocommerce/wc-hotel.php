@@ -11,10 +11,10 @@ use Tourfic\Classes\Helper;
  *
  * @since 2.2.0
  */
-add_action( 'wp_ajax_tf_hotel_booking', 'tf_hotel_booking_callback' );
-add_action( 'wp_ajax_nopriv_tf_hotel_booking', 'tf_hotel_booking_callback' );
+add_action( 'wp_ajax_tourfic_hotel_booking', 'tourfic_hotel_booking_callback' );
+add_action( 'wp_ajax_nopriv_tourfic_hotel_booking', 'tourfic_hotel_booking_callback' );
 
-function tf_hotel_booking_callback() {
+function tourfic_hotel_booking_callback() {
 
 	// Check nonce security
 	if ( ! isset( $_POST['tf_room_booking_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['tf_room_booking_nonce'] ) ), 'check_room_booking_nonce' ) ) {
@@ -29,22 +29,22 @@ function tf_hotel_booking_callback() {
 	 *
 	 * With errors
 	 */
-	$post_id   = isset( $_POST['post_id'] ) ? intval( sanitize_text_field( $_POST['post_id'] ) ) : null;
-	$room_id   = isset( $_POST['room_id'] ) ? intval( sanitize_text_field( $_POST['room_id'] ) ) : null;
-	$unique_id = isset( $_POST['unique_id'] ) ? sanitize_text_field( $_POST['unique_id'] ) : null;
-	$option_id = isset( $_POST['option_id'] ) ? sanitize_text_field( $_POST['option_id'] ) : null;
-	$location  = isset( $_POST['location'] ) ? sanitize_text_field( $_POST['location'] ) : '';
+	$post_id   = isset( $_POST['post_id'] ) ? intval( sanitize_text_field( wp_unslash($_POST['post_id']) ) ) : null;
+	$room_id   = isset( $_POST['room_id'] ) ? intval( sanitize_text_field( wp_unslash($_POST['room_id']) ) ) : null;
+	$unique_id = isset( $_POST['unique_id'] ) ? sanitize_text_field( wp_unslash($_POST['unique_id']) ) : null;
+	$option_id = isset( $_POST['option_id'] ) ? sanitize_text_field( wp_unslash($_POST['option_id']) ) : null;
+	$location  = isset( $_POST['location'] ) ? sanitize_text_field( wp_unslash($_POST['location']) ) : '';
 	// People number
-	$adult           = isset( $_POST['adult'] ) ? intval( sanitize_text_field( $_POST['adult'] ) ) : '0';
-	$child           = isset( $_POST['child'] ) ? intval( sanitize_text_field( $_POST['child'] ) ) : '0';
-	$children_ages   = isset( $_POST['children_ages'] ) ? sanitize_text_field( $_POST['children_ages'] ) : '0';
-	$room_selected   = isset( $_POST['room'] ) ? intval( sanitize_text_field( $_POST['room'] ) ) : ( (isset($_POST["hotel_room_selected"]) && !empty($_POST["hotel_room_selected"])) ? intval( sanitize_text_field( $_POST['hotel_room_selected'] ) ) : 1 );
-	$check_in        = isset( $_POST['check_in_date'] ) ? sanitize_text_field( $_POST['check_in_date'] ) : '';
-	$check_out       = isset( $_POST['check_out_date'] ) ? sanitize_text_field( $_POST['check_out_date'] ) : '';
-	$deposit         = isset( $_POST['deposit'] ) ? sanitize_text_field( $_POST['deposit'] ) : false;
-	$airport_service = isset( $_POST['airport_service'] ) ? sanitize_text_field( $_POST['airport_service'] ) : '';
-	$extras = isset( $_POST['extra_service'] ) ? wp_unslash( $_POST['extra_service'] ) : [];
-	$hotel_extra_quantities = isset( $_POST['hotel_extra_quantity'] ) ? Helper::tf_sanitize_extra_quantities( wp_unslash( $_POST['hotel_extra_quantity'] ) ) : [];
+	$adult           = isset( $_POST['adult'] ) ? intval( sanitize_text_field( wp_unslash($_POST['adult']) ) ) : '0';
+	$child           = isset( $_POST['child'] ) ? intval( sanitize_text_field( wp_unslash($_POST['child']) ) ) : '0';
+	$children_ages   = isset( $_POST['children_ages'] ) ? sanitize_text_field( wp_unslash($_POST['children_ages']) ) : '0';
+	$room_selected   = isset( $_POST['room'] ) ? intval( sanitize_text_field( wp_unslash($_POST['room']) ) ) : ( (isset($_POST["hotel_room_selected"]) && !empty($_POST["hotel_room_selected"])) ? intval( sanitize_text_field( wp_unslash($_POST['hotel_room_selected']) ) ) : 1 );
+	$check_in        = isset( $_POST['check_in_date'] ) ? sanitize_text_field( wp_unslash($_POST['check_in_date']) ) : '';
+	$check_out       = isset( $_POST['check_out_date'] ) ? sanitize_text_field( wp_unslash($_POST['check_out_date']) ) : '';
+	$deposit         = isset( $_POST['deposit'] ) ? sanitize_text_field( wp_unslash($_POST['deposit']) ) : false;
+	$airport_service = isset( $_POST['airport_service'] ) ? sanitize_text_field( wp_unslash($_POST['airport_service']) ) : '';
+	$extras = isset( $_POST['extra_service'] ) ? map_deep( wp_unslash( $_POST['extra_service'] ), 'sanitize_text_field' ) : [];
+	$hotel_extra_quantities = isset( $_POST['hotel_extra_quantity'] ) ? Helper::tf_sanitize_extra_quantities( map_deep( wp_unslash( $_POST['hotel_extra_quantity'] ), 'sanitize_text_field' ) ) : [];
 	$quick_checkout = !empty(Helper::tfopt( 'tf-quick-checkout' )) ? Helper::tfopt( 'tf-quick-checkout' ) : 0;
 	$instantio_is_active = 0;
 
@@ -53,7 +53,7 @@ function tf_hotel_booking_callback() {
 	}
 
 	if(!empty($_POST['extras'])){
-		$extras = wp_unslash( $_POST['extras'] );
+		$extras = map_deep( wp_unslash( $_POST['extras'] ), 'sanitize_text_field' );
 	}
 
 	if ( is_string( $extras ) ) {
@@ -68,9 +68,9 @@ function tf_hotel_booking_callback() {
 
 
 	// Without Payment Booking Data
-	$tf_without_payment_guest_info = !empty( $_POST['guest'] ) ? wp_unslash( $_POST['guest'] ) : []; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+	$tf_without_payment_guest_info = ! empty( $_POST['guest'] ) && is_array( $_POST['guest'] ) ? map_deep( wp_unslash( $_POST['guest'] ), 'sanitize_text_field' ) : [];
 
-	$tf_without_payment_confirmation_details = !empty( $_POST['booking_confirm'] ) ? wp_unslash( $_POST['booking_confirm'] ) : array(); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+	$tf_without_payment_confirmation_details = ! empty( $_POST['booking_confirm'] ) && is_array( $_POST['booking_confirm'] ) ? map_deep( wp_unslash( $_POST['booking_confirm'] ), 'sanitize_text_field' ) : array();
 
 	$tf_without_payment_booking_fields = !empty( Helper::tfopt( 'hotel-book-confirm-field' ) ) ? Helper::tf_data_types( Helper::tfopt( 'hotel-book-confirm-field' ) ) : '';
 
@@ -114,11 +114,11 @@ function tf_hotel_booking_callback() {
 		$avail_date = ! empty( $room_meta['avail_date'] ) ? json_decode( $room_meta['avail_date'], true ) : [];
 	}
 	$use_explicit_availability_pricing = false;
-	if ( $avail_by_date && function_exists( 'is_tf_pro' ) && is_tf_pro() ) {
+	if ( $avail_by_date ) {
 		$use_explicit_availability_pricing = Availability::has_explicit_available_rules( $avail_date );
 	}
 	$room_name       = get_the_title( $room_id );
-	$pricing_by      = $room_meta['pricing-by'];
+	$pricing_by      = apply_filters( 'tourfic_room_pricing_mode', 1, $room_meta );
 	$price_multi_day = ! empty( $room_meta['price_multi_day'] ) ? $room_meta['price_multi_day'] : false;
 	$adults_per_room = empty( $adult ) ? 0 : ceil( intval( $adult ) / max( 1, intval( $room_selected ) ) );
 	$childs_per_room = empty( $child ) ? 0 : ceil( intval( $child ) / max( 1, intval( $room_selected ) ) );
@@ -208,6 +208,7 @@ function tf_hotel_booking_callback() {
 
 		// Get the original (default language) post ID using WPML
 		if ( function_exists( 'wpml_get_default_language' ) ) {
+			// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- WPML-owned hook.
 			$original_hotel_id = absint( apply_filters( 'wpml_object_id', $post_id, 'tf_hotel', false, wpml_get_default_language() ) );
 		} else {
 			$original_hotel_id = $post_id;
@@ -291,8 +292,8 @@ function tf_hotel_booking_callback() {
 	if ( $room_selected > $num_room_available ) {
 
 		if ( $num_room_available > 0 ) {
-			/* translators: %1$s Available rooms */
 			$response['errors'][] = sprintf(
+				/* translators: %1$s: Number of available rooms. */
 				esc_html__( 'Only %1$s room(s) available for the selected date.', 'tourfic' ),
 				$num_room_available
 			);
@@ -311,11 +312,11 @@ function tf_hotel_booking_callback() {
 	if ( ! array_key_exists( 'errors', $response ) || count( $response['errors'] ) == 0 ) {
 
 		/**
-		 * Hook: tf_hotel_booking_after_validation
+		 * Hook: tourfic_hotel_booking_after_validation
 		 * Fires after validation passes and before processing the booking.
 		 *
 		 * @since 2.3.0
-		 * @hook tf_hotel_booking_after_validation
+		 * @hook tourfic_hotel_booking_after_validation
 		 * @param int $post_id The hotel post ID.
 		 * @param int $room_id The room post ID.
 		 * @param string $check_in Check-in date.
@@ -324,7 +325,7 @@ function tf_hotel_booking_callback() {
 		 * @param int $child Number of children.
 		 * @param int $room_selected Number of rooms selected.
 		 */
-		do_action( 'tf_hotel_booking_after_validation', $post_id, $room_id, $check_in, $check_out, $adult, $child, $room_selected );
+		do_action( 'tourfic_hotel_booking_after_validation', $post_id, $room_id, $check_in, $check_out, $adult, $child, $room_selected );
 
 		if (3 == $tf_booking_type) {
 			$tf_hotel_booking_fields = !empty(Helper::tfopt( 'hotel-book-confirm-field' )) ? Helper::tf_data_types(Helper::tfopt( 'hotel-book-confirm-field' )) : '';
@@ -401,9 +402,8 @@ function tf_hotel_booking_callback() {
 		// Hotel Extra
 		$total_extras_title = [];
 		$total_extras_price = 0;
-		$hotel_extra_option     = ! empty( $meta['hotel_extra_option'] ) ? $meta['hotel_extra_option'] : '';
-		if(function_exists( 'is_tf_pro' ) && is_tf_pro() && !empty($hotel_extra_option)){
-			$hotel_extras     = ! empty( $meta['hotel-extra'] ) ? $meta['hotel-extra'] : '';
+		$hotel_extras       = apply_filters( 'tourfic_hotel_extra_meta', null, $post_id, $meta );
+		if ( ! empty( $hotel_extras ) ) {
 			foreach ( $extras as $key => $extra ) {
 				if ( empty( $hotel_extras[ $extra ] ) ) {
 					continue;
@@ -606,12 +606,12 @@ function tf_hotel_booking_callback() {
 
 
 		// Set Extra Price
-		if(function_exists( 'is_tf_pro' ) && is_tf_pro() && !empty($total_extras_price) && !empty($hotel_extra_option)){
+		if(!empty($total_extras_price) && !empty($hotel_extra_option)){
 			$tf_room_data['tf_hotel_data']['price_total'] += $total_extras_price;
 		}
 
 		# Airport Service Fee
-		if ( function_exists( 'is_tf_pro' ) && is_tf_pro() && ! empty( $tf_room_data['tf_hotel_data']['air_serivice_avail'] ) && 1 == $tf_room_data['tf_hotel_data']['air_serivice_avail'] ) {
+		if ( ! empty( $tf_room_data['tf_hotel_data']['air_serivice_avail'] ) && 1 == $tf_room_data['tf_hotel_data']['air_serivice_avail'] ) {
 			if ( "pickup" == $airport_service ) {
 				$airport_pickup_price = ! empty( $meta['airport_pickup_price'] ) ? $meta['airport_pickup_price'] : '';
 				if ( ! empty( $airport_pickup_price ) && gettype( $airport_pickup_price ) == "string" ) {
@@ -772,7 +772,7 @@ function tf_hotel_booking_callback() {
 		if ( $deposit == "true" ) {
 
 			Helper::tf_get_deposit_amount( $room_meta, $price_total, $deposit_amount, $has_deposit );
-			if ( function_exists( 'is_tf_pro' ) && is_tf_pro() && $has_deposit == true && ! empty( $deposit_amount ) ) {
+			if ( $has_deposit == true && ! empty( $deposit_amount ) ) {
 				$tf_room_data['tf_hotel_data']['price_total'] = $deposit_amount;
 				if ( ! empty( $airport_service ) || !empty($total_extras_price) ) {
 					$tf_room_data['tf_hotel_data']['due'] = ( $price_total + $airport_service_price_total + $total_extras_price ) - $deposit_amount;
@@ -787,13 +787,10 @@ function tf_hotel_booking_callback() {
 			$tf_room_data['tf_hotel_data']['visitor_details']	=	wp_json_encode($tf_without_payment_guest_info);
 		}
 		// Booking Type
-		$tf_booking_type = $tf_booking_url = $tf_booking_query_url = $tf_booking_attribute = '';
-		if ( function_exists( 'is_tf_pro' ) && is_tf_pro() ) {
-			$tf_booking_type      = ! empty( $meta['booking-by'] ) ? $meta['booking-by'] : 1;
-			$tf_booking_url       = ! empty( $meta['booking-url'] ) ? esc_url( $meta['booking-url'] ) : '';
-			$tf_booking_query_url = ! empty( $meta['booking-query'] ) ? $meta['booking-query'] : 'adult={adult}&child={child}&room={room}';
-			$tf_booking_attribute = ! empty( $meta['booking-attribute'] ) ? $meta['booking-attribute'] : '';
-		}
+		$tf_booking_type      = ! empty( $meta['booking-by'] ) ? $meta['booking-by'] : 1;
+		$tf_booking_url       = ! empty( $meta['booking-url'] ) ? esc_url( $meta['booking-url'] ) : '';
+		$tf_booking_query_url = ! empty( $meta['booking-query'] ) ? $meta['booking-query'] : 'adult={adult}&child={child}&room={room}';
+		$tf_booking_attribute = ! empty( $meta['booking-attribute'] ) ? $meta['booking-attribute'] : '';
 		if ( 2 == $tf_booking_type && ! empty( $tf_booking_url ) ) {
 			$external_search_info = array(
 				'{adult}'    => $adult,
@@ -849,8 +846,8 @@ function tf_hotel_booking_callback() {
 
 			$response['without_payment'] = 'true';
 			$order_id = Helper::tf_set_order( $without_payment_order_data );
-			if ( function_exists('is_tf_pro') && is_tf_pro() && !empty($order_id) ) {
-				do_action( 'tf_offline_payment_booking_confirmation', $order_id, $without_payment_order_data );
+			if ( ! empty( $order_id ) ) {
+				do_action( 'tourfic_offline_payment_booking_confirmation', $order_id, $without_payment_order_data );
 
 				if ( ! empty( Helper::tf_data_types( Helper::tfopt( 'tf-integration' ) )['tf-new-order-google-calendar'] ) && Helper::tf_data_types( Helper::tfopt( 'tf-integration' ) )['tf-new-order-google-calendar'] == "1" ) {
 					
@@ -861,21 +858,21 @@ function tf_hotel_booking_callback() {
 					 * @param array  $order_data The items in the order.
 					 * @param string $type Order type
 					 */
-					apply_filters( 'tf_after_booking_completed_calendar_data', $order_id, $without_payment_order_data, '' );
+					apply_filters( 'tourfic_after_booking_completed_calendar_data', $order_id, $without_payment_order_data, '' );
 				}
 			}
 		} else {
 			/**
-			 * Hook: tf_hotel_before_booking_added_to_cart
+			 * Hook: tourfic_hotel_before_booking_added_to_cart
 			 * Fires before a hotel booking is added to the WooCommerce cart.
 			 *
 			 * @since 2.3.0
-			 * @hook tf_hotel_before_booking_added_to_cart
+			 * @hook tourfic_hotel_before_booking_added_to_cart
 			 * @param int $post_id The hotel post ID.
 			 * @param array $tf_room_data The room booking data array.
 			 * @param int $product_id The WooCommerce product ID.
 			 */
-			do_action( 'tf_hotel_before_booking_added_to_cart', $post_id, $tf_room_data, $product_id );
+			do_action( 'tourfic_hotel_before_booking_added_to_cart', $post_id, $tf_room_data, $product_id );
 
 			# Add product to cart with the custom cart item data
 			$added_to_cart = WC()->cart->add_to_cart( $post_id, 1, '0', array(), $tf_room_data );
@@ -884,17 +881,17 @@ function tf_hotel_booking_callback() {
 				$response['errors'][] = esc_html__( 'Unable to add this hotel booking to cart. Please try again.', 'tourfic' );
 			} else {
 				/**
-				 * Hook: tf_hotel_after_booking_added_to_cart
+				 * Hook: tourfic_hotel_after_booking_added_to_cart
 				 * Fires after a hotel booking is successfully added to the WooCommerce cart.
 				 *
 				 * @since 2.3.0
-				 * @hook tf_hotel_after_booking_added_to_cart
+				 * @hook tourfic_hotel_after_booking_added_to_cart
 				 * @param int $post_id The hotel post ID.
 				 * @param array $tf_room_data The room booking data array.
 				 * @param int $product_id The WooCommerce product ID.
 				 * @param string $added_to_cart The cart item key or false.
 				 */
-				do_action( 'tf_hotel_after_booking_added_to_cart', $post_id, $tf_room_data, $product_id, $added_to_cart );
+				do_action( 'tourfic_hotel_after_booking_added_to_cart', $post_id, $tf_room_data, $product_id, $added_to_cart );
 
 				$response['product_id']  = $product_id;
 				$response['add_to_cart'] = 'true';
@@ -914,7 +911,7 @@ function tf_hotel_booking_callback() {
 /**
  * Over write WooCommerce Price
  */
-function tf_hotel_set_order_price( $cart ) {
+function tourfic_hotel_set_order_price( $cart ) {
 
 	if ( is_admin() && ! defined( 'DOING_AJAX' ) ) {
 		return;
@@ -933,10 +930,10 @@ function tf_hotel_set_order_price( $cart ) {
 
 }
 
-add_action( 'woocommerce_before_calculate_totals', 'tf_hotel_set_order_price', 30, 1 );
+add_action( 'woocommerce_before_calculate_totals', 'tourfic_hotel_set_order_price', 30, 1 );
 
 // Display custom cart item meta data (in cart and checkout)
-function display_cart_item_custom_meta_data( $item_data, $cart_item ) {
+function tourfic_display_cart_item_custom_meta_data( $item_data, $cart_item ) {
 
 	if ( isset( $cart_item['tf_hotel_data']['room_name'] ) ) {
 		$item_data[] = array(
@@ -1048,12 +1045,12 @@ function display_cart_item_custom_meta_data( $item_data, $cart_item ) {
 
 }
 
-add_filter( 'woocommerce_get_item_data', 'display_cart_item_custom_meta_data', 10, 2 );
+add_filter( 'woocommerce_get_item_data', 'tourfic_display_cart_item_custom_meta_data', 10, 2 );
 
 /**
  * Change cart item permalink
  */
-function tf_hotel_cart_item_permalink( $permalink, $cart_item, $cart_item_key ) {
+function tourfic_hotel_cart_item_permalink( $permalink, $cart_item, $cart_item_key ) {
 
 	$type = ! empty( $cart_item['tf_hotel_data']['order_type'] ) ? $cart_item['tf_hotel_data']['order_type'] : '';
 	if ( is_cart() && $type == 'hotel' ) {
@@ -1064,12 +1061,12 @@ function tf_hotel_cart_item_permalink( $permalink, $cart_item, $cart_item_key ) 
 
 }
 
-add_filter( 'woocommerce_cart_item_permalink', 'tf_hotel_cart_item_permalink', 10, 3 );
+add_filter( 'woocommerce_cart_item_permalink', 'tourfic_hotel_cart_item_permalink', 10, 3 );
 
 /**
  * Show custom data in order details
  */
-function tf_hotel_custom_order_data( $item, $cart_item_key, $values, $order ) {
+function tourfic_hotel_custom_order_data( $item, $cart_item_key, $values, $order ) {
 
 	// Assigning data into variables
 	$order_type           = ! empty( $values['tf_hotel_data']['order_type'] ) ? $values['tf_hotel_data']['order_type'] : '';
@@ -1174,7 +1171,7 @@ function tf_hotel_custom_order_data( $item, $cart_item_key, $values, $order ) {
 
 }
 
-add_action( 'woocommerce_checkout_create_order_line_item', 'tf_hotel_custom_order_data', 10, 4 );
+add_action( 'woocommerce_checkout_create_order_line_item', 'tourfic_hotel_custom_order_data', 10, 4 );
 
 /**
  * Add order id to the hotel room meta field
@@ -1183,7 +1180,7 @@ add_action( 'woocommerce_checkout_create_order_line_item', 'tf_hotel_custom_orde
  *
  * @author fida
  */
-function tf_add_order_id_room_checkout_order_processed( $order_id, $posted_data, $order ) {
+function tourfic_add_order_id_room_checkout_order_processed( $order_id, $posted_data, $order ) {
 
 	$tf_integration_order_data   = array(
 		'order_id' => $order_id
@@ -1197,6 +1194,7 @@ function tf_add_order_id_room_checkout_order_processed( $order_id, $posted_data,
 			$post_id   = $item->get_meta( '_post_id', true );
 			// Get the original (default language) post ID using WPML
 			if (function_exists('wpml_get_default_language')) {
+				// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- WPML-owned hook.
 				$original_post_id = apply_filters('wpml_object_id', $post_id, 'tf_hotel', false, wpml_get_default_language());
 			} else {
 				$original_post_id = $post_id;
@@ -1367,13 +1365,14 @@ function tf_add_order_id_room_checkout_order_processed( $order_id, $posted_data,
 
 			// Get the original (default language) post ID using WPML
 			if (function_exists('wpml_get_default_language')) {
+				// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- WPML-owned hook.
 				$original_post_id = apply_filters('wpml_object_id', $post_id, 'tf_hotel', false, wpml_get_default_language());
 			} else {
 				$original_post_id = $post_id;
 			}
 
 			global $wpdb;
-			$wpdb->query(
+			$wpdb->query( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 				$wpdb->prepare(
 					"INSERT INTO {$wpdb->prefix}tf_order_data
 				( order_id, post_id, post_type, room_number, room_id, check_in, check_out, billing_details, shipping_details, order_details, customer_id, payment_method, ostatus, order_date )
@@ -1398,11 +1397,11 @@ function tf_add_order_id_room_checkout_order_processed( $order_id, $posted_data,
 			);
 
 			/**
-			 * Hook: tf_hotel_booking_processed
+			 * Hook: tourfic_hotel_booking_processed
 			 * Fires when a hotel booking is processed (WooCommerce order is placed).
 			 *
 			 * @since 2.3.0
-			 * @hook tf_hotel_booking_processed
+			 * @hook tourfic_hotel_booking_processed
 			 * @param int $order_id The WooCommerce order ID.
 			 * @param WC_Order $order The WooCommerce order object.
 			 * @param int $item_id The item ID.
@@ -1411,7 +1410,7 @@ function tf_add_order_id_room_checkout_order_processed( $order_id, $posted_data,
 			 * @param array $shippinginfo The shipping information.
 			 * @param array $iteminfo The item information.
 			 */
-			do_action( 'tf_hotel_booking_processed', $order_id, $order, $item_id, $item, $billinginfo, $shippinginfo, $iteminfo );
+			do_action( 'tourfic_hotel_booking_processed', $order_id, $order, $item_id, $item, $billinginfo, $shippinginfo, $iteminfo );
 		}
 
 	}
@@ -1420,13 +1419,13 @@ function tf_add_order_id_room_checkout_order_processed( $order_id, $posted_data,
 	 * New Order Pabbly Integration
 	 * @author Jahid
 	 */
-	if ( function_exists( 'is_tf_pro' ) && is_tf_pro() && ! empty( $tf_integration_order_status ) ) {
-		do_action( 'tf_new_order_pabbly_form_trigger', $tf_integration_order_data, $billinginfo, $shippinginfo, $tf_integration_order_status );
-		do_action( 'tf_new_order_zapier_form_trigger', $tf_integration_order_data, $billinginfo, $shippinginfo, $tf_integration_order_status );
+	if ( ! empty( $tf_integration_order_status ) ) {
+		do_action( 'tourfic_new_order_pabbly_form_trigger', $tf_integration_order_data, $billinginfo, $shippinginfo, $tf_integration_order_status );
+		do_action( 'tourfic_new_order_zapier_form_trigger', $tf_integration_order_data, $billinginfo, $shippinginfo, $tf_integration_order_status );
 	}
 }
 
-add_action( 'woocommerce_checkout_order_processed', 'tf_add_order_id_room_checkout_order_processed', 10, 4 );
+add_action( 'woocommerce_checkout_order_processed', 'tourfic_add_order_id_room_checkout_order_processed', 10, 4 );
 
 /**
  * Add order id to the hotel room meta field
@@ -1438,7 +1437,7 @@ add_action( 'woocommerce_checkout_order_processed', 'tf_add_order_id_room_checko
  * @since 2.11.10
  * @author Foysal
  */
-function tf_add_order_id_room_checkout_order_processed_block_checkout( $order ) {
+function tourfic_add_order_id_room_checkout_order_processed_block_checkout( $order ) {
 
 	$order_id                    = $order->get_id();
 	$tf_integration_order_data   = array(
@@ -1453,6 +1452,7 @@ function tf_add_order_id_room_checkout_order_processed_block_checkout( $order ) 
 			$post_id   = $item->get_meta( '_post_id', true );
 			// Get the original (default language) post ID using WPML
 			if (function_exists('wpml_get_default_language')) {
+				// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- WPML-owned hook.
 				$original_post_id = apply_filters('wpml_object_id', $post_id, 'tf_hotel', false, wpml_get_default_language());
 			} else {
 				$original_post_id = $post_id;
@@ -1618,13 +1618,14 @@ function tf_add_order_id_room_checkout_order_processed_block_checkout( $order ) 
 
 			// Get the original (default language) post ID using WPML
 			if (function_exists('wpml_get_default_language')) {
+				// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- WPML-owned hook.
 				$original_post_id = apply_filters('wpml_object_id', $post_id, 'tf_hotel', false, wpml_get_default_language());
 			} else {
 				$original_post_id = $post_id;
 			}
 
 			global $wpdb;
-			$wpdb->query(
+			$wpdb->query( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 				$wpdb->prepare(
 					"INSERT INTO {$wpdb->prefix}tf_order_data
 				( order_id, post_id, post_type, room_number, room_id, check_in, check_out, billing_details, shipping_details, order_details, customer_id, payment_method, ostatus, order_date )
@@ -1649,11 +1650,11 @@ function tf_add_order_id_room_checkout_order_processed_block_checkout( $order ) 
 			);
 
 			/**
-			 * Hook: tf_hotel_booking_processed
+			 * Hook: tourfic_hotel_booking_processed
 			 * Fires when a hotel booking is processed (WooCommerce order is placed).
 			 *
 			 * @since 2.3.0
-			 * @hook tf_hotel_booking_processed
+			 * @hook tourfic_hotel_booking_processed
 			 * @param int $order_id The WooCommerce order ID.
 			 * @param WC_Order $order The WooCommerce order object.
 			 * @param int $item_id The item ID.
@@ -1662,7 +1663,7 @@ function tf_add_order_id_room_checkout_order_processed_block_checkout( $order ) 
 			 * @param array $shippinginfo The shipping information.
 			 * @param array $iteminfo The item information.
 			 */
-			do_action( 'tf_hotel_booking_processed', $order_id, $order, $item_id, $item, $billinginfo, $shippinginfo, $iteminfo );
+			do_action( 'tourfic_hotel_booking_processed', $order_id, $order, $item_id, $item, $billinginfo, $shippinginfo, $iteminfo );
 		}
 
 	}
@@ -1671,10 +1672,10 @@ function tf_add_order_id_room_checkout_order_processed_block_checkout( $order ) 
 	 * New Order Pabbly Integration
 	 * @author Jahid
 	 */
-	if ( function_exists( 'is_tf_pro' ) && is_tf_pro() && ! empty( $tf_integration_order_status ) ) {
-		do_action( 'tf_new_order_pabbly_form_trigger', $tf_integration_order_data, $billinginfo, $shippinginfo, $tf_integration_order_status );
-		do_action( 'tf_new_order_zapier_form_trigger', $tf_integration_order_data, $billinginfo, $shippinginfo, $tf_integration_order_status );
+	if ( ! empty( $tf_integration_order_status ) ) {
+		do_action( 'tourfic_new_order_pabbly_form_trigger', $tf_integration_order_data, $billinginfo, $shippinginfo, $tf_integration_order_status );
+		do_action( 'tourfic_new_order_zapier_form_trigger', $tf_integration_order_data, $billinginfo, $shippinginfo, $tf_integration_order_status );
 	}
 }
 
-add_action( 'woocommerce_store_api_checkout_order_processed', 'tf_add_order_id_room_checkout_order_processed_block_checkout' );
+add_action( 'woocommerce_store_api_checkout_order_processed', 'tourfic_add_order_id_room_checkout_order_processed_block_checkout' );

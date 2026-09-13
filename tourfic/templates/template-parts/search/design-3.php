@@ -7,30 +7,32 @@ defined( 'ABSPATH' ) || exit;
 
     use \Tourfic\Classes\Helper;
 
-    // Check nonce security
-    if (!isset($_GET['_nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_GET['_nonce'])), 'tf_ajax_nonce')) {
+    $tourfic_search_request = tourfic_get_public_search_request();
+    $tourfic_search_type    = isset( $tourfic_search_request['type'] ) ? $tourfic_search_request['type'] : '';
+    if ( empty( $tourfic_search_type ) ) {
         return;
     }
 
-    if( !empty($_GET['type']) && $_GET['type']=="tf_tours" ){
-        $tf_search_result_banner = ! empty( Helper::tf_data_types(Helper::tfopt( 'tf-template' ))['tour_archive_design_3_bannar'] ) ?  Helper::tf_data_types(Helper::tfopt( 'tf-template' ))['tour_archive_design_3_bannar'] : '';
-    }elseif( !empty($_GET['type']) && $_GET['type']=="tf_hotel" ){
-        $tf_search_result_banner = ! empty( Helper::tf_data_types(Helper::tfopt( 'tf-template' ))['hotel_archive_design_3_bannar'] ) ?  Helper::tf_data_types(Helper::tfopt( 'tf-template' ))['hotel_archive_design_3_bannar'] : '';
+    if( "tf_tours" === $tourfic_search_type ){
+        $tourfic_search_result_banner = ! empty( Helper::tf_data_types(Helper::tfopt( 'tf-template' ))['tour_archive_design_3_bannar'] ) ?  Helper::tf_data_types(Helper::tfopt( 'tf-template' ))['tour_archive_design_3_bannar'] : '';
+    }elseif( "tf_hotel" === $tourfic_search_type ){
+        $tourfic_search_result_banner = ! empty( Helper::tf_data_types(Helper::tfopt( 'tf-template' ))['hotel_archive_design_3_bannar'] ) ?  Helper::tf_data_types(Helper::tfopt( 'tf-template' ))['hotel_archive_design_3_bannar'] : '';
     }else{
-        $tf_search_result_banner = ! empty( Helper::tf_data_types(Helper::tfopt( 'tf-template' ))['apartment_archive_design_2_bannar'] ) ?  Helper::tf_data_types(Helper::tfopt( 'tf-template' ))['apartment_archive_design_2_bannar'] : '';
+        $tourfic_search_result_banner = ! empty( Helper::tf_data_types(Helper::tfopt( 'tf-template' ))['apartment_archive_design_2_bannar'] ) ?  Helper::tf_data_types(Helper::tfopt( 'tf-template' ))['apartment_archive_design_2_bannar'] : '';
     }
     ?>
     <div class="tf-content-wrapper">
         <?php
-        do_action('tf_before_container');
-        $post_count = $GLOBALS['wp_query']->post_count;
-        $tf_map_settings = !empty(Helper::tfopt('google-page-option')) ? Helper::tfopt('google-page-option') : "default";
-        $tf_map_api = !empty(Helper::tfopt('tf-googlemapapi')) ? Helper::tfopt('tf-googlemapapi') : '';
+        do_action('tourfic_before_container');
+        $tourfic_post_count = $GLOBALS['wp_query']->post_count;
+        $tourfic_map_settings = !empty(Helper::tfopt('google-page-option')) ? Helper::tfopt('google-page-option') : "default";
+        $tourfic_map_api = !empty(Helper::tfopt('tf-googlemapapi')) ? Helper::tfopt('tf-googlemapapi') : '';
         ?>
 
-        <div class="tf-archive-search-form tf-booking-form-wrapper" style="<?php echo !empty($tf_search_result_banner) ? 'background-image: url('.esc_url($tf_search_result_banner).')' : ''; ?>">
+        <div class="tf-archive-search-form tf-booking-form-wrapper" style="<?php echo !empty($tourfic_search_result_banner) ? 'background-image: url('.esc_url($tourfic_search_result_banner).')' : ''; ?>">
             <div class="tf-container">
                 <form action="<?php echo esc_url(Helper::tf_booking_search_action()); ?>" method="get" autocomplete="off" class="tf-archive-booking-form__style-3 tf_archive_search_result tf-hotel-side-booking tf-booking-form">
+                    <?php wp_nonce_field( 'tourfic_public_search', 'tourfic_search_nonce', false ); ?>
                     <?php Helper::tf_search_result_sidebar_form('archive'); ?>
                 </form>
             </div>
@@ -39,14 +41,14 @@ defined( 'ABSPATH' ) || exit;
         <div class="tf-archive-details-wrap">
             <div class="tf-archive-details">
 
-                <?php if ($tf_map_settings == "googlemap") :
-                    if (empty($tf_map_api)):
+                <?php if ($tourfic_map_settings == "googlemap") :
+                    if (empty($tourfic_map_api)):
                         ?>
                         <div class="tf-container">
                             <div class="tf-notice tf-mt-24 tf-mb-30">
                                 <?php
-                                if (current_user_can('administrator')) {
-                                    echo '<p>' . esc_html__('Google Maps is selected but the API key is missing. Please configure the API key ', 'tourfic') . '<a href="' . esc_url(admin_url('admin.php?page=tf_settings#tab=map_settings')) . '" target="_blank">' . esc_html__('Map Settings', 'tourfic') . '</a></p>';
+                                if (current_user_can('manage_options')) {
+                                    echo '<p>' . esc_html__('Google Maps is selected but the API key is missing. Please configure the API key ', 'tourfic') . '<a href="' . esc_url(admin_url('admin.php?page=tourfic_settings#tab=map_settings')) . '" target="_blank">' . esc_html__('Map Settings', 'tourfic') . '</a></p>';
                                 } else {
                                     echo '<p>' . esc_html__('Access is restricted as Google Maps API key is not configured. Please contact the site administrator.', 'tourfic') . '</p>';
                                 }
@@ -58,7 +60,7 @@ defined( 'ABSPATH' ) || exit;
                             <!-- Loader Image -->
                             <div id="tf_ajax_searchresult_loader">
                                 <div id="tf-searchresult-loader-img">
-                                    <img src="<?php echo esc_url(TF_ASSETS_APP_URL) ?>images/loader.gif" alt="">
+                                    <img src="<?php echo esc_url(TOURFIC_ASSETS_APP_URL) ?>images/loader.gif" alt="">
                                 </div>
                             </div>
                             <!--Available rooms start -->
@@ -84,7 +86,7 @@ defined( 'ABSPATH' ) || exit;
                                     </div>
                                 </div>
 
-                                <?php echo do_shortcode("[tf_search_result]"); ?>
+                                <?php echo do_shortcode( '[tourfic_search_result]' ); ?>
 
                             </div>
                             <!-- Available rooms end -->
@@ -101,7 +103,7 @@ defined( 'ABSPATH' ) || exit;
                                 </svg>
                                 <span><?php echo esc_html__('List view', 'tourfic') ?></span>
                             </a>
-                            <div id="map-marker" data-marker="<?php echo esc_url(TF_ASSETS_URL . 'app/images/cluster-marker.png'); ?>"></div>
+                            <div id="map-marker" data-marker="<?php echo esc_url(TOURFIC_ASSETS_URL . 'app/images/cluster-marker.png'); ?>"></div>
                             <div class="tf-hotel-archive-map-wrap">
                                 <div id="tf-hotel-archive-map"></div>
                             </div>
@@ -111,8 +113,8 @@ defined( 'ABSPATH' ) || exit;
                     <div class="tf-container">
                         <div class="tf-notice tf-mt-24 tf-mb-30">
                             <?php
-                            if (current_user_can('administrator')) {
-                                echo '<p>' . esc_html__('Google Maps is not selected. Please configure it ', 'tourfic') . '<a href="' . esc_url(admin_url('admin.php?page=tf_settings#tab=map_settings')) . '" target="_blank">' . esc_html__('Map Settings', 'tourfic') . '</a></p>';
+                            if (current_user_can('manage_options')) {
+                                echo '<p>' . esc_html__('Google Maps is not selected. Please configure it ', 'tourfic') . '<a href="' . esc_url(admin_url('admin.php?page=tourfic_settings#tab=map_settings')) . '" target="_blank">' . esc_html__('Map Settings', 'tourfic') . '</a></p>';
                             } else {
                                 echo '<p>' . esc_html__('Access is restricted as Google Maps is not enabled. Please contact the site administrator', 'tourfic') . '</p>';
                             }

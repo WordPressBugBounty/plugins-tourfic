@@ -55,7 +55,28 @@ class Similar_Tours extends \WP_Widget {
         }
         ?>
 			<div class="ni-buttons">
-				<a href="<?php echo esc_url(Helper::tf_booking_search_action()) . '?destination=' . esc_attr( $terms[0]->name ) . '&adults=' . esc_attr(sanitize_text_field( wp_unslash($_GET['adults']) )) . '&children=' . esc_attr(sanitize_text_field( wp_unslash($_GET['children']) )) . '&room=' . esc_attr(sanitize_text_field( wp_unslash($_GET['room']) )) . '&check-in-date=' . esc_attr(sanitize_text_field( wp_unslash($_GET['check-in-date']) )) . '&check-out-date=' . esc_attr(sanitize_text_field( wp_unslash($_GET['check-out-date']) )); ?>" class="tf_btn tf_btn_outline"><?php echo esc_html( $btn_label );?></a>
+				<?php
+				$tourfic_search_request = \tourfic_get_public_search_request();
+				$adults           = isset( $tourfic_search_request['adults'] ) ? $tourfic_search_request['adults'] : '';
+				$children         = isset( $tourfic_search_request['children'] ) ? $tourfic_search_request['children'] : '';
+				$room             = isset( $tourfic_search_request['room'] ) ? $tourfic_search_request['room'] : '';
+				$check_in_date    = isset( $tourfic_search_request['check-in-date'] ) ? $tourfic_search_request['check-in-date'] : '';
+				$check_out_date   = isset( $tourfic_search_request['check-out-date'] ) ? $tourfic_search_request['check-out-date'] : '';
+				$destination_name = ! empty( $terms[0]->name ) ? sanitize_text_field( $terms[0]->name ) : '';
+				$search_url       = add_query_arg(
+					array(
+						'tourfic_search_nonce' => wp_create_nonce( 'tourfic_public_search' ),
+						'destination'   => $destination_name,
+						'adults'        => $adults,
+						'children'      => $children,
+						'room'          => $room,
+						'check-in-date' => $check_in_date,
+						'check-out-date' => $check_out_date,
+					),
+					Helper::tf_booking_search_action()
+				);
+				?>
+				<a href="<?php echo esc_url( $search_url ); ?>" class="tf_btn tf_btn_outline"><?php echo esc_html( $btn_label ); ?></a>
 			</div>
 		</div>
 		<!-- End similar tour widget -->

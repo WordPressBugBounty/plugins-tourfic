@@ -2,8 +2,8 @@
 // don't load directly
 defined( 'ABSPATH' ) || exit;
 
-if ( ! class_exists( 'TF_colorpalette' ) ) {
-	class TF_colorpalette extends TF_Fields {
+if ( ! class_exists( 'Tourfic_colorpalette' ) ) {
+	class Tourfic_colorpalette extends Tourfic_Fields {
 
 		public function __construct( $field, $value = '', $settings_id = '', $parent_field = '' ) {
 			parent::__construct( $field, $value, $settings_id, $parent_field );
@@ -17,7 +17,7 @@ if ( ! class_exists( 'TF_colorpalette' ) ) {
 					$checked = $key == $this->value ? ' checked' : '';
                     $disable_checked = !empty($value['disabled']) ? ' disabled' : '';
 					?>
-                    <li class="<?php echo isset( $value['is_pro'] ) && $value['is_pro'] ? 'tf-pro-item' : '' ?>">
+					<li>
                         <label class="tf-colors-checkbox">
 
                             <div class="tf-colors-box">

@@ -18,12 +18,17 @@ class Search_Result extends \Tourfic\Core\Shortcodes {
 
 	use \Tourfic\Traits\Singleton;
 
-	protected $shortcode = 'tf_search_result';
+	protected $shortcode = 'tourfic_search_result';
 
 	function render( $atts, $content = null ) {
+		$search_request = tourfic_get_public_search_request();
+		if ( empty( $search_request ) ) {
+			echo '<h3>' . esc_html__( 'Please submit a Tourfic search form.', 'tourfic' ) . '</h3>';
+			return;
+		}
 
 		// Get post type
-		$post_type = isset( $_GET['type'] ) ? sanitize_text_field( $_GET['type'] ) : '';
+		$post_type = isset( $search_request['type'] ) ? $search_request['type'] : '';
 		if ( empty( $post_type ) ) {
 			echo '<h3>' . esc_html__(" Please select fields from the search form! ", "tourfic") . '</h3>';
 
@@ -37,46 +42,44 @@ class Search_Result extends \Tourfic\Core\Shortcodes {
 		} elseif($post_type == 'tf_apartment'){
 			$taxonomy = 'apartment_location';
 		}
-		$place        = isset( $_GET['place'] ) ? sanitize_text_field( $_GET['place'] ) : '';
-		$adults       = isset( $_GET['adults'] ) ? sanitize_text_field( $_GET['adults'] ) : '';
-		$child        = isset( $_GET['children'] ) ? sanitize_text_field( $_GET['children'] ) : '';
-		$infant       = isset( $_GET['infant'] ) ? sanitize_text_field( $_GET['infant'] ) : '';
-		$room         = isset( $_GET['room'] ) ? sanitize_text_field( $_GET['room'] ) : '';
-		$check_in_out = isset( $_GET['check-in-out-date'] ) ? sanitize_text_field( $_GET['check-in-out-date'] ) : '';
-		//get children ages
-		//$children_ages = isset( $_GET['children_ages'] ) ? sanitize_text_field($_GET['children_ages']) : '';
+		$place        = isset( $search_request['place'] ) ? $search_request['place'] : '';
+		$adults       = isset( $search_request['adults'] ) ? $search_request['adults'] : '';
+		$child        = isset( $search_request['children'] ) ? $search_request['children'] : '';
+		$infant       = isset( $search_request['infant'] ) ? $search_request['infant'] : '';
+		$room         = isset( $search_request['room'] ) ? $search_request['room'] : '';
+		$check_in_out = isset( $search_request['check-in-out-date'] ) ? $search_request['check-in-out-date'] : '';
 
 
 		// Price Range
-		$startprice = isset( $_GET['from'] ) ? absint( sanitize_text_field( $_GET['from'] ) ) : '';
-		$endprice   = isset( $_GET['to'] ) ? absint( sanitize_text_field( $_GET['to'] ) ) : '';
-		$tf_min_seat = isset( $_GET['min_seat'] ) ? absint( sanitize_text_field( $_GET['min_seat'] ) ) : '';
-		$tf_max_seat = isset( $_GET['max_seat'] ) ? absint( sanitize_text_field( $_GET['max_seat'] ) ) : '';
-		$tf_driver_age = isset( $_GET['driver_age'] ) ? sanitize_text_field( wp_unslash( $_GET['driver_age'] ) ) : '';
+		$startprice   = isset( $search_request['from'] ) ? absint( $search_request['from'] ) : '';
+		$endprice     = isset( $search_request['to'] ) ? absint( $search_request['to'] ) : '';
+		$tf_min_seat  = isset( $search_request['min_seat'] ) ? $search_request['min_seat'] : '';
+		$tf_max_seat  = isset( $search_request['max_seat'] ) ? $search_request['max_seat'] : '';
+		$tf_driver_age = isset( $search_request['driver_age'] ) ? $search_request['driver_age'] : '';
 
 		// Cars Data Start
-		$pickup   = isset( $_GET['pickup'] ) ? sanitize_text_field( $_GET['pickup'] ) : '';
-		$dropoff = isset( $_GET['dropoff'] ) ? sanitize_text_field( $_GET['dropoff'] ) : '';
+		$pickup  = isset( $search_request['pickup'] ) ? $search_request['pickup'] : '';
+		$dropoff = isset( $search_request['dropoff'] ) ? $search_request['dropoff'] : '';
 
-		$tf_pickup_date  = isset( $_GET['pickup-date'] ) ? tf_normalize_date( sanitize_text_field( wp_unslash( $_GET['pickup-date'] ) ) ) : '';
-		$tf_dropoff_date  = isset( $_GET['dropoff-date'] ) ? tf_normalize_date( sanitize_text_field( wp_unslash( $_GET['dropoff-date'] ) ) ) : '';
-		$tf_pickup_time  = isset( $_GET['pickup-time'] ) ? sanitize_text_field( wp_unslash( $_GET['pickup-time'] ) ) : '';
-		$tf_dropoff_time  = isset( $_GET['dropoff-time'] ) ? sanitize_text_field( wp_unslash( $_GET['dropoff-time'] ) ) : '';
+		$tf_pickup_date  = isset( $search_request['pickup-date'] ) ? tourfic_normalize_date( $search_request['pickup-date'] ) : '';
+		$tf_dropoff_date = isset( $search_request['dropoff-date'] ) ? tourfic_normalize_date( $search_request['dropoff-date'] ) : '';
+		$tf_pickup_time  = isset( $search_request['pickup-time'] ) ? $search_request['pickup-time'] : '';
+		$tf_dropoff_time = isset( $search_request['dropoff-time'] ) ? $search_request['dropoff-time'] : '';
 		// Cars Data End
 
 		// Author Id if any
-		$tf_author_ids = isset( $_GET['tf-author'] ) ? sanitize_key( $_GET['tf-author'] ) : '';
+		$tf_author_ids = isset( $search_request['tf-author'] ) ? $search_request['tf-author'] : '';
 
 		if ( ! empty( $startprice ) && ! empty( $endprice ) ) {
-			if ( $_GET['type'] == "tf_tours" ) {
+			if ( 'tf_tours' === $post_type ) {
 				$data = array( $adults, $child, $check_in_out, $startprice, $endprice );
-			} elseif ( $_GET['type'] == "tf_apartment" ) {
+			} elseif ( 'tf_apartment' === $post_type ) {
 				$data = array( $adults, $child, $infant, $check_in_out, $startprice, $endprice );
 			} else {
 				$data = array( $adults, $child, $room, $check_in_out, $startprice, $endprice );
 			}
 		} else {
-			if ( $_GET['type'] == "tf_tours" ) {
+			if ( 'tf_tours' === $post_type ) {
 				$data = array( $adults, $child, $check_in_out );
 			} else {
 				$data = array( $adults, $child, $room, $check_in_out );
@@ -84,20 +87,18 @@ class Search_Result extends \Tourfic\Core\Shortcodes {
 		}
 
 		// Gird or List View
-		if(!empty($_GET['type']) && $_GET['type'] == "tf_hotel"){
+		if ( 'tf_hotel' === $post_type ) {
 			$tf_defult_views = ! empty( Helper::tf_data_types(Helper::tfopt( 'tf-template' ))['hotel_archive_view'] ) ? Helper::tf_data_types(Helper::tfopt( 'tf-template' ))['hotel_archive_view'] : 'list';
-		}elseif(!empty($_GET['type']) && $_GET['type'] == "tf_tours"){
+		} elseif ( 'tf_tours' === $post_type ) {
 			$tf_defult_views = ! empty( Helper::tf_data_types(Helper::tfopt( 'tf-template' ))['tour_archive_view'] ) ? Helper::tf_data_types(Helper::tfopt( 'tf-template' ))['tour_archive_view'] : 'list';
-		}elseif(!empty($_GET['type']) && $_GET['type'] == "tf_apartment"){
+		} elseif ( 'tf_apartment' === $post_type ) {
 			$tf_defult_views = ! empty( Helper::tf_data_types(Helper::tfopt( 'tf-template' ))['apartment_archive_view'] ) ? Helper::tf_data_types(Helper::tfopt( 'tf-template' ))['apartment_archive_view'] : 'list';
-		}elseif(!empty($_GET['type']) && $_GET['type'] == "tf_carrental"){
+		} elseif ( 'tf_carrental' === $post_type ) {
 			$tf_defult_views = ! empty( Helper::tf_data_types(Helper::tfopt( 'tf-template' ))['car_archive_view'] ) ? Helper::tf_data_types(Helper::tfopt( 'tf-template' ))['car_archive_view'] : 'grid';
-		}else{
-
 		}
 
 		$paged          = ( get_query_var( 'paged' ) ) ? absint( get_query_var( 'paged' ) ) : 1;
-		$checkInOutDate = ! empty( $_GET['check-in-out-date'] ) ? tf_split_date_range( wp_unslash( $_GET['check-in-out-date'] ) ) : '';
+		$checkInOutDate = ! empty( $check_in_out ) ? tourfic_split_date_range( $check_in_out ) : '';
 		if ( ! empty( $checkInOutDate ) ) {
 			$period = new \DatePeriod(
 				new \DateTime( $checkInOutDate[0] ),
@@ -165,19 +166,19 @@ class Search_Result extends \Tourfic\Core\Shortcodes {
 
 
 		// Hotel/Apartment Features
-		if ( ! empty( $_GET['features'] ) ) {
+		if ( ! empty( $search_request['features'] ) ) {
 			$args['tax_query'][] = array(
 				'taxonomy' => $post_type == 'tf_hotel' ? 'hotel_feature' : 'apartment_feature',
 				'field'    => 'slug',
-				'terms'    => sanitize_text_field( wp_unslash($_GET['features']) ),
+				'terms'    => $search_request['features'],
 			);
 		}
 		// Hotel/Tour/Apartment Types
-		if ( ! empty( $_GET['types'] ) ) {
+		if ( ! empty( $search_request['types'] ) ) {
 			$args['tax_query'][] = array(
 				'taxonomy' => $post_type == 'tf_hotel' ? 'hotel_type' : ($post_type == 'tf_tours' ? 'tour_type' : 'apartment_type'),
 				'field'    => 'slug',
-				'terms'    => sanitize_text_field( wp_unslash($_GET['types']) ),
+				'terms'    => $search_request['types'],
 			);
 		}
 
@@ -274,7 +275,8 @@ class Search_Result extends \Tourfic\Core\Shortcodes {
 							</div>
 						</div>
 						<div class="tf-sorting-selection-warper">
-                            <form class="tf-archive-ordering" method="get">
+							<form class="tf-archive-ordering" method="get">
+								<?php wp_nonce_field( 'tourfic_public_search', 'tourfic_search_nonce', false ); ?>
                                 <select class="tf-orderby" name="tf-orderby" id="tf-orderby">
                                     <option value="default">Default Sorting</option>
                                     <option value="enquiry">Sort By Recommended</option>
@@ -292,7 +294,7 @@ class Search_Result extends \Tourfic\Core\Shortcodes {
 				<!-- Loader Image -->
 				<div id="tf_ajax_searchresult_loader">
 					<div id="tf-searchresult-loader-img">
-						<img src="<?php echo esc_url(TF_ASSETS_APP_URL) ?>images/loader.gif" alt="">
+						<img src="<?php echo esc_url(TOURFIC_ASSETS_APP_URL) ?>images/loader.gif" alt="">
 					</div>
 				</div>
 				<div class="tf-search-results-list tf-mt-30">
@@ -491,6 +493,7 @@ class Search_Result extends \Tourfic\Core\Shortcodes {
 					</h3>
 					<div class="tf-sorting-selection-warper">
 						<form class="tf-archive-ordering" method="get">
+							<?php wp_nonce_field( 'tourfic_public_search', 'tourfic_search_nonce', false ); ?>
 							<select class="tf-orderby" name="tf-orderby" id="tf-orderby">
 								<option value="default"><?php echo esc_html__( 'Default Sorting', 'tourfic' ); ?></option>
 								<option value="enquiry"><?php echo esc_html__( 'Sort By Recommended', 'tourfic' ); ?></option>
@@ -521,7 +524,7 @@ class Search_Result extends \Tourfic\Core\Shortcodes {
 				<!-- Loader Image -->
 				<div id="tour_room_details_loader">
 					<div id="tour-room-details-loader-img">
-						<img src="<?php echo esc_url(TF_ASSETS_APP_URL) ?>images/loader.gif" alt="">
+						<img src="<?php echo esc_url(TOURFIC_ASSETS_APP_URL) ?>images/loader.gif" alt="">
 					</div>
 				</div>
 
@@ -766,7 +769,7 @@ class Search_Result extends \Tourfic\Core\Shortcodes {
 									$car_meta = get_post_meta( get_the_ID(), 'tf_carrental_opt', true );
 									$car_inventory = Availability::tf_car_inventory(get_the_ID(), $car_meta, $tf_pickup_date, $tf_dropoff_date, $tf_pickup_time, $tf_dropoff_time);
 									if($car_inventory){
-										tf_car_availability_response( $car_meta, $not_found, $pickup, $dropoff, $tf_pickup_date, $tf_dropoff_date, $tf_pickup_time, $tf_dropoff_time, $startprice, $endprice, $tf_min_seat, $tf_max_seat, $tf_driver_age, $car_driver_min_age, $car_driver_max_age );
+										tourfic_car_availability_response( $car_meta, $not_found, $pickup, $dropoff, $tf_pickup_date, $tf_dropoff_date, $tf_pickup_time, $tf_dropoff_time, $startprice, $endprice, $tf_min_seat, $tf_max_seat, $tf_driver_age, $car_driver_min_age, $car_driver_max_age );
 									}
 								}
 							}
@@ -787,7 +790,8 @@ class Search_Result extends \Tourfic\Core\Shortcodes {
 							$post_per_page = Helper::tfopt( 'posts_per_page' ) ? Helper::tfopt( 'posts_per_page' ) : 10;
 
 							$total_filtered_results = count( $tf_total_filters );
-							$current_page           = ! empty( $_POST['page'] ) ? absint( $_POST['page'] ) : 1;
+							$requested_page         = filter_input( INPUT_POST, 'page', FILTER_VALIDATE_INT );
+							$current_page           = $requested_page ? absint( $requested_page ) : 1;
 							$offset                 = ( $current_page - 1 ) * $post_per_page;
 							$displayed_results      = array_slice( $tf_total_filters, $offset, $post_per_page );
 							if ( ! empty( $displayed_results ) ) {
@@ -806,7 +810,7 @@ class Search_Result extends \Tourfic\Core\Shortcodes {
 												$car_meta = get_post_meta( get_the_ID(), 'tf_carrental_opt', true );
 												$is_car_featured = is_array( $car_meta ) && ! empty( $car_meta['car_as_featured'] );
 												if ( $is_car_featured ) {
-													tf_car_archive_single_item($pickup, $dropoff, $tf_pickup_date, $tf_dropoff_date, $tf_pickup_time, $tf_dropoff_time);
+													tourfic_car_archive_single_item($pickup, $dropoff, $tf_pickup_date, $tf_dropoff_date, $tf_pickup_time, $tf_dropoff_time);
 												}
 											}
 
@@ -821,7 +825,7 @@ class Search_Result extends \Tourfic\Core\Shortcodes {
 												$car_meta = get_post_meta( get_the_ID(), 'tf_carrental_opt', true );
 												$is_car_featured = is_array( $car_meta ) && ! empty( $car_meta['car_as_featured'] );
 												if ( ! $is_car_featured ) {
-													tf_car_archive_single_item($pickup, $dropoff, $tf_pickup_date, $tf_dropoff_date, $tf_pickup_time, $tf_dropoff_time);
+													tourfic_car_archive_single_item($pickup, $dropoff, $tf_pickup_date, $tf_dropoff_date, $tf_pickup_time, $tf_dropoff_time);
 												}
 											}
 
@@ -865,6 +869,7 @@ class Search_Result extends \Tourfic\Core\Shortcodes {
 				</h3>
 				<div class="tf-archive-header-right tf-flex tf-flex-space-bttn tf-flex-align-center tf-flex-gap-16">
 					<form class="tf-archive-ordering" method="get">
+						<?php wp_nonce_field( 'tourfic_public_search', 'tourfic_search_nonce', false ); ?>
 						<select class="tf-orderby tf-room-archive-action-btn" name="tf-orderby" id="tf-orderby">
 							<option value="default"><?php echo esc_html__( 'Default Sorting', 'tourfic' ); ?></option>
 							<option value="order"><?php echo esc_html__( 'Sort By Popularity', 'tourfic' ); ?></option>
@@ -901,10 +906,10 @@ class Search_Result extends \Tourfic\Core\Shortcodes {
 				<!-- Loader Image -->
 				<div id="tf_ajax_searchresult_loader">
 					<div id="tf-searchresult-loader-img">
-						<img src="<?php echo esc_url(TF_ASSETS_APP_URL) ?>images/loader.gif" alt="">
+						<img src="<?php echo esc_url(TOURFIC_ASSETS_APP_URL) ?>images/loader.gif" alt="">
 					</div>
 				</div>
-				<?php do_action("tf_room_archive_roomd_items_before"); ?>
+				<?php do_action("tourfic_room_archive_roomd_items_before"); ?>
 				<div class="tf-room-item-cards tf-flex tf-room-result archive_ajax_result">
 					<?php
 					if ( $loop->have_posts() ) {
@@ -990,12 +995,12 @@ class Search_Result extends \Tourfic\Core\Shortcodes {
 					echo "</span>";
 					?>
 				</div>
-				<?php do_action("tf_room_archive_roomd_items_after"); ?>
+				<?php do_action("tourfic_room_archive_roomd_items_after"); ?>
 			</div>
 			<?php
-		} elseif ( ( $post_type == "tf_tours" && $tf_tour_arc_selected_template == "design-3" && function_exists( 'is_tf_pro' ) && is_tf_pro()) ||
-		           ( $post_type == "tf_hotel" && $tf_hotel_arc_selected_template == "design-3" && function_exists( 'is_tf_pro' ) && is_tf_pro()) ||
-		           ( $post_type == "tf_apartment" && $tf_apartment_arc_selected_template == "design-2" && function_exists( 'is_tf_pro' ) && is_tf_pro()) ) {
+		} elseif ( ( $post_type == "tf_tours" && $tf_tour_arc_selected_template == "design-3") ||
+		           ( $post_type == "tf_hotel" && $tf_hotel_arc_selected_template == "design-3") ||
+		           ( $post_type == "tf_apartment" && $tf_apartment_arc_selected_template == "design-2") ) {
 
 			if($post_type == "tf_hotel") {
 				$found_post_label = esc_html__( "Hotels", "tourfic" );
@@ -1161,7 +1166,7 @@ class Search_Result extends \Tourfic\Core\Shortcodes {
 													if ( ! empty( wp_get_attachment_url( get_post_thumbnail_id(), 'tf_gallery_thumb' ) ) ) {
 														the_post_thumbnail( 'full' );
 													} else {
-														echo '<img src="' . esc_url(TF_ASSETS_APP_URL . "images/feature-default.jpg") . '" class="attachment-full size-full wp-post-image">';
+														echo '<img src="' . esc_url(TOURFIC_ASSETS_APP_URL . "images/feature-default.jpg") . '" class="attachment-full size-full wp-post-image">';
 													}
 													?>
                                                 </a>
@@ -1245,7 +1250,7 @@ class Search_Result extends \Tourfic\Core\Shortcodes {
 													if ( ! empty( wp_get_attachment_url( get_post_thumbnail_id(), 'tf_gallery_thumb' ) ) ) {
 														the_post_thumbnail( 'full' );
 													} else {
-														echo '<img src="' . esc_url(TF_ASSETS_APP_URL . "images/feature-default.jpg") . '" class="attachment-full size-full wp-post-image">';
+														echo '<img src="' . esc_url(TOURFIC_ASSETS_APP_URL . "images/feature-default.jpg") . '" class="attachment-full size-full wp-post-image">';
 													}
 													?>
                                                 </a>
@@ -1328,7 +1333,7 @@ class Search_Result extends \Tourfic\Core\Shortcodes {
 													if ( ! empty( wp_get_attachment_url( get_post_thumbnail_id(), 'tf_gallery_thumb' ) ) ) {
 														the_post_thumbnail( 'full' );
 													} else {
-														echo '<img src="' . esc_url(TF_ASSETS_APP_URL . "images/feature-default.jpg") . '" class="attachment-full size-full wp-post-image">';
+														echo '<img src="' . esc_url(TOURFIC_ASSETS_APP_URL . "images/feature-default.jpg") . '" class="attachment-full size-full wp-post-image">';
 													}
 													?>
                                                 </a>
@@ -1416,7 +1421,7 @@ class Search_Result extends \Tourfic\Core\Shortcodes {
 													if ( ! empty( wp_get_attachment_url( get_post_thumbnail_id(), 'tf_gallery_thumb' ) ) ) {
 														the_post_thumbnail( 'full' );
 													} else {
-														echo '<img src="' . esc_url(TF_ASSETS_APP_URL . "images/feature-default.jpg") . '" class="attachment-full size-full wp-post-image">';
+														echo '<img src="' . esc_url(TOURFIC_ASSETS_APP_URL . "images/feature-default.jpg") . '" class="attachment-full size-full wp-post-image">';
 													}
 													?>
                                                 </a>
@@ -1500,7 +1505,7 @@ class Search_Result extends \Tourfic\Core\Shortcodes {
 													if ( ! empty( wp_get_attachment_url( get_post_thumbnail_id(), 'tf_gallery_thumb' ) ) ) {
 														the_post_thumbnail( 'full' );
 													} else {
-														echo '<img src="' . esc_url(TF_ASSETS_APP_URL . "images/feature-default.jpg") . '" class="attachment-full size-full wp-post-image">';
+														echo '<img src="' . esc_url(TOURFIC_ASSETS_APP_URL . "images/feature-default.jpg") . '" class="attachment-full size-full wp-post-image">';
 													}
 													?>
                                                 </a>
@@ -1584,7 +1589,7 @@ class Search_Result extends \Tourfic\Core\Shortcodes {
 													if ( ! empty( wp_get_attachment_url( get_post_thumbnail_id(), 'tf_gallery_thumb' ) ) ) {
 														the_post_thumbnail( 'full' );
 													} else {
-														echo '<img src="' . esc_url(TF_ASSETS_APP_URL . "images/feature-default.jpg") . '" class="attachment-full size-full wp-post-image">';
+														echo '<img src="' . esc_url(TOURFIC_ASSETS_APP_URL . "images/feature-default.jpg") . '" class="attachment-full size-full wp-post-image">';
 													}
 													?>
                                                 </a>
@@ -1672,7 +1677,8 @@ class Search_Result extends \Tourfic\Core\Shortcodes {
 						<a href="#list-view" data-id="list-view" class="change-view <?php echo $tf_defult_views=="list" ? esc_attr('active') : ''; ?>" title="<?php esc_html_e( 'List View', 'tourfic' ); ?>"><i class="fas fa-list"></i></a>
 						<a href="#grid-view" data-id="grid-view" class="change-view <?php echo $tf_defult_views=="grid" ? esc_attr('active') : ''; ?>" title="<?php esc_html_e( 'Grid View', 'tourfic' ); ?>"><i class="fas fa-border-all"></i></a>
 						<div class="tf-sorting-selection-warper">
-                            <form class="tf-archive-ordering" method="get">
+							<form class="tf-archive-ordering" method="get">
+								<?php wp_nonce_field( 'tourfic_public_search', 'tourfic_search_nonce', false ); ?>
                                 <select class="tf-orderby" name="tf-orderby" id="tf-orderby">
                                     <option value="default"><?php echo esc_html__( 'Default Sorting', 'tourfic' ); ?></option>
                                     <option value="enquiry"><?php echo esc_html__( 'Sort By Recommended', 'tourfic' ); ?></option>

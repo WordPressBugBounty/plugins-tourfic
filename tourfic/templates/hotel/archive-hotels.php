@@ -12,26 +12,26 @@ defined( 'ABSPATH' ) || exit;
  use \Tourfic\Classes\Helper;
 
 
-if(wp_is_block_theme()){
+if(tourfic_is_block_theme()){
     wp_head();
-    block_header_area();
+    tourfic_render_block_header_area();
 }else{
     get_header();
 }
 
 
-$tf_hotel_arc_selected_template = ! empty( Helper::tf_data_types(Helper::tfopt( 'tf-template' ))['hotel-archive'] ) ?  Helper::tf_data_types(Helper::tfopt( 'tf-template' ))['hotel-archive'] : 'design-1';
+$tourfic_hotel_arc_selected_template = ! empty( Helper::tf_data_types(Helper::tfopt( 'tf-template' ))['hotel-archive'] ) ?  Helper::tf_data_types(Helper::tfopt( 'tf-template' ))['hotel-archive'] : 'design-1';
 
 if ( Helper::tf_is_woo_active() ) {
-	if ( $tf_hotel_arc_selected_template == "design-1" ) {
-		include TF_TEMPLATE_PATH . 'hotel/archive/design-1.php';
-	} elseif ( $tf_hotel_arc_selected_template == "design-2" ) {
-		include TF_TEMPLATE_PATH . 'hotel/archive/design-2.php';
-	} elseif( $tf_hotel_arc_selected_template=="design-3" && function_exists( 'is_tf_pro' ) && is_tf_pro()){
-		include TF_TEMPLATE_PATH . 'hotel/archive/design-3.php';
+	if ( $tourfic_hotel_arc_selected_template == "design-1" ) {
+		include TOURFIC_TEMPLATE_PATH . 'hotel/archive/design-1.php';
+	} elseif ( $tourfic_hotel_arc_selected_template == "design-2" ) {
+		include TOURFIC_TEMPLATE_PATH . 'hotel/archive/design-2.php';
+	} elseif ( $tourfic_hotel_arc_selected_template == "design-3" ) {
+		include TOURFIC_TEMPLATE_PATH . 'hotel/archive/design-3.php';
 	} else {
-		$template = apply_filters( 'tf_hotel_archive_legacy_template', TF_TEMPLATE_PATH . 'hotel/archive/design-legacy.php' );
-		include $template;
+		$tourfic_template = apply_filters( 'tourfic_hotel_archive_legacy_template', TOURFIC_TEMPLATE_PATH . 'hotel/archive/design-legacy.php' );
+		include $tourfic_template;
 	}
 } else {
 	?>
@@ -43,9 +43,9 @@ if ( Helper::tf_is_woo_active() ) {
 <?php
 }
 
-if(wp_is_block_theme()){
+if(tourfic_is_block_theme()){
     wp_footer();
-    block_footer_area();
+    tourfic_render_block_footer_area();
  }else{
 	get_footer('tourfic');
  }

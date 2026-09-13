@@ -5,8 +5,8 @@ defined( 'ABSPATH' ) || exit;
 use \Tourfic\Classes\Helper;
 use Tourfic\Classes\Room\Room;
 
-if ( ! class_exists( 'TF_Hotel_Rest_API' ) ) {
-	class TF_Hotel_Rest_API extends TF_Rest_API {
+if ( ! class_exists( 'Tourfic_Hotel_Rest_API' ) ) {
+	class Tourfic_Hotel_Rest_API extends Tourfic_Rest_API {
 
 		/*
 		 * instance
@@ -96,15 +96,7 @@ if ( ! class_exists( 'TF_Hotel_Rest_API' ) ) {
 		 * @return true|WP_Error
 		 */
 		public function tf_hotel_permission_callback( WP_REST_Request $request ) {
-			if ( current_user_can( 'edit_tf_hotels' ) ) {
-				return true;
-			}
-
-			return new WP_Error(
-				'rest_forbidden',
-				esc_html__( 'You are not authorized to access this endpoint.', 'tourfic' ),
-				array( 'status' => 403 )
-			);
+			return $this->tf_management_permission_callback( $request, 'edit_tf_hotels', 'edit_others_tf_hotels', 'tf_hotel' );
 		}
 
 		/*
@@ -176,7 +168,7 @@ if ( ! class_exists( 'TF_Hotel_Rest_API' ) ) {
 			if ( ! empty( $rooms ) ):
 				foreach ( $rooms as $_room ) {
 					$room       = get_post_meta( $_room->ID, 'tf_room_opt', true );
-					$pricing_by = ! empty( $room['pricing-by'] ) ? $room['pricing-by'] : 1;
+					$pricing_by = apply_filters( 'tourfic_room_pricing_mode', 1, $room );
 					if ( $pricing_by == 1 ) {
 						$price        = ! empty( $room['price'] ) ? $room['price'] : '';
 						$room_price[] = $price;
@@ -201,15 +193,14 @@ if ( ! class_exists( 'TF_Hotel_Rest_API' ) ) {
 				$room_meta       = get_post_meta( $id, 'tf_room_opt', true );
 				$room_avail_data = isset( $room_meta['avail_date'] ) && ! empty( $room_meta['avail_date'] ) ? json_decode( $room_meta['avail_date'], true ) : [];
 			} else {
-				$room_avail_data = get_option( 'tf_hotel_avail_date' );
-				delete_option( 'tf_hotel_avail_date' );
+				$room_avail_data = array();
 			}
 
 			if ( ! empty( $room_avail_data ) && is_array( $room_avail_data ) ) {
 				$room_avail_data = array_values( $room_avail_data );
 				$room_avail_data = array_map( function ( $item ) {
 					$item['editable'] = false;
-					$item['start']    = date( 'Y-m-d', strtotime( $item['check_in'] ) );
+					$item['start']    = gmdate( 'Y-m-d', strtotime( $item['check_in'] ) );
 					if ( $item['price_by'] == '1' ) {
 						$item['title'] = __( 'Price: ', 'tourfic' ) . wc_price( $item['price'] );
 					} elseif ( $item['price_by'] == '2' ) {
@@ -246,4 +237,4 @@ if ( ! class_exists( 'TF_Hotel_Rest_API' ) ) {
 	}
 }
 
-TF_Hotel_Rest_API::get_instance();
+Tourfic_Hotel_Rest_API::get_instance();

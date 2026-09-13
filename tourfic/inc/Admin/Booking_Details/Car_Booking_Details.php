@@ -12,7 +12,7 @@ class Car_Booking_Details extends \Tourfic\Core\TF_Booking_Details
         $booking_args = array(
             'post_type' => 'tf_carrental',
             'menu_title' => esc_html__('Car Booking Details', 'tourfic'),
-            'menu_slug' => 'tf_carrental_booking',
+            'menu_slug' => 'tourfic_carrental_booking',
             'capability' => 'edit_tf_carrentals',
 			'booking_type' => 'car',
             'booking_title' => esc_html__('Car', 'tourfic'),
@@ -87,7 +87,6 @@ class Car_Booking_Details extends \Tourfic\Core\TF_Booking_Details
 
 }
 
-add_filter("tf_car_booking_details_pricing_section_title_change", function() {
+add_filter("tourfic_car_booking_details_pricing_section_title_change", function() {
     return esc_html__("Car details", "tourfic");
 });
- 

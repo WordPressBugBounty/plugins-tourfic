@@ -22,12 +22,11 @@ class Room_Notice extends \Tourfic\Core\TF_Notice {
     }
 
     function set_notice_id() {
-        $this->notice_id = 'tf_dismiss_222';
+        $this->notice_id = 'tourfic_dismiss_222';
     }
 
     // Red Color: style="color:#d63638;
 
-    // License activation notice for Tourfic Pro
     function tf_plugin_admin_notice( ) { 
 		if ( get_option( $this->notice_id ) < 1 ) {
             ?>

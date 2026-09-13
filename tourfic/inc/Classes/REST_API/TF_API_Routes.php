@@ -5,14 +5,14 @@ defined( 'ABSPATH' ) || exit;
 /**
  * GET-only REST API routes for Tourfic free plugin.
  *
- * This keeps read endpoints available when Tourfic Pro is not active.
+ * This keeps the core routes available unless another component replaces them.
  */
-class TF_API_Routes {
+class Tourfic_API_Routes {
 
 	/**
 	 * Singleton instance.
 	 *
-	 * @var TF_API_Routes|null
+	 * @var Tourfic_API_Routes|null
 	 */
 	private static $instance = null;
 
@@ -33,15 +33,15 @@ class TF_API_Routes {
 
 	public function __construct() {
 		$this->api_classes = array(
-			'rest'          => TF_Rest_API::get_instance(),
-			'tour'          => TF_Tour_Rest_API::get_instance(),
-			'apartment'     => TF_Apartment_Rest_API::get_instance(),
-			'rental'        => TF_Rental_Rest_API::get_instance(),
-			'hotel'         => TF_Hotel_Rest_API::get_instance(),
-			'room'          => TF_Room_Rest_API::get_instance(),
-			'booking'       => TF_Booking_Rest_API::get_instance(),
-			'enquiry'       => TF_Enquiry_Rest_API::get_instance(),
-			'user'          => TF_User_Rest_API::get_instance(),
+			'rest'          => Tourfic_Rest_API::get_instance(),
+			'tour'          => Tourfic_Tour_Rest_API::get_instance(),
+			'apartment'     => Tourfic_Apartment_Rest_API::get_instance(),
+			'rental'        => Tourfic_Rental_Rest_API::get_instance(),
+			'hotel'         => Tourfic_Hotel_Rest_API::get_instance(),
+			'room'          => Tourfic_Room_Rest_API::get_instance(),
+			'booking'       => Tourfic_Booking_Rest_API::get_instance(),
+			'enquiry'       => Tourfic_Enquiry_Rest_API::get_instance(),
+			'user'          => Tourfic_User_Rest_API::get_instance(),
 		);
 
 		add_action( 'rest_api_init', array( $this, 'register_get_routes' ) );
@@ -73,13 +73,13 @@ class TF_API_Routes {
 		register_rest_route( 'tf/v1', '/tours', array(
 			'methods'             => 'GET',
 			'callback'            => array( $api, 'tf_get_tours' ),
-			'permission_callback' => array( $api, 'tf_permission_callback' ),
+			'permission_callback' => array( $api, 'tf_tour_permission_callback' ),
 		) );
 
 		register_rest_route( 'tf/v1', '/tour-availability', array(
 			'methods'             => 'GET',
 			'callback'            => array( $api, 'tf_get_tour_availability' ),
-			'permission_callback' => array( $api, 'tf_permission_callback' ),
+			'permission_callback' => array( $api, 'tf_tour_permission_callback' ),
 		) );
 	}
 
@@ -89,13 +89,13 @@ class TF_API_Routes {
 		register_rest_route( 'tf/v1', '/apartments', array(
 			'methods'             => 'GET',
 			'callback'            => array( $api, 'tf_get_apartments' ),
-			'permission_callback' => array( $api, 'tf_permission_callback' ),
+			'permission_callback' => array( $api, 'tf_apartment_permission_callback' ),
 		) );
 
 		register_rest_route( 'tf/v1', '/apartment-availability', array(
 			'methods'             => 'GET',
 			'callback'            => array( $api, 'tf_get_apartment_availability' ),
-			'permission_callback' => array( $api, 'tf_permission_callback' ),
+			'permission_callback' => array( $api, 'tf_apartment_permission_callback' ),
 		) );
 	}
 
@@ -105,7 +105,7 @@ class TF_API_Routes {
 		register_rest_route( 'tf/v1', '/rentals', array(
 			'methods'             => 'GET',
 			'callback'            => array( $api, 'tf_get_rentals' ),
-			'permission_callback' => array( $api, 'tf_permission_callback' ),
+			'permission_callback' => array( $api, 'tf_rental_permission_callback' ),
 		) );
 	}
 
@@ -121,7 +121,7 @@ class TF_API_Routes {
 		register_rest_route( 'tf/v1', '/hotel-room-availability', array(
 			'methods'             => 'GET',
 			'callback'            => array( $api, 'tf_get_hotel_room_availability' ),
-			'permission_callback' => array( $api, 'tf_permission_callback' ),
+			'permission_callback' => array( $this->api_classes['room'], 'tf_room_permission_callback' ),
 		) );
 	}
 
@@ -131,13 +131,13 @@ class TF_API_Routes {
 		register_rest_route( 'tf/v1', '/hotel-rooms', array(
 			'methods'             => 'GET',
 			'callback'            => array( $api, 'tf_get_hotel_rooms' ),
-			'permission_callback' => array( $api, 'tf_permission_callback' ),
+			'permission_callback' => array( $api, 'tf_room_permission_callback' ),
 		) );
 
 		register_rest_route( 'tf/v1', '/rooms', array(
 			'methods'             => 'GET',
 			'callback'            => array( $api, 'tf_get_rooms' ),
-			'permission_callback' => array( $api, 'tf_permission_callback' ),
+			'permission_callback' => array( $api, 'tf_room_permission_callback' ),
 		) );
 	}
 
@@ -239,13 +239,13 @@ class TF_API_Routes {
 		register_rest_route( 'tf/v1', '/user-bookings', array(
 			'methods'             => 'GET',
 			'callback'            => array( $api, 'tf_user_bookings' ),
-			'permission_callback' => array( $api, 'tf_permission_callback' ),
+			'permission_callback' => array( $api, 'tf_user_self_permission_callback' ),
 		) );
 
 		register_rest_route( 'tf/v1', '/user-wishlist', array(
 			'methods'             => 'GET',
 			'callback'            => array( $api, 'tf_user_wishlist' ),
-			'permission_callback' => array( $api, 'tf_permission_callback' ),
+			'permission_callback' => array( $api, 'tf_user_self_permission_callback' ),
 		) );
 	}
 }

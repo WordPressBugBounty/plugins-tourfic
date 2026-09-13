@@ -6,13 +6,39 @@ defined( 'ABSPATH' ) || exit;
 
 trait Database {
 
-	function create_enquiry_database_table() {
+	/**
+	 * Upgrade the Tourfic tables when their schema version changes.
+	 */
+	public function tourfic_maybe_upgrade_database() {
+		if ( TOURFIC_DATABASE_VERSION === get_option( 'tourfic_database_version' ) ) {
+			return;
+		}
+
+		$this->tourfic_install_database();
+	}
+
+	/**
+	 * Install or update all Tourfic database tables.
+	 */
+	public function tourfic_install_database() {
+		require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+
+		$this->tourfic_create_enquiry_database_table();
+		$this->tourfic_create_order_database_table();
+
+		wp_clear_scheduled_hook( 'tf_everydate_cron_job' );
+		update_option( 'tourfic_database_version', TOURFIC_DATABASE_VERSION, false );
+	}
+
+	/**
+	 * Create or update the enquiry table.
+	 */
+	private function tourfic_create_enquiry_database_table() {
 		global $wpdb;
 		$table_name      = $wpdb->prefix . 'tf_enquiry_data';
 		$charset_collate = $wpdb->get_charset_collate();
-		require_once( ABSPATH . 'wp-admin/includes/upgrade.php' );
 
-		$sql = "CREATE TABLE IF NOT EXISTS $table_name (
+		$sql = "CREATE TABLE $table_name (
         id bigint(20) NOT NULL AUTO_INCREMENT,
         post_id bigint(20) NOT NULL,
         post_type varchar(255),
@@ -23,7 +49,7 @@ trait Database {
         author_roles varchar(255),
 		enquiry_status varchar(255) NOT NULL DEFAULT 'read',
 		server_data varchar(255) NOT NULL DEFAULT '',
-		reply_data LONGTEXT NOT NULL DEFAULT '',
+		reply_data LONGTEXT NULL,
         created_at datetime NOT NULL,
         PRIMARY KEY  (id)
     ) $charset_collate;";
@@ -31,13 +57,15 @@ trait Database {
 
 	}
 
-	function tf_order_table_create(){
+	/**
+	 * Create or update the order table.
+	 */
+	private function tourfic_create_order_database_table() {
 
 		global $wpdb;
 		$order_table_name = $wpdb->prefix.'tf_order_data';
 		$charset_collate = $wpdb->get_charset_collate();
-		require_once( ABSPATH . 'wp-admin/includes/upgrade.php' );
-		$sql = "CREATE TABLE IF NOT EXISTS $order_table_name (
+		$sql = "CREATE TABLE $order_table_name (
 		 id bigint(20) NOT NULL AUTO_INCREMENT,
 		 order_id bigint(20) NOT NULL,
 		 post_id bigint(20) NOT NULL,
@@ -58,31 +86,5 @@ trait Database {
 		 PRIMARY KEY  (id)
 	 ) $charset_collate;";
 		dbDelta( $sql );
-	}
-
-	function tf_admin_table_alter_order_data() {
-		global $wpdb;
-		$order_table_name = $wpdb->prefix . 'tf_order_data';
-		require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
-
-		// Check if the 'checkinout' & 'checkinout_by' column exists before attempting to add it
-		if ( !$wpdb->get_var("SHOW COLUMNS FROM {$wpdb->prefix}tf_order_data LIKE 'checkinout'") &&
-		     !$wpdb->get_var("SHOW COLUMNS FROM {$wpdb->prefix}tf_order_data LIKE 'checkinout_by'") ) {
-			$wpdb->query($wpdb->prepare(
-				"ALTER TABLE %s 
-                ADD COLUMN checkinout varchar(255) NULL,
-                ADD COLUMN checkinout_by varchar(255) NULL",
-				$order_table_name
-			));
-		}
-
-		// Check if the 'room_id' column exists before attempting to add it
-		if ( !$wpdb->get_var("SHOW COLUMNS FROM {$wpdb->prefix}tf_order_data LIKE 'room_id'") ) {
-			$wpdb->query($wpdb->prepare(
-				"ALTER TABLE %s 
-                ADD COLUMN room_id varchar(255) NULL",
-				$order_table_name
-			));
-		}
 	}
 }

@@ -6,16 +6,8 @@ use \Tourfic\Classes\Helper;
 use \Tourfic\App\TF_Review;
 use \Tourfic\Classes\Hotel\Hotel;
 
-$tf_booking_type = '1';
-$tf_hide_booking_form = '';
-$tf_ext_booking_type = '';
-$tf_ext_booking_code = '';
-if ( function_exists( 'is_tf_pro' ) && is_tf_pro() ) {
-	$tf_booking_type      = ! empty( $meta['booking-by'] ) ? $meta['booking-by'] : 1;
-	$tf_hide_booking_form = ! empty( $meta['hide_booking_form'] ) ? $meta['hide_booking_form'] : '';
-	$tf_ext_booking_type = ! empty( $meta['external-booking-type'] ) ? $meta['external-booking-type'] : '1';
-    $tf_ext_booking_code = !empty( $meta['booking-code'] ) ? $meta['booking-code'] : '';
-}
+$tourfic_booking_type      = ! empty( $tourfic_meta['booking-by'] ) ? $tourfic_meta['booking-by'] : 1;
+$tourfic_hide_booking_form = ! empty( $tourfic_meta['hide_booking_form'] ) ? $tourfic_meta['hide_booking_form'] : '';
 ?>
 <div class="tf-single-template__one">
     <div class="tf-tour-single">
@@ -52,8 +44,8 @@ if ( function_exists( 'is_tf_pro' ) && is_tf_pro() ) {
                             
                             <!-- Hotel Single Widget Hook are - start -->
                             <div class="tf-hotel-single-custom-widget-wrap">
-                                <?php do_action( "tf_hotel_single_widgets" ); ?>
-                                <?php do_action( "tf_single_hotel_sidebar_area_with_args", $post_id ); ?>
+                                <?php do_action( "tourfic_hotel_single_widgets" ); ?>
+                                <?php do_action( "tourfic_single_hotel_sidebar_area_with_args", $tourfic_post_id ); ?>
                             </div>
                             <!-- Hotel Single Widget Hook are - end -->
                         </div>
@@ -61,26 +53,26 @@ if ( function_exists( 'is_tf_pro' ) && is_tf_pro() ) {
                 </div>
                
                 <?php 
-                if(file_exists(TF_TEMPLATE_PART_PATH . 'hotel/design-1/places.php')) {
-                    include TF_TEMPLATE_PART_PATH . 'hotel/design-1/places.php';
+                if(file_exists(TOURFIC_TEMPLATE_PART_PATH . 'hotel/design-1/places.php')) {
+                    include TOURFIC_TEMPLATE_PART_PATH . 'hotel/design-1/places.php';
                 }
                 ?>
 
                 <?php 
                 if( !empty(Helper::tf_data_types(Helper::tfopt( 'tf-template' ))['single-hotel-layout']) ){
-                    foreach(Helper::tf_data_types(Helper::tfopt( 'tf-template' ))['single-hotel-layout'] as $section){
-                        if( !empty($section['status']) && $section['status']=="1" && !empty($section['slug']) ){
-                            include TF_TEMPLATE_PART_PATH . 'hotel/design-1/'.$section['slug'].'.php';
+                    foreach(Helper::tf_data_types(Helper::tfopt( 'tf-template' ))['single-hotel-layout'] as $tourfic_section){
+                        if( !empty($tourfic_section['status']) && $tourfic_section['status']=="1" && !empty($tourfic_section['slug']) ){
+                            include TOURFIC_TEMPLATE_PART_PATH . 'hotel/design-1/'.$tourfic_section['slug'].'.php';
                         }
                     }
                 }else{
-                    include TF_TEMPLATE_PART_PATH . 'hotel/design-1/description.php';
-                    include TF_TEMPLATE_PART_PATH . 'hotel/design-1/features.php';
-                    include TF_TEMPLATE_PART_PATH . 'hotel/design-1/rooms.php';
-                    include TF_TEMPLATE_PART_PATH . 'hotel/design-1/facilities.php';
-                    include TF_TEMPLATE_PART_PATH . 'hotel/design-1/faq.php';
-                    include TF_TEMPLATE_PART_PATH . 'hotel/design-1/review.php';
-                    include TF_TEMPLATE_PART_PATH . 'hotel/design-1/trams-condition.php';
+                    include TOURFIC_TEMPLATE_PART_PATH . 'hotel/design-1/description.php';
+                    include TOURFIC_TEMPLATE_PART_PATH . 'hotel/design-1/features.php';
+                    include TOURFIC_TEMPLATE_PART_PATH . 'hotel/design-1/rooms.php';
+                    include TOURFIC_TEMPLATE_PART_PATH . 'hotel/design-1/facilities.php';
+                    include TOURFIC_TEMPLATE_PART_PATH . 'hotel/design-1/faq.php';
+                    include TOURFIC_TEMPLATE_PART_PATH . 'hotel/design-1/review.php';
+                    include TOURFIC_TEMPLATE_PART_PATH . 'hotel/design-1/trams-condition.php';
                 }
                 ?>
             </div>

@@ -9,8 +9,8 @@ use Tourfic\Classes\Helper;
  * @author AbuHena
  * @since 1.7.0
  */
-if(!function_exists('tf_tour_meals')){
-	function tf_tour_meals() {
+if(!function_exists('tourfic_tour_meals')){
+	function tourfic_tour_meals() {
 		$itinerary_options = ! empty( Helper::tf_data_types( Helper::tfopt( 'itinerary-builder-setings' ) ) ) ? Helper::tf_data_types( Helper::tfopt( 'itinerary-builder-setings' ) ) : '';
 		$all_meals         = [];
 		if ( ! empty( $itinerary_options['meals'] ) && is_array( $itinerary_options['meals'] ) ) {
@@ -24,7 +24,7 @@ if(!function_exists('tf_tour_meals')){
 	}
 }
 
-TF_Metabox::metabox( 'tf_tours_opt', array(
+Tourfic_Metabox::metabox( 'tf_tours_opt', array(
 	'title'     => esc_html__( 'Tour Settings', 'tourfic' ),
 	'post_type' => 'tf_tours',
 	'sections'  => array(
@@ -73,17 +73,17 @@ TF_Metabox::metabox( 'tf_tours_opt', array(
 					'options'  => array(
 						'design-1' => array(
 							'title' => esc_html__('Design 1', 'tourfic'),
-							'url'   => TF_ASSETS_ADMIN_URL . "images/template/preview-single-design-1.png",
+							'url'   => TOURFIC_ASSETS_ADMIN_URL . "images/template/preview-single-design-1.png",
 							'preview_link' => esc_url('https://tourfic.com/preview/tours/amplified-nz-tour/'),
 						),
 						'design-2' => array(
 							'title' => esc_html__('Design 2', 'tourfic'),
-							'url'   => TF_ASSETS_ADMIN_URL . "images/template/preview-single-design-2.png",
+							'url'   => TOURFIC_ASSETS_ADMIN_URL . "images/template/preview-single-design-2.png",
 							'preview_link' => esc_url('https://tourfic.com/preview/tours/ancient-trails-of-japan/'),
 						),
 						'default'  => array(
 							'title' => esc_html__('Legacy', 'tourfic'),
-							'url'   => TF_ASSETS_ADMIN_URL . "images/template/preview-single-default.png",
+							'url'   => TOURFIC_ASSETS_ADMIN_URL . "images/template/preview-single-default.png",
 							'preview_link' => esc_url('https://tourfic.com/preview/tours/magical-russia/'),
 						),
 					),
@@ -126,7 +126,7 @@ TF_Metabox::metabox( 'tf_tours_opt', array(
 					'type'     => 'map',
 					'label'    => esc_html__( 'Dynamic Location Search', 'tourfic' ),
 					/* translators: %s is the link to the Google Maps API Key settings */
-					'subtitle' => sprintf( wp_kses_post(__( 'Enter the specific address you wish to use for the tour and select the correct option from the suggested addresses. This will be used to hyperlink address and display the address on the front-end map. <strong>Google Maps is also available for location. Simply set up your <a href="%s" target="_blank">Google Maps API Key</a></strong>', 'tourfic' )), esc_url( admin_url('admin.php?page=tf_settings#tab=map_settings') ) ),
+					'subtitle' => sprintf( wp_kses_post(__( 'Enter the specific address you wish to use for the tour and select the correct option from the suggested addresses. This will be used to hyperlink address and display the address on the front-end map. <strong>Google Maps is also available for location. Simply set up your <a href="%s" target="_blank">Google Maps API Key</a></strong>', 'tourfic' )), esc_url( admin_url('admin.php?page=tourfic_settings#tab=map_settings') ) ),
 					'height'   => '250px',
 					'settings' => array(
 						'scrollWheelZoom' => true,
@@ -275,14 +275,6 @@ TF_Metabox::metabox( 'tf_tours_opt', array(
 					'default'    => 'none',
 					'inline_add_new' => true
 				),
-				array(
-					'id'    => 'tf-pro-notice',
-					'type'  => 'notice',
-					'class' => 'tf-pro-notice',
-					'notice' => 'info',
-					'icon' => 'ri-information-fill',
-					'content' => wp_kses_post(__( 'We\'re offering some extra features like <b>tour type</b> in our pro plan. <a href="https://tourfic.com/" target="_blank"> Upgrade to our pro package today to take advantage of these fantastic options!</a>', 'tourfic' ) ),
-				),
 			),
 		),
 		// Contact Info
@@ -334,29 +326,6 @@ TF_Metabox::metabox( 'tf_tours_opt', array(
 				),
 			),
 		),
-		// //  Tour Extra
-		'tour_extra'           => array(
-			'title'  => esc_html__( 'Tour Extras', 'tourfic' ),
-			'icon'   => 'fa-solid fa-route',
-			'fields' => array(
-				array(
-					'id'    => 'tour-extras-heading',
-					'type'  => 'heading',
-					'title' => esc_html__( 'Offer Tour Extras', 'tourfic' ),
-					'content' => esc_html__( 'If you wish to provide additional services that are not included in your current tour package, you can list them here.', 'tourfic' ),
-					'docs' => esc_url('https://themefic.com/docs/tourfic/tours/tour-extra/')
-				),
-				array(
-					'id'    => 'tf-pro-notice',
-					'type'  => 'notice',
-					'class' => 'tf-pro-notice',
-					'notice' => 'info',
-					'icon' => 'ri-information-fill',
-					'content' => wp_kses_post(__( 'Are you interested in enriching your tour offerings with exciting services? With our Pro package, you can easily add exciting activities such as paragliding, along with meals and hotel accommodations, through our <b>Tour Extra Services</b>. This feature allows you to customize and expand your services as much as you want, providing a better experience for your customers. <a href="https://tourfic.com/" target="_blank">Upgrade to our Pro package today to take advantage of these fantastic options!</a>', 'tourfic' ) ),
-				),
-			),
-		),
-
 		// // Price
 		'price'                => array(
 			'title'  => esc_html__( 'Pricing', 'tourfic' ),
@@ -475,14 +444,6 @@ TF_Metabox::metabox( 'tf_tours_opt', array(
 						'fixed'   => esc_html__( 'Fixed', 'tourfic' ),
 					),
 				),
-				array(
-					'id'    => 'tf-pro-notice',
-					'type'  => 'notice',
-					'class' => 'tf-pro-notice',
-					'notice' => 'info',
-					'icon' => 'ri-information-fill',
-					'content' => wp_kses_post(__( 'Are you interested in collecting upfront or partial payments for your tours? Our <b>deposit option</b> allows you to set an upfront payment, either as a <b>percentage</b> or a <b>fixed</b> amount, which travelers can pay at the time of booking. Our pro package also include <b>group pricing</b> for a group of travelers. <a href="https://tourfic.com/" target="_blank">Upgrade to our Pro package today to take advantage of this fantastic option!</a>', 'tourfic' ) ),
-				),
 			),
 		),
 
@@ -499,30 +460,8 @@ TF_Metabox::metabox( 'tf_tours_opt', array(
 					'docs' => esc_url('https://themefic.com/docs/tourfic/tours/tour-availability/')
 				),
 				array(
-					'id'       => 'type',
-					'type'     => 'select',
-					'label'    => esc_html__( 'How often does this Tour run?', 'tourfic' ),
-					'description' => esc_html__( "Continuous: runs regularly (e.g., daily whale watching). Fixed: Specific dates only (e.g., New Year's cruise)", 'tourfic' ),
-					'class'    => 'tour-type',
-					'options'  => [
-						'continuous' => esc_html__( 'Continuous', 'tourfic' ),
-					],
-					'default'  => 'continuous',
-					'attributes' => array(
-						'class' => 'tf_tour_avail_type',
-					),
-				),
-				array(
-					'id'         => 'tour_availability',
-					'type'       => 'tourAvailabilityCal',
-				),
-				array(
-					'id'    => 'tf-pro-notice',
-					'type'  => 'notice',
-					'class' => 'tf-pro-notice',
-					'notice' => 'info',
-					'icon' => 'ri-information-fill',
-					'content' => wp_kses_post(__( 'Are you interested in package pricing, per group pricing and bulk add? Our <b>bulk add</b> allows you to set multiple data using week, months, years, etc. <a href="https://tourfic.com/" target="_blank">Upgrade to our Pro package today to take advantage of this fantastic option!</a>', 'tourfic' ) ),
+					'id'   => 'tour_availability',
+					'type' => 'tourAvailabilityCal',
 				),
 			),
 		),
@@ -564,28 +503,12 @@ TF_Metabox::metabox( 'tf_tours_opt', array(
 					'subtitle'  => esc_html__( 'With this option, you can change the text of the booking form button for this tour', 'tourfic' ),
 					'default'    => esc_html__('Book Now', 'tourfic'),
 				),
-				array(
-					'id'    => 'tf-pro-notice',
-					'type'  => 'notice',
-					'class' => 'tf-pro-notice',
-					'notice' => 'info',
-					'icon' => 'ri-information-fill',
-					'content' => wp_kses_post(__( 'We\'re offering some extra features like <b>minimum days for booking</b>, <b>enable traveler info</b>, <b>external booking</b>, <b>booking without payment</b>, <b>taxable tour</b>, <b>tax class for Woocommerce</b> in our pro plan. <a href="https://tourfic.com/" target="_blank">Upgrade to our pro package today to take advantage of these fantastic options!</a>', 'tourfic' ) ),
-				),
 
 				array(
 					'id'    => 'tour-cancellation-heading',
 					'type'  => 'heading',
 					'title' => esc_html__( 'Cancellation Condition', 'tourfic' ),
 					'content' => esc_html__( 'Define and customize booking cancellation policies for your offerings. This section allows you to set different cancellation rules, such as timeframes for free cancellations, partial refunds, or no refunds.', 'tourfic' ),
-				),
-				array(
-					'id'    => 'tf-pro-notice',
-					'type'  => 'notice',
-					'class' => 'tf-pro-notice',
-					'notice' => 'info',
-					'icon' => 'ri-information-fill',
-					'content' => wp_kses_post(__( 'We\'re offering some extra features like <b>booking cancellation</b> in our pro plan. <a href="https://tourfic.com/" target="_blank">Upgrade to our pro package today to take advantage of these fantastic options!</a>', 'tourfic' )),
 				),
 			),
 		),
@@ -714,14 +637,6 @@ TF_Metabox::metabox( 'tf_tours_opt', array(
 					'type'    => 'heading',
 					'title' => esc_html__( 'Itinerary Downloader Settings', 'tourfic' ),
 					'description' => esc_html__( 'These are some additional settings specific to the Itinerary PDF downloader. Note that some of these settings may override the global settings. ', 'tourfic' ),
-				),
-				array(
-					'id'    => 'tf-pro-notice',
-					'type'  => 'notice',
-					'class' => 'tf-pro-notice',
-					'notice' => 'info',
-					'icon' => 'ri-information-fill',
-					'content' => wp_kses_post(__( 'We\'re offering some advanced itinerary features inside every repeater like <b>duration</b>, <b>itinerary gallery</b>, <b>custom itinerary options</b>, <b>meals</b>, <b>location</b>, <b>altitude</b>. Also our pro package includes a feature that allows customers to <b>download</b> the detailed itinerary directly from the frontend as a <b>PDF</b>. This enhancement is perfect for travelers offline access or who wish to share their itinerary with others. <a href="https://tourfic.com/" target="_blank">Upgrade to our pro package today to take advantage of these fantastic option!</a>', 'tourfic') ),
 				),
 			),
 		),

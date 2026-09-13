@@ -5,8 +5,8 @@ use Tourfic\Classes\Helper;
 
 defined( 'ABSPATH' ) || exit;
 
-if ( ! class_exists( 'TF_imageselect' ) ) {
-	class TF_imageselect extends TF_Fields {
+if ( ! class_exists( 'Tourfic_imageselect' ) ) {
+	class Tourfic_imageselect extends Tourfic_Fields {
 
 		public function __construct( $field, $value = '', $settings_id = '', $parent_field = '' ) {
 			parent::__construct( $field, $value, $settings_id, $parent_field );
@@ -27,18 +27,15 @@ if ( ! class_exists( 'TF_imageselect' ) ) {
 					}
                     $disable_checked = !empty($value['disabled']) ? ' disabled' : '';
 					?>
-                    <li class="<?php echo isset( $value['is_pro'] ) && $value['is_pro'] ? 'tf-pro-item' : '' ?>">
-                        <label class="tf-image-checkbox">
-							<?php if ( isset( $value['is_pro'] ) && $value['is_pro'] ): ?>
-                                <span class="tf-image-checkbox-pro-badge"><?php echo esc_html__('Pro', 'tourfic') ?></span>
-                            <?php else : 
-								if($multiple){
-									echo '<input type="checkbox" id="' . esc_attr( $this->field_name() ) . '[' . esc_attr( $key ) . ']" name="' . esc_attr( $this->field_name() ) . '[]" data-depend-id="' . esc_attr( $this->field['id'] ) . '' . esc_attr( $this->parent_field ) . '" value="' . esc_attr( $key ) . '" ' . esc_attr( $checked ) . ' ' . esc_attr($disable_checked). ' '. wp_kses_post( $this->field_attributes() ) . '/>';
-								} else {
-									echo '<input type="radio" id="' . esc_attr( $this->field_name() ) . '[' . esc_attr( $key ) . ']" name="' . esc_attr( $this->field_name() ) . '" data-depend-id="' . esc_attr( $this->field['id'] ) . '' . esc_attr( $this->parent_field ) . '" value="' . esc_attr( $key ) . '" ' . esc_attr( $checked ) . ' ' . esc_attr($disable_checked). ' '. wp_kses_post( $this->field_attributes() ) . '/>';
-								}
-								?>
-							<?php endif; ?>
+					<li>
+						<label class="tf-image-checkbox">
+							<?php
+							if ( $multiple ) {
+								echo '<input type="checkbox" id="' . esc_attr( $this->field_name() ) . '[' . esc_attr( $key ) . ']" name="' . esc_attr( $this->field_name() ) . '[]" data-depend-id="' . esc_attr( $this->field['id'] ) . '' . esc_attr( $this->parent_field ) . '" value="' . esc_attr( $key ) . '" ' . esc_attr( $checked ) . ' ' . esc_attr( $disable_checked ) . ' ' . wp_kses_post( $this->field_attributes() ) . '/>';
+							} else {
+								echo '<input type="radio" id="' . esc_attr( $this->field_name() ) . '[' . esc_attr( $key ) . ']" name="' . esc_attr( $this->field_name() ) . '" data-depend-id="' . esc_attr( $this->field['id'] ) . '' . esc_attr( $this->parent_field ) . '" value="' . esc_attr( $key ) . '" ' . esc_attr( $checked ) . ' ' . esc_attr( $disable_checked ) . ' ' . wp_kses_post( $this->field_attributes() ) . '/>';
+							}
+							?>
 
                             <img 
 								src="<?php echo esc_url( $value['url'] ); ?>" 

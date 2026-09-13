@@ -45,29 +45,21 @@ class Booking_Form {
 	}
 
 	private static function tf_hotel_booking_form( $post_id, $settings ) {
-		$style                = ! empty( $settings['booking_form_style'] ) ? $settings['booking_form_style'] : 'style1';
-		$meta                 = get_post_meta( $post_id, 'tf_hotels_opt', true );
-        $tf_booking_type = '1';
-        $tf_hide_booking_form = $tf_ext_booking_type = $tf_ext_booking_code = '';
-        if ( function_exists( 'is_tf_pro' ) && is_tf_pro() ) {
-            $tf_booking_type      = ! empty( $meta['booking-by'] ) ? $meta['booking-by'] : 1;
-            $tf_hide_booking_form = ! empty( $meta['hide_booking_form'] ) ? $meta['hide_booking_form'] : '';
-            $tf_ext_booking_type = ! empty( $meta['external-booking-type'] ) ? $meta['external-booking-type'] : '1';
-            $tf_ext_booking_code = !empty( $meta['booking-code'] ) ? $meta['booking-code'] : '';
-        }
-        $wrapper = ! empty( $settings['wrapper'] ) ? $settings['wrapper'] : 'yes';
+		$style                         = ! empty( $settings['booking_form_style'] ) ? $settings['booking_form_style'] : 'style1';
+		$meta                          = get_post_meta( $post_id, 'tf_hotels_opt', true );
+		$tf_booking_type               = ! empty( $meta['booking-by'] ) ? $meta['booking-by'] : 1;
+		$tf_booking_url                = ! empty( $meta['booking-url'] ) ? esc_url( $meta['booking-url'] ) : '';
+		$tf_hide_booking_form          = ! empty( $meta['hide_booking_form'] ) ? $meta['hide_booking_form'] : '';
+		$tf_has_external_booking_url   = '2' === (string) $tf_booking_type && '' !== $tf_booking_url;
+		$tf_show_internal_booking_form = ! $tf_has_external_booking_url || '1' !== (string) $tf_hide_booking_form;
+		$wrapper                       = ! empty( $settings['wrapper'] ) ? $settings['wrapper'] : 'yes';
 
 		if ( 'style1' === $style ) {
 			?>
 			<?php echo 'yes' === $wrapper ? '<div class="tf-single-hotel-booking-form__style-1 tf-single-template__one">' : ''; ?>
-				<?php if ( ( $tf_booking_type == 2 && $tf_hide_booking_form !== '1' && $tf_ext_booking_type == 1 ) || $tf_booking_type == 1 || $tf_booking_type == 3 ) : ?>
+				<?php if ( $tf_show_internal_booking_form ) : ?>
 					<div class="tf-tour-booking-box tf-box">
 						<?php Hotel::tf_hotel_sidebar_booking_form( '', '', 'design-1' ); ?>
-					</div>
-				<?php endif; ?>
-				<?php if ( ! empty( $tf_ext_booking_code ) && $tf_ext_booking_type == 2 ) : ?>
-					<div id="tf-external-booking-embaded-form" class="tf-tour-booking-box tf-box">
-						<?php echo wp_kses( $tf_ext_booking_code, Helper::tf_custom_wp_kses_allow_tags() ); ?>
 					</div>
 				<?php endif; ?>
 			<?php echo 'yes' === $wrapper ? '</div>' : ''; ?>
@@ -77,14 +69,9 @@ class Booking_Form {
 			<?php echo 'yes' === $wrapper ? '<div class="tf-single-hotel-booking-form__style-2 tf-single-template__two">' : ''; ?>
 				<div id="room-availability">
 					<span id="availability" class="tf-modify-search-btn"><?php esc_html_e( 'Modify search', 'tourfic' ); ?></span>
-					<?php if ( ( $tf_booking_type == 2 && $tf_hide_booking_form !== '1' && $tf_ext_booking_type == 1 ) || $tf_booking_type == 1 || $tf_booking_type == 3 ) : ?>
+					<?php if ( $tf_show_internal_booking_form ) : ?>
 						<div class="tf-booking-form-wrapper">
 							<?php Hotel::tf_hotel_sidebar_booking_form( '', '', 'design-2' ); ?>
-						</div>
-					<?php endif; ?>
-					<?php if ( $tf_booking_type == 2 && $tf_ext_booking_type == 2 && ! empty( $tf_ext_booking_code ) ) : ?>
-						<div id="tf-external-booking-embaded-form" class="tf-booking-form-wrapper">
-							<?php echo wp_kses( $tf_ext_booking_code, Helper::tf_custom_wp_kses_allow_tags() ); ?>
 						</div>
 					<?php endif; ?>
 				</div>
@@ -93,14 +80,9 @@ class Booking_Form {
 		} elseif ( 'style3' === $style ) {
 			?>
 			<?php echo 'yes' === $wrapper ? '<div class="tf-single-hotel-booking-form__style-3 tf-single-template__legacy">' : ''; ?>
-				<?php if ( ( $tf_booking_type == 2 && $tf_hide_booking_form !== '1' && $tf_ext_booking_type == 1 ) || $tf_booking_type == 1 || $tf_booking_type == 3 ) : ?>
+				<?php if ( $tf_show_internal_booking_form ) : ?>
 					<div class="tf-hero-booking">
 						<?php Hotel::tf_hotel_sidebar_booking_form( '', '', 'default' ); ?>
-					</div>
-				<?php endif; ?>
-				<?php if ( $tf_booking_type == 2 && $tf_ext_booking_type == 2 && ! empty( $tf_ext_booking_code ) ) : ?>
-					<div id="tf-external-booking-embaded-form" class="tf-hero-booking">
-						<?php echo wp_kses( $tf_ext_booking_code, Helper::tf_custom_wp_kses_allow_tags() ); ?>
 					</div>
 				<?php endif; ?>
 			<?php echo 'yes' === $wrapper ? '</div>' : ''; ?>
@@ -110,9 +92,10 @@ class Booking_Form {
 
 	private static function tf_room_booking_form( $post_id, $settings ) {
         $meta = get_post_meta( get_the_ID(), 'tf_room_opt', true );
-        $pricing_by = ! empty( $meta["pricing-by"] ) ? $meta["pricing-by"] : 1;
+        $pricing_by = apply_filters( 'tourfic_room_pricing_mode', 1, $meta );
 		$style       = ! empty( $settings['booking_form_style'] ) ? $settings['booking_form_style'] : 'style1';
-		$room_option = ! empty( $_GET['room-option'] ) ? sanitize_text_field( wp_unslash( $_GET['room-option'] ) ) : '';
+		$search_request = tourfic_get_public_search_request();
+		$room_option = isset( $search_request['room-option'] ) ? $search_request['room-option'] : '';
         $wrapper     = ! empty( $settings['wrapper'] ) ? $settings['wrapper'] : 'yes';
 
 		if ( 'style1' === $style ) {
@@ -130,28 +113,25 @@ class Booking_Form {
 	}
 
 	private static function tf_tour_booking_form( $post_id, $settings ) {
+		$search_request                 = tourfic_get_public_search_request();
 		$style                          = ! empty( $settings['booking_form_style'] ) ? $settings['booking_form_style'] : 'style1';
 		$meta                           = get_post_meta( $post_id, 'tf_tours_opt', true );
 		$avail_prices                   = tourPricing::instance( $post_id )->get_avail_price();
 		$disable_adult                  = ! empty( $meta['disable_adult_price'] ) ? $meta['disable_adult_price'] : false;
 		$disable_child                  = ! empty( $meta['disable_child_price'] ) ? $meta['disable_child_price'] : false;
 		$tf_tour_single_book_now_text  = isset( $meta['single_tour_booking_form_button_text'] ) && ! empty( $meta['single_tour_booking_form_button_text'] ) ? stripslashes( sanitize_text_field( $meta['single_tour_booking_form_button_text'] ) ) : esc_html__( 'Book Now', 'tourfic' );
-		$adults                        = ! empty( $_GET['adults'] ) ? sanitize_text_field( wp_unslash( $_GET['adults'] ) ) : 1;
-		$children                      = ! empty( $_GET['children'] ) ? sanitize_text_field( wp_unslash( $_GET['children'] ) ) : 0;
-		$infant                        = ! empty( $_GET['infant'] ) ? sanitize_text_field( wp_unslash( $_GET['infant'] ) ) : 0;
-		$tour_date                     = ! empty( $_GET['tour_date'] ) ? sanitize_text_field( wp_unslash( $_GET['tour_date'] ) ) : '';
+		$adults                        = isset( $search_request['adults'] ) ? $search_request['adults'] : 1;
+		$children                      = isset( $search_request['children'] ) ? $search_request['children'] : 0;
+		$infant                        = isset( $search_request['infant'] ) ? $search_request['infant'] : 0;
+		$tour_date                     = isset( $search_request['tour_date'] ) ? $search_request['tour_date'] : '';
         $wrapper                        = ! empty( $settings['wrapper'] ) ? $settings['wrapper'] : 'yes';
 
-		$tf_booking_type = '1';
-        $tf_booking_url  = $tf_booking_query_url = $tf_booking_attribute = $tf_hide_booking_form = $tf_hide_price = '';
-        if ( function_exists( 'is_tf_pro' ) && is_tf_pro() ) {
-            $tf_booking_type      = ! empty( $meta['booking-by'] ) ? $meta['booking-by'] : 1;
-            $tf_booking_url       = ! empty( $meta['booking-url'] ) ? esc_url( $meta['booking-url'] ) : '';
-            $tf_booking_query_url = ! empty( $meta['booking-query'] ) ? $meta['booking-query'] : 'adult={adult}&child={child}&infant={infant}';
-            $tf_booking_attribute = ! empty( $meta['booking-attribute'] ) ? $meta['booking-attribute'] : '';
-            $tf_hide_booking_form = ! empty( $meta['hide_booking_form'] ) ? $meta['hide_booking_form'] : '';
-            $tf_hide_price        = ! empty( $meta['hide_price'] ) ? $meta['hide_price'] : '';
-        }
+		$tf_booking_type      = ! empty( $meta['booking-by'] ) ? $meta['booking-by'] : 1;
+		$tf_booking_url       = ! empty( $meta['booking-url'] ) ? esc_url( $meta['booking-url'] ) : '';
+		$tf_booking_query_url = ! empty( $meta['booking-query'] ) ? $meta['booking-query'] : 'adult={adult}&child={child}&infant={infant}';
+		$tf_booking_attribute = ! empty( $meta['booking-attribute'] ) ? $meta['booking-attribute'] : '';
+		$tf_hide_booking_form = ! empty( $meta['hide_booking_form'] ) ? $meta['hide_booking_form'] : '';
+		$tf_hide_price        = ! empty( $meta['hide_price'] ) ? $meta['hide_price'] : '';
         if ( 2 == $tf_booking_type && ! empty( $tf_booking_url ) ) {
             $external_search_info = array(
                 '{adult}'        => ! empty( $adults ) ? $adults : 1,
@@ -276,7 +256,7 @@ class Booking_Form {
 
 				<div id="tour_room_details_loader">
 					<div id="tour-room-details-loader-img">
-						<img src="<?php echo esc_url( TF_ASSETS_APP_URL ); ?>images/loader.gif" alt="">
+						<img src="<?php echo esc_url( TOURFIC_ASSETS_APP_URL ); ?>images/loader.gif" alt="">
 					</div>
 				</div>
 			<?php echo 'yes' === $wrapper ? '</div>' : ''; ?>
@@ -350,17 +330,24 @@ class Booking_Form {
 	}
 
 	private static function tf_car_booking_form( $post_id, $settings ) {
+		$search_request                  = tourfic_get_public_search_request();
 		$meta                            = get_post_meta( $post_id, 'tf_carrental_opt', true );
-		$car_allow_deposit               = ! empty( $meta['allow_deposit'] ) ? $meta['allow_deposit'] : '';
+		$car_allow_deposit               = apply_filters( 'tourfic_allow_deposit_feature', false, $meta );
 		$car_deposit_type                = ! empty( $meta['deposit_type'] ) ? $meta['deposit_type'] : 'none';
 		$car_deposit_amount              = ! empty( $meta['deposit_amount'] ) ? $meta['deposit_amount'] : '';
 		$car_booking_by                  = ! empty( $meta['booking-by'] ) ? $meta['booking-by'] : '1';
 		$car_instructions_section_status = ! empty( $meta['instructions_section'] ) ? $meta['instructions_section'] : '';
 		$car_instructions_content        = ! empty( $meta['instructions_content'] ) ? $meta['instructions_content'] : '';
-		$car_extra_sec_title             = ! empty( $meta['car_extra_sec_title'] ) ? $meta['car_extra_sec_title'] : '';
-		$car_extras                      = ! empty( $meta['extras'] ) ? $meta['extras'] : '';
-		$tf_pickup_date                  = ! empty( $_GET['pickup_date'] ) ? sanitize_text_field( wp_unslash( $_GET['pickup_date'] ) ) : '';
-		$tf_dropoff_date                 = ! empty( $_GET['dropoff_date'] ) ? sanitize_text_field( wp_unslash( $_GET['dropoff_date'] ) ) : '';
+		$car_extra_sec_title             = apply_filters( 'tourfic_car_extra_sec_title', '', $post_id, $meta );
+		$car_extras                      = apply_filters( 'tourfic_car_extra_meta', null, $post_id, $meta );
+		$tf_pickup_date                  = isset( $search_request['pickup_date'] ) ? $search_request['pickup_date'] : '';
+		$tf_dropoff_date                 = isset( $search_request['dropoff_date'] ) ? $search_request['dropoff_date'] : '';
+		$pickup_location                 = isset( $search_request['pickup'] ) ? $search_request['pickup'] : '';
+		$dropoff_location                = isset( $search_request['dropoff'] ) ? $search_request['dropoff'] : '';
+		$pickup_term                     = $pickup_location ? get_term_by( 'slug', $pickup_location, 'carrental_location' ) : false;
+		$dropoff_term                    = $dropoff_location ? get_term_by( 'slug', $dropoff_location, 'carrental_location' ) : false;
+		$pickup_location_name            = $pickup_term instanceof \WP_Term ? $pickup_term->name : '';
+		$dropoff_location_name           = $dropoff_term instanceof \WP_Term ? $dropoff_term->name : '';
 		$check_in_out                    = '';
 		$car_protection_section_status   = '';
 		$car_protections                 = [];
@@ -394,8 +381,8 @@ class Booking_Form {
 		$start_time            = strtotime( $start_time_str );
 		$end_time              = strtotime( $end_time_str );
 		$default_time          = gmdate( 'g:i A', strtotime( $default_time_str ) );
-		$selected_pickup_time  = ! empty( $_GET['pickup_time'] ) ? sanitize_text_field( wp_unslash( $_GET['pickup_time'] ) ) : $default_time;
-		$selected_dropoff_time = ! empty( $_GET['dropoff_time'] ) ? sanitize_text_field( wp_unslash( $_GET['dropoff_time'] ) ) : $default_time;
+		$selected_pickup_time  = isset( $search_request['pickup_time'] ) ? $search_request['pickup_time'] : $default_time;
+		$selected_dropoff_time = isset( $search_request['dropoff_time'] ) ? $search_request['dropoff_time'] : $default_time;
 		$total_prices          = carPricing::set_total_price( $meta, $tf_pickup_date, $tf_dropoff_date, $start_time_str, $end_time_str );
 		$wrapper               = ! empty( $settings['wrapper'] ) ? $settings['wrapper'] : 'yes';
 		?>
@@ -409,16 +396,14 @@ class Booking_Form {
                 <p><?php echo wp_kses_post(carPricing::is_taxable($meta)); ?></p>
             </div>
 
-            <?php if(function_exists( 'is_tf_pro' ) && is_tf_pro()){ ?>
-            <div class="tf-extra-added-info">
+			<div class="tf-extra-added-info">
                 <div class="tf-extra-added-box tf-flex tf-flex-gap-16 tf-flex-direction-column">
                     <h3><?php esc_html_e("Extras added", "tourfic"); ?></h3>
                     <div class="tf-added-extra tf-flex tf-flex-gap-16 tf-flex-direction-column">
                         
                     </div>
-                </div>
-            </div>
-            <?php } ?>
+				</div>
+			</div>
 
             <div class="tf-date-select-box">
 
@@ -439,8 +424,8 @@ class Booking_Form {
                             </div>
                             <div class="info-select">
                                 <h5><?php esc_html_e("Pick-up", "tourfic"); ?></h5>
-                                <input type="text" placeholder="<?php echo esc_attr__("Pick Up Location", "tourfic"); ?>" id="tf_pickup_location" value="<?php echo !empty($_GET['pickup']) ? esc_html(get_term_by( 'slug', sanitize_text_field( wp_unslash($_GET['pickup']) ), 'carrental_location' )->name) : ''; ?>" />
-                                <input type="hidden" id="tf_pickup_location_id" value="<?php echo !empty($_GET['pickup']) ? esc_html(sanitize_text_field( wp_unslash($_GET['pickup']) )) : ''; ?>" />
+								<input type="text" placeholder="<?php echo esc_attr__("Pick Up Location", "tourfic"); ?>" id="tf_pickup_location" value="<?php echo esc_attr( $pickup_location_name ); ?>" />
+								<input type="hidden" id="tf_pickup_location_id" value="<?php echo esc_attr( $pickup_location ); ?>" />
                             </div>
                         </div>
                     </div>
@@ -461,8 +446,8 @@ class Booking_Form {
                             </div>
                             <div class="info-select">
                                 <h5><?php esc_html_e("Drop-off", "tourfic"); ?></h5>
-                                <input type="text" placeholder="<?php echo esc_attr__( 'Drop Off Location', 'tourfic' ); ?>" id="tf_dropoff_location" value="<?php echo !empty($_GET['dropoff']) ? esc_html(get_term_by( 'slug', sanitize_text_field( wp_unslash($_GET['dropoff']) ), 'carrental_location' )->name) : ''; ?>" />
-                                <input type="hidden" id="tf_dropoff_location_id" value="<?php echo !empty($_GET['dropoff']) ? esc_html(sanitize_text_field( wp_unslash($_GET['dropoff']) )) : ''; ?>" />
+								<input type="text" placeholder="<?php echo esc_attr__( 'Drop Off Location', 'tourfic' ); ?>" id="tf_dropoff_location" value="<?php echo esc_attr( $dropoff_location_name ); ?>" />
+								<input type="hidden" id="tf_dropoff_location_id" value="<?php echo esc_attr( $dropoff_location ); ?>" />
                             </div>
                         </div>
                     </div>
@@ -593,15 +578,15 @@ class Booking_Form {
                     if($car_deposit_type=='percent'){
                         $due_amount = ($total_prices['sale_price'] * $car_deposit_amount)/100;
                     }
-                    if( function_exists( 'is_tf_pro' ) && is_tf_pro() && '2'==$car_booking_by ){ ?>
+					if ( '2' == $car_booking_by ) { ?>
                         <button class="tf_btn tf-flex tf-flex-align-center tf-flex-justify-center booking-process tf-final-step tf-flex-gap-8">
-                            <?php echo esc_html( apply_filters("tf_car_booking_form_submit_button_text", $booking_btn_text ), 'tourfic' ); ?>
+                            <?php echo esc_html( apply_filters("tourfic_car_booking_form_submit_button_text", $booking_btn_text ), 'tourfic' ); ?>
                             <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
                             <path d="M7.5 15L12.5 10L7.5 5" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
                             </svg>
                         </button>
                     <?php }else{ ?>
-                        <?php if( function_exists( 'is_tf_pro' ) && is_tf_pro() && !empty($car_allow_deposit) && $car_deposit_type!='none' && !empty($car_deposit_amount) ){  ?>
+						<?php if ( $car_allow_deposit && 'none' != $car_deposit_type && ! empty( $car_deposit_amount ) ) { ?>
                             <div class="tf-partial-payment-button tf-flex tf-flex-direction-column tf-flex-gap-16">
                                 <button class="tf_btn tf-flex tf-flex-align-center tf-partial-button tf-flex-justify-center tf-flex-gap-8 <?php echo (empty($car_protection_section_status) || empty($car_protections)) && '3'!=$car_booking_by ? esc_attr('booking-process tf-final-step') : esc_attr('tf-car-booking'); ?>" data-partial="<?php echo esc_attr('yes'); ?>">
                                     <?php esc_html_e( 'Part Pay', 'tourfic' ); ?> <?php echo wp_kses_post(wc_price($due_amount)); ?>
@@ -619,7 +604,7 @@ class Booking_Form {
                             </div>
                         <?php }else{ ?>
                             <button class="tf-flex tf-flex-align-center tf-flex-justify-center tf-flex-gap-8 <?php echo (empty($car_protection_section_status) || empty($car_protections)) && '3'!=$car_booking_by ? esc_attr('booking-process tf-final-step') : esc_attr('tf-car-booking'); ?>">
-                                <?php echo esc_html( apply_filters("tf_car_booking_form_submit_button_text", esc_html__('Continue', 'tourfic') ) ); ?>
+                                <?php echo esc_html( apply_filters("tourfic_car_booking_form_submit_button_text", esc_html__('Continue', 'tourfic') ) ); ?>
                                 <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
                                 <path d="M7.5 15L12.5 10L7.5 5" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
                                 </svg>
@@ -654,7 +639,7 @@ class Booking_Form {
                     </div>
                 <?php } ?>
 
-                <?php do_action( 'tf_car_cancellation', $post_id ); ?>
+                <?php do_action( 'tourfic_car_cancellation', $post_id ); ?>
             </div>
             <div class="tf-mobile-booking-btn">
                 <div class="tf-price-header">
@@ -695,7 +680,7 @@ class Booking_Form {
                                 </svg>
                             </span>
                     </div>
-                    <img src="<?php echo esc_url( TF_ASSETS_APP_URL ) ?>images/thank-you.gif" alt="Thank You">
+                    <img src="<?php echo esc_url( TOURFIC_ASSETS_APP_URL ) ?>images/thank-you.gif" alt="Thank You">
                     <h2>
                         <?php
                         $booking_confirmation_msg = ! empty( Helper::tfopt( 'car-booking-confirmation-msg' ) ) ? Helper::tfopt( 'car-booking-confirmation-msg' ) : esc_html__('Booked Successfully', 'tourfic');
@@ -705,7 +690,7 @@ class Booking_Form {
                 </div>
             </div>
 
-            <?php do_action( 'tf_car_extras', $car_extras, $post_id, $car_extra_sec_title ); ?>
+            <?php do_action( 'tourfic_car_extras', $car_extras, $post_id, $car_extra_sec_title ); ?>
 		<?php echo 'yes' === $wrapper ? '</div>' : ''; ?>
 		<script>
 			(function ($) {
@@ -752,7 +737,7 @@ class Booking_Form {
 								url: <?php echo wp_json_encode( admin_url( 'admin-ajax.php' ) ) ?>,
 								type: 'POST',
 								data: {
-									action: 'get_car_time_slots',
+									action: 'tourfic_get_car_time_slots',
 									pickup_day: startDay,
 									drop_day: endDay
 								},

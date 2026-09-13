@@ -1,30 +1,21 @@
 <?php return array(
     'root' => array(
-        'name' => '__root__',
+        'name' => 'themefic/tourfic',
         'pretty_version' => 'dev-master',
         'version' => 'dev-master',
-        'reference' => '09683a3854ae0a287629a93d5212ce68e2a97e7d',
-        'type' => 'library',
+        'reference' => 'cd649b741ab3ee16f1d5a6b551578bc2a55dc0de',
+        'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
-        'dev' => true,
+        'dev' => false,
     ),
     'versions' => array(
-        '__root__' => array(
+        'themefic/tourfic' => array(
             'pretty_version' => 'dev-master',
             'version' => 'dev-master',
-            'reference' => '09683a3854ae0a287629a93d5212ce68e2a97e7d',
-            'type' => 'library',
+            'reference' => 'cd649b741ab3ee16f1d5a6b551578bc2a55dc0de',
+            'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
-            'aliases' => array(),
-            'dev_requirement' => false,
-        ),
-        'appsero/client' => array(
-            'pretty_version' => 'v2.0.5',
-            'version' => '2.0.5.0',
-            'reference' => 'b7766ee150cc8e28125a818a11e770feb9899a71',
-            'type' => 'library',
-            'install_path' => __DIR__ . '/../appsero/client',
             'aliases' => array(),
             'dev_requirement' => false,
         ),

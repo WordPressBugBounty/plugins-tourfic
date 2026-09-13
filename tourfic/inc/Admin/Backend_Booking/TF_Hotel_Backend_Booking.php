@@ -16,7 +16,7 @@ class TF_Hotel_Backend_Booking extends TF_Backend_Booking {
 
 	protected array $args = array(
 		'name' => 'hotel',
-        'prefix' => 'tf-hotel',
+        'prefix' => 'tourfic-hotel',
         'post_type' => 'tf_hotel',
         'caps' => 'edit_tf_hotels'
 	);
@@ -88,14 +88,6 @@ class TF_Hotel_Backend_Booking extends TF_Backend_Booking {
 						),
 						'field_width' => 50,
 					),
-					array(
-						'id'    => 'tf-pro-notice',
-						'type'  => 'notice',
-						'class' => 'tf-pro-notice',
-						'notice' => 'info',
-						'icon' => 'ri-information-fill',
-						'content' => wp_kses_post(__( 'Do you need to add hotel airport services such as pickup, dropoff, or both? Our Pro plan includes the <b>hotel service</b> feature, allowing you to easily add these services with pricing options <b>per person</b>, <b>fixed</b>, or <b>complimentary</b>. Enhance your guest experience by integrating these convenient services seamlessly into your offerings. <a href="https://tourfic.com/" target="_blank">Upgrade to our pro package today to take advantage of this fantastic option!</a>', 'tourfic') ),
-					),
 				),
 			),
 		);
@@ -113,10 +105,7 @@ class TF_Hotel_Backend_Booking extends TF_Backend_Booking {
 			'field_width' => 50,
 		);
 
-		if( function_exists( 'is_tf_pro' ) && is_tf_pro() ) {
-			array_pop( $this->settings['tf_booking_fields']['fields']);
-			array_push( $this->settings['tf_booking_fields']['fields'], $hotel_services_setting );
-		}
+		array_push( $this->settings['tf_booking_fields']['fields'], $hotel_services_setting );
 
 		$this->set_settings( $this->settings );
 	}
@@ -128,30 +117,19 @@ class TF_Hotel_Backend_Booking extends TF_Backend_Booking {
         parent::__construct($this->args);
 
 		// all actions
-		add_action( 'wp_ajax_tf_check_available_hotel', array( $this, 'tf_check_available_hotel' ) );
-		add_action( 'wp_ajax_tf_check_available_room', array( $this, 'tf_check_available_room' ) );
-		add_action( 'wp_ajax_tf_update_room_fields', array( $this, 'tf_update_room_fields' ) );
-		add_action( 'wp_ajax_tf_backend_hotel_booking', array( $this, 'backend_booking_callback' ) );
+		add_action( 'wp_ajax_tourfic_check_available_hotel', array( $this, 'tf_check_available_hotel' ) );
+		add_action( 'wp_ajax_tourfic_check_available_room', array( $this, 'tf_check_available_room' ) );
+		add_action( 'wp_ajax_tourfic_update_room_fields', array( $this, 'tf_update_room_fields' ) );
+		add_action( 'wp_ajax_tourfic_backend_hotel_booking', array( $this, 'backend_booking_callback' ) );
 	}
 
 	public function tf_check_available_hotel() {
-		// Add nonce for security and authentication.
-		check_ajax_referer('updates', '_nonce');
-
-		// Check if the current user has the required capability.
-		if (!current_user_can('manage_options')) {
-			wp_send_json_error(esc_html__('You do not have permission to access this resource.', 'tourfic'));
-			return;
-		}
-
-		$from = isset( $_POST['from'] ) ? sanitize_text_field( $_POST['from'] ) : '';
-		$to   = isset( $_POST['to'] ) ? sanitize_text_field( $_POST['to'] ) : '';
-
-		$loop = new \WP_Query( array(
-			'post_type'      => 'tf_hotel',
-			'post_status'    => 'publish',
-			'posts_per_page' => - 1,
-		) );
+		$request = $this->read_request( array( 'from' => 'date', 'to' => 'date' ) );
+		$from    = $request['from'];
+		$to      = $request['to'];
+		$this->validate_date_range( $from, $to );
+		$loop = new \WP_Query( $this->listing_query_args() );
+		$tf_total_filters = array();
 
 		$period = '';
 		if ( ! empty( $from ) && ! empty( $to ) ) {
@@ -184,23 +162,17 @@ class TF_Hotel_Backend_Booking extends TF_Backend_Booking {
 	}
 
 	public function tf_check_available_room() {
-		// Add nonce for security and authentication.
-		check_ajax_referer('updates', '_nonce');
-
-		// Check if the current user has the required capability.
-		if (!current_user_can('manage_options')) {
-			wp_send_json_error(esc_html__('You do not have permission to access this resource.', 'tourfic'));
-			return;
-		}
-
-		$hotel_id = isset( $_POST['hotel_id'] ) ? sanitize_text_field( $_POST['hotel_id'] ) : '';
-		$from     = isset( $_POST['from'] ) ? sanitize_text_field( $_POST['from'] ) : '';
-		$to       = isset( $_POST['to'] ) ? sanitize_text_field( $_POST['to'] ) : '';
+		$request  = $this->read_request( array( 'hotel_id' => 'positive', 'from' => 'date', 'to' => 'optional_date' ) );
+		$hotel_id = $request['hotel_id'];
+		$from     = $request['from'];
+		$to       = $request['to'];
+		$this->authorize_listing( $hotel_id );
 
 		// Custom avail
 		if ( empty( $to ) ) {
 			$to = gmdate( 'Y/m/d', strtotime( $from . " + 1 day" ) );
 		}
+		$this->validate_date_range( $from, $to );
 		$from = gmdate( 'Y/m/d', strtotime( $from . ' +1 day' ) );
 
 		/**
@@ -238,7 +210,7 @@ class TF_Hotel_Backend_Booking extends TF_Backend_Booking {
 						$avail_date = ! empty( $room['avail_date'] ) ? json_decode($room['avail_date'], true) : [];
 					}
 
-					if ( $avil_by_date && function_exists( 'is_tf_pro' ) && is_tf_pro() ) {
+					if ( $avil_by_date ) {
 
 						foreach ( $period as $date ) {
 							$available_rooms = array_values( array_filter( $avail_date, function ( $date_availability ) use ( $date ) {
@@ -265,7 +237,7 @@ class TF_Hotel_Backend_Booking extends TF_Backend_Booking {
 		);
 		$hotel_service_avail = ! empty( $meta['airport_service'] ) ? $meta['airport_service'] : '';
 		$hotel_service_type  = ! empty( $meta['airport_service_type'] ) ? $meta['airport_service_type'] : '';
-		if ( function_exists( 'is_tf_pro' ) && is_tf_pro() && ! empty( $hotel_service_avail ) && ! empty( $hotel_service_type ) ) {
+		if ( ! empty( $hotel_service_avail ) && ! empty( $hotel_service_type ) ) {
 			foreach ( $hotel_service_type as $single_service_type ) {
 				if ( "pickup" == $single_service_type ) {
 					$hotel_services['pickup'] = esc_html__( 'Pickup Service', 'tourfic' );
@@ -286,24 +258,22 @@ class TF_Hotel_Backend_Booking extends TF_Backend_Booking {
 	}
 
 	public function tf_update_room_fields() {
-		// Add nonce for security and authentication.
-		check_ajax_referer('updates', '_nonce');
-
-		// Check if the current user has the required capability.
-		if (!current_user_can('manage_options')) {
-			wp_send_json_error(esc_html__('You do not have permission to access this resource.', 'tourfic'));
-			return;
+		$request  = $this->read_request( array( 'hotel_id' => 'positive', 'room_id' => 'text', 'from' => 'date', 'to' => 'date' ) );
+		$hotel_id = $request['hotel_id'];
+		$room_id  = $request['room_id'];
+		$from     = $request['from'];
+		$to       = $request['to'];
+		$this->authorize_listing( $hotel_id );
+		$this->validate_date_range( $from, $to );
+		$room_data = $this->tf_get_room_data( $hotel_id, $room_id );
+		if ( ! is_array( $room_data ) || empty( $room_data['enable'] ) ) {
+			$this->request_error( esc_html__( 'Please select an enabled room belonging to this hotel.', 'tourfic' ) );
 		}
 		
 		$response = array(
 			'adults'   => 0,
 			'children' => 0,
 		);
-
-		$hotel_id = isset( $_POST['hotel_id'] ) ? absint( wp_unslash( $_POST['hotel_id'] ) ) : 0;
-		$room_id  = isset( $_POST['room_id'] ) ? absint( wp_unslash( $_POST['room_id'] ) ) : 0;
-		$from     = isset( $_POST['from'] ) ? sanitize_text_field( wp_unslash( $_POST['from'] ) ) : '';
-		$to       = isset( $_POST['to'] ) ? sanitize_text_field( wp_unslash( $_POST['to'] ) ) : '';
 
 
 		if ( ! empty( $hotel_id ) && ! empty( $room_id ) ) {
@@ -312,7 +282,7 @@ class TF_Hotel_Backend_Booking extends TF_Backend_Booking {
 			if ( ! empty( $rooms ) ) {
 				foreach ( $rooms as $_room ) {
 					$room = get_post_meta($_room->ID, 'tf_room_opt', true);
-					if ( $room['unique_id'] == $room_id ) {
+					if ( (string) ( $room['unique_id'] ?? '' ) === $room_id ) {
 
 						$avil_by_date = ! empty( $room['avil_by_date'] ) ? $room['avil_by_date'] : false;
 						if ( $avil_by_date ) {
@@ -436,22 +406,20 @@ class TF_Hotel_Backend_Booking extends TF_Backend_Booking {
 	}
 
     function backend_booking_callback(){
-		// Add nonce for security and authentication.
-		check_ajax_referer('tf_backend_booking_nonce_action', 'tf_backend_booking_nonce');
+		$field = $this->read_request( array(
+			'tf_available_hotels'      => 'positive',
+			'tf_available_rooms'       => 'text',
+			'tf_hotel_date'            => 'date_range',
+			'tf_hotel_rooms_number'    => 'positive',
+			'tf_hotel_adults_number'   => 'positive',
+			'tf_hotel_children_number' => 'number',
+			'tf_hotel_service_type'    => 'text',
+		), true );
+		$this->authorize_listing( $field['tf_available_hotels'], true );
 
 		$response = array(
 			'success' => false,
 		);
-
-		$field = [];
-		foreach ( $_POST as $key => $value ) {
-			if ( $key === 'tf_hotel_date' ) {
-				$field[ $key ]['from'] = sanitize_text_field( $value['from'] );
-				$field[ $key ]['to']   = sanitize_text_field( $value['to'] );
-			} else {
-				$field[ $key ] = $value;
-			}
-		}
 
 		$required_fields = array(
 			'tf_hotel_booked_by',
@@ -486,6 +454,15 @@ class TF_Hotel_Backend_Booking extends TF_Backend_Booking {
 		}
 
 		$room_data = $this->tf_get_room_data( intval( $field['tf_available_hotels'] ), $field['tf_available_rooms'] );
+		if ( ! is_array( $room_data ) || empty( $room_data['enable'] ) ) {
+			$this->request_error( esc_html__( 'Please select an enabled room belonging to this hotel.', 'tourfic' ), true, 'tf_available_rooms' );
+		}
+		$hotel_meta = get_post_meta( $field['tf_available_hotels'], 'tf_hotels_opt', true );
+		$service    = $field['tf_hotel_service_type'];
+		if ( '' !== $service && ( ! in_array( $service, array( 'pickup', 'dropoff', 'both' ), true )
+			|| empty( $hotel_meta['airport_service'] ) || ! in_array( $service, (array) ( $hotel_meta['airport_service_type'] ?? array() ), true ) ) ) {
+			$this->request_error( esc_html__( 'Please select a service offered by this hotel.', 'tourfic' ), true, 'tf_hotel_service_type' );
+		}
 
 		if ( (int) $field['tf_hotel_rooms_number'] * (int) $room_data['adult'] < $field['tf_hotel_adults_number'] ) {
 			/* translators: %s maximum adult number */
@@ -556,8 +533,8 @@ class TF_Hotel_Backend_Booking extends TF_Backend_Booking {
 			);
 
 			$order_id = Helper::tf_set_order( $order_data );
-			if ( function_exists( 'is_tf_pro' ) && is_tf_pro() && ! empty( $order_id ) ) {
-				do_action( 'tf_offline_payment_booking_confirmation', $order_id, $order_data );
+			if ( ! empty( $order_id ) ) {
+				do_action( 'tourfic_offline_payment_booking_confirmation', $order_id, $order_data );
 			}
 
 			$rooms     = Room::get_hotel_rooms( intval( $field['tf_available_hotels'] ) );
@@ -565,9 +542,9 @@ class TF_Hotel_Backend_Booking extends TF_Backend_Booking {
 				foreach ( $rooms as $_room ) {
 					$room = get_post_meta( $_room->ID, 'tf_room_opt', true );
 					# Check if order is for this room
-					if ( $room['unique_id'] == $field['tf_available_rooms'] ) {
+					if ( (string) ( $room['unique_id'] ?? '' ) === $field['tf_available_rooms'] ) {
 
-						$old_order_id = $room['order_id'];
+						$old_order_id = $room['order_id'] ?? '';
 
 						$old_order_id != "" && $old_order_id .= ",";
 						$old_order_id .= $order_id;
@@ -588,7 +565,7 @@ class TF_Hotel_Backend_Booking extends TF_Backend_Booking {
 				 * @param array  $order_data The items in the order.
 				 * @param string $type Order type
 				 */
-				apply_filters( 'tf_after_booking_completed_calendar_data', $order_id, $order_data, '' );
+				apply_filters( 'tourfic_after_booking_completed_calendar_data', $order_id, $order_data, '' );
 			}
 
 			$response['success'] = true;
@@ -610,7 +587,7 @@ class TF_Hotel_Backend_Booking extends TF_Backend_Booking {
 			if ( ! empty( $rooms ) ) {
 				foreach ( $rooms as $_room ) {
 					$room = get_post_meta($_room->ID, 'tf_room_opt', true);
-					if ( $room['unique_id'] == $room_id ) {
+					if ( (string) ( $room['unique_id'] ?? '' ) === (string) $room_id ) {
 						return $room;
 					}
 				}
@@ -628,7 +605,7 @@ class TF_Hotel_Backend_Booking extends TF_Backend_Booking {
 		if ( $avail_by_date ) {
 			$avail_date = ! empty( $room['avail_date'] ) ? json_decode($room['avail_date'], true) : [];
 		}
-		$pricing_by      = $room_data['pricing-by'];
+		$pricing_by      = apply_filters( 'tourfic_room_pricing_mode', 1, $room_data );
 		$price_multi_day = ! empty( $room_data['price_multi_day'] ) ? $room_data['price_multi_day'] : false;
 
 		# Calculate night number
@@ -641,7 +618,7 @@ class TF_Hotel_Backend_Booking extends TF_Backend_Booking {
 		/**
 		 * Calculate Pricing
 		 */
-		if ( $avail_by_date && function_exists( 'is_tf_pro' ) && is_tf_pro() ) {
+		if ( $avail_by_date ) {
 
 			// Check availability by date option
 			$period = new \DatePeriod(
@@ -698,7 +675,7 @@ class TF_Hotel_Backend_Booking extends TF_Backend_Booking {
 		}
 
 		# Airport Service Fee
-		if ( function_exists( 'is_tf_pro' ) && is_tf_pro() && ! empty( $airport_service ) && $airport_service == 1 ) {
+		if ( ! empty( $airport_service ) && $airport_service == 1 ) {
 			if ( "pickup" == $service_type ) {
 				$airport_pickup_price = ! empty( $meta['airport_pickup_price'] ) ? $meta['airport_pickup_price'] : '';
 				if ( ! empty( $airport_pickup_price ) && gettype( $airport_pickup_price ) == "string" ) {

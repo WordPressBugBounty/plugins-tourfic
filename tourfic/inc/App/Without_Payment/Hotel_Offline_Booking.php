@@ -7,6 +7,7 @@ use Tourfic\Classes\Hotel\Hotel;
 use Tourfic\Classes\Helper;
 use Tourfic\Classes\Hotel\Pricing;
 use Tourfic\Classes\Room\Availability;
+use Tourfic\Classes\Room\Room;
 
 // don't call the file directly
 defined( 'ABSPATH' ) || exit;
@@ -16,7 +17,8 @@ class Hotel_Offline_Booking extends Without_Payment_Booking{
     use \Tourfic\Traits\Singleton;
 
     protected array $args = array(
-        "post_type" => "tf_hotel"
+        'post_type' => 'tf_hotel',
+        'action'    => 'tourfic_hotel_booking_popup',
     );
 
     function __construct(){
@@ -37,21 +39,21 @@ class Hotel_Offline_Booking extends Without_Payment_Booking{
 		 *
 		 * With errors
 		 */
-		$post_id         = isset( $_POST['post_id'] ) ? intval( sanitize_text_field( $_POST['post_id'] ) ) : null;
-		$room_id         = isset( $_POST['room_id'] ) ? intval( sanitize_text_field( $_POST['room_id'] ) ) : null;
-		$unique_id       = isset( $_POST['unique_id'] ) ? sanitize_text_field( $_POST['unique_id'] ) : null;
-		$option_id       = isset( $_POST['option_id'] ) ? sanitize_text_field( $_POST['option_id'] ) : null;
-		$location        = isset( $_POST['location'] ) ? sanitize_text_field( $_POST['location'] ) : '';
-		$adult           = isset( $_POST['adult'] ) ? intval( sanitize_text_field( $_POST['adult'] ) ) : '0';
-		$child           = isset( $_POST['child'] ) ? intval( sanitize_text_field( $_POST['child'] ) ) : '0';
-		$children_ages   = isset( $_POST['children_ages'] ) ? sanitize_text_field( $_POST['children_ages'] ) : '0';
-		$room_selected   = isset( $_POST['room'] ) ? intval( sanitize_text_field( $_POST['room'] ) ) : '0';
-		$check_in        = isset( $_POST['check_in_date'] ) ? sanitize_text_field( $_POST['check_in_date'] ) : '';
-		$check_out       = isset( $_POST['check_out_date'] ) ? sanitize_text_field( $_POST['check_out_date'] ) : '';
-		$deposit         = isset( $_POST['deposit'] ) ? sanitize_text_field( $_POST['deposit'] ) : false;
-		$airport_service = isset( $_POST['airport_service'] ) ? sanitize_text_field( $_POST['airport_service'] ) : '';
-		$extras = isset( $_POST['extras'] ) ? wp_unslash( $_POST['extras'] ) : [];
-		$hotel_extra_quantities = isset( $_POST['hotel_extra_quantity'] ) ? Helper::tf_sanitize_extra_quantities( wp_unslash( $_POST['hotel_extra_quantity'] ) ) : [];
+		$post_id         = isset( $_POST['post_id'] ) ? intval( sanitize_text_field( wp_unslash($_POST['post_id']) ) ) : null;
+		$room_id         = isset( $_POST['room_id'] ) ? intval( sanitize_text_field( wp_unslash($_POST['room_id']) ) ) : null;
+		$unique_id       = isset( $_POST['unique_id'] ) ? sanitize_text_field( wp_unslash($_POST['unique_id']) ) : null;
+		$option_id       = isset( $_POST['option_id'] ) ? sanitize_text_field( wp_unslash($_POST['option_id']) ) : null;
+		$location        = isset( $_POST['location'] ) ? sanitize_text_field( wp_unslash($_POST['location']) ) : '';
+		$adult           = isset( $_POST['adult'] ) ? intval( sanitize_text_field( wp_unslash($_POST['adult']) ) ) : '0';
+		$child           = isset( $_POST['child'] ) ? intval( sanitize_text_field( wp_unslash($_POST['child']) ) ) : '0';
+		$children_ages   = isset( $_POST['children_ages'] ) ? sanitize_text_field( wp_unslash($_POST['children_ages']) ) : '0';
+		$room_selected   = isset( $_POST['room'] ) ? intval( sanitize_text_field( wp_unslash($_POST['room']) ) ) : '0';
+		$check_in        = isset( $_POST['check_in_date'] ) ? sanitize_text_field( wp_unslash($_POST['check_in_date']) ) : '';
+		$check_out       = isset( $_POST['check_out_date'] ) ? sanitize_text_field( wp_unslash($_POST['check_out_date']) ) : '';
+		$deposit         = isset( $_POST['deposit'] ) ? sanitize_text_field( wp_unslash($_POST['deposit']) ) : false;
+		$airport_service = isset( $_POST['airport_service'] ) ? sanitize_text_field( wp_unslash( $_POST['airport_service'] ) ) : '';
+		$extras = isset( $_POST['extras'] ) ? map_deep( wp_unslash( $_POST['extras'] ), 'sanitize_text_field' ) : [];
+		$hotel_extra_quantities = isset( $_POST['hotel_extra_quantity'] ) ? Helper::tf_sanitize_extra_quantities( map_deep( wp_unslash( $_POST['hotel_extra_quantity'] ), 'sanitize_text_field' ) ) : [];
 
 		if ( is_string( $extras ) ) {
 			$extras = explode( ',', sanitize_text_field( $extras ) );
@@ -98,7 +100,7 @@ class Hotel_Offline_Booking extends Without_Payment_Booking{
 		$product_id  = get_post_meta( $post_id, 'product_id', true );
 		$post_author = get_post_field( 'post_author', $post_id );
 		$meta        = get_post_meta( $post_id, 'tf_hotels_opt', true );
-		$room_meta   = get_post_meta( $room_id, 'tf_room_opt', true );
+		$room_meta   = Room::get_normalized_room_meta( $room_id, true );
 		// if ( ! empty( $rooms ) && gettype( $rooms ) == "string" ) {
 		// 	$tf_hotel_rooms_value = preg_replace_callback( '!s:(\d+):"(.*?)";!', function ( $match ) {
 		// 		return ( $match[1] == strlen( $match[2] ) ) ? $match[0] : 's:' . strlen( $match[2] ) . ':"' . $match[2] . '";';
@@ -110,11 +112,11 @@ class Hotel_Offline_Booking extends Without_Payment_Booking{
 			$avail_date = ! empty( $room_meta['avail_date'] ) ? json_decode( $room_meta['avail_date'], true ) : [];
 		}
 		$use_explicit_availability_pricing = false;
-		if ( $avail_by_date && function_exists( 'is_tf_pro' ) && is_tf_pro() ) {
+		if ( $avail_by_date ) {
 			$use_explicit_availability_pricing = Availability::has_explicit_available_rules( $avail_date );
 		}
 		$room_name       = get_the_title( $room_id );
-		$pricing_by      = $room_meta['pricing-by'];
+		$pricing_by      = apply_filters( 'tourfic_room_pricing_mode', 1, $room_meta );
 		$price_multi_day = ! empty( $room_meta['price_multi_day'] ) ? $room_meta['price_multi_day'] : false;
 		$adults_per_room = empty( $adult ) ? 0 : ceil( intval( $adult ) / max( 1, intval( $room_selected ) ) );
 		$childs_per_room = empty( $child ) ? 0 : ceil( intval( $child ) / max( 1, intval( $room_selected ) ) );
@@ -134,11 +136,11 @@ class Hotel_Offline_Booking extends Without_Payment_Booking{
             "max_stay" => ! empty( $room_meta["maximum_stay_requirement"] ) ? $room_meta["maximum_stay_requirement"] : 0
         );
 
+		// Hotel Extra
 		$total_extras_title = [];
 		$total_extras_price = 0;
-		$hotel_extra_option     = ! empty( $meta['hotel_extra_option'] ) ? $meta['hotel_extra_option'] : '';
-		if(function_exists( 'is_tf_pro' ) && is_tf_pro() && !empty($hotel_extra_option)){
-			$hotel_extras     = ! empty( $meta['hotel-extra'] ) ? Helper::tf_data_types($meta['hotel-extra']) : [];
+		$hotel_extras       = apply_filters( 'tourfic_hotel_extra_meta', null, $post_id, $meta );
+		if ( ! empty( $hotel_extras ) ) {
 			foreach ( $extras as $key => $extra ) {
 				if ( empty( $hotel_extras[ $extra ] ) ) {
 					continue;
@@ -220,6 +222,7 @@ class Hotel_Offline_Booking extends Without_Payment_Booking{
 
 			// Get the original (default language) post ID using WPML
 			if ( function_exists( 'wpml_get_default_language' ) ) {
+				// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- WPML-owned hook.
 				$original_hotel_id = absint( apply_filters( 'wpml_object_id', $post_id, 'tf_hotel', false, wpml_get_default_language() ) );
 			} else {
 				$original_hotel_id = $post_id;
@@ -303,8 +306,8 @@ class Hotel_Offline_Booking extends Without_Payment_Booking{
 		if ( $room_selected > $num_room_available ) {
 
 			if ( $num_room_available > 0 ) {
-				/* translators: %1$s Available rooms */
 				$response['errors'][] = sprintf(
+					/* translators: %1$s: Number of available rooms. */
 					esc_html__( 'Only %1$s room(s) available for the selected date.', 'tourfic' ),
 					$num_room_available
 				);
@@ -415,7 +418,7 @@ class Hotel_Offline_Booking extends Without_Payment_Booking{
 
 				if ( $pricing_by == '1' ) {
 
-					$total_price = $room_meta['price'];
+					$total_price = isset( $room_meta['price'] ) && is_numeric( $room_meta['price'] ) ? (float) $room_meta['price'] : 0.0;
 
 					if ( $hotel_discount_type == "percent" ) {
 						$total_price = floatval( preg_replace( '/[^\d.]/', '', number_format( (float) $total_price - ( ( (float) $total_price / 100 ) * (float) $hotel_discount_amount ), 2 ) ) );
@@ -458,6 +461,8 @@ class Hotel_Offline_Booking extends Without_Payment_Booking{
 					}
 				}
 
+				$total_price = is_numeric( $total_price ) ? (float) $total_price : 0.0;
+
 				# Multiply pricing by night number
 				if ( ! empty( $day_difference ) && $price_multi_day == true ) {
 					$price_total = $total_price * $room_selected * $day_difference;
@@ -473,7 +478,7 @@ class Hotel_Offline_Booking extends Without_Payment_Booking{
 			if ( $deposit == "true" ) {
 
 				Helper::tf_get_deposit_amount( $room_meta, $price_total, $deposit_amount, $has_deposit );
-				if ( function_exists( 'is_tf_pro' ) && is_tf_pro() && $has_deposit == true && ! empty( $deposit_amount ) ) {
+				if ( $has_deposit == true && ! empty( $deposit_amount ) ) {
 						if ( ! empty( $airport_service ) || ! empty( $total_extras_price ) ) {
 							$tf_due_amount = ( $price_total + $airport_service_arr['price'] + $total_extras_price ) - $deposit_amount;
 						} else {
@@ -483,7 +488,7 @@ class Hotel_Offline_Booking extends Without_Payment_Booking{
 				}
 			}
 
-			$hotel_guest_info_fields = ! empty( tfopt( 'hotel_guest_info_fields' ) ) ? tf_data_types( tfopt( 'hotel_guest_info_fields' ) ) : '';
+			$hotel_guest_info_fields = ! empty( Helper::tfopt( 'hotel_guest_info_fields' ) ) ? Helper::tf_data_types( Helper::tfopt( 'hotel_guest_info_fields' ) ) : '';
 
 			$response['guest_info']            = '';
 			$response['hotel_booking_summery'] = '';
@@ -586,7 +591,7 @@ class Hotel_Offline_Booking extends Without_Payment_Booking{
 
 				$response['guest_info'] .= '</div>
             </div>';
-				$date_format_for_users  = ! empty( tfopt( "tf-date-format-for-users" ) ) ? tfopt( "tf-date-format-for-users" ) : "Y/m/d";
+				$date_format_for_users  = ! empty( Helper::tfopt( "tf-date-format-for-users" ) ) ? Helper::tfopt( "tf-date-format-for-users" ) : "Y/m/d";
 
 			}
 
