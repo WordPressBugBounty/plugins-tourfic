@@ -1942,7 +1942,7 @@ Tourfic_Settings::option( 'tourfic_settings', array(
 					'placeholder' => esc_html__( 'Select a page', 'tourfic' ),
 					'label'       => esc_html__( 'Select Search Result Page', 'tourfic' ),
 					/* translators: %s: Page template name wrapped in <code> tag */
-					'description' => sprintf( esc_html__( 'This page will be used to show the Search form Results. Please make sure Page template: %s is selected while creating this page.', 'tourfic' ), '<code>' . esc_html__( 'Tourfic - Search Result', 'tourfic' ) . '</code>' ),
+					'description' => sprintf( esc_html__( 'This page shows search-form results and uses the Tourfic: Search Result Sidebar. Select the %s page template. Service archives are generated routes and do not appear under Pages.', 'tourfic' ), '<code>' . esc_html__( 'Tourfic - Search Results', 'tourfic' ) . '</code>' ),
 					'options'     => 'posts',
 					'query_args'  => array(
 						'post_type'      => 'page',
@@ -2677,7 +2677,7 @@ Tourfic_Settings::option( 'tourfic_settings', array(
 								array(
 									'id'          => 'admin_booking_email_template',
 									'type'        => 'editor',
-									'label'       => esc_html__( 'Booking Confrimation Template', 'tourfic' ),
+									'label'       => esc_html__( 'Booking Confirmation Template', 'tourfic' ),
 									'default'     => Tourfic\Admin\Emails\TF_Handle_Emails::get_email_template( 'order_confirmation', '', 'admin' ),
 									'description' => esc_html__( 'This template will be sent to admin', 'tourfic' )
 								),
